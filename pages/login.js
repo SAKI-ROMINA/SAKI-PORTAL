@@ -4,15 +4,13 @@ import { supabase } from '../lib/supabaseClient'
 
 export default function Login() {
   const [email, setEmail] = useState('')
-  const [sending, setSending] = useState(false)
-  const [msg, setMsg] = useState(null)
-  const [err, setErr] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState(null)
 
-  async function handleMagicLink(e) {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    setSending(true)
-    setMsg(null)
-    setErr(null)
+    setLoading(true)
+    setMessage(null)
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -22,33 +20,29 @@ export default function Login() {
     })
 
     if (error) {
-      setErr(error.message)
+      setMessage(❌ Error: ${error.message})
     } else {
-      setMsg('📩 Revisa tu correo y haz clic en el enlace para entrar.')
+      setMessage('📩 Revisa tu correo para ingresar con el enlace mágico')
     }
-    setSending(false)
+    setLoading(false)
   }
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial', textAlign: 'center' }}>
-      <h1>Portal SAKI</h1>
-      <p>Ingresa tu correo para recibir un enlace mágico:</p>
-      <form onSubmit={handleMagicLink}>
+    <div style={{ padding: '2rem', fontFamily: 'Arial' }}>
+      <h1>Iniciar sesión</h1>
+      <form onSubmit={handleLogin}>
         <input
           type="email"
-          placeholder="tu@email.com"
+          placeholder="Tu correo"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: '0.5rem', width: '250px' }}
+          style={{ padding: '0.5rem', marginRight: '0.5rem' }}
         />
-        <br /><br />
-        <button type="submit" disabled={sending}>
-          {sending ? 'Enviando...' : 'Enviar enlace'}
+        <button type="submit" disabled={loading}>
+          {loading ? 'Enviando...' : 'Ingresar'}
         </button>
       </form>
-      {msg && <p style={{ color: 'green' }}>{msg}</p>}
-      {err && <p style={{ color: 'red' }}>{err}</p>}
+      {message && <p>{message}</p>}
     </div>
   )
 }
