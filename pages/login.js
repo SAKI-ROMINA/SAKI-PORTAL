@@ -20,10 +20,11 @@ export default function Login() {
     })
 
     if (error) {
-      setMessage(❌ Error: ${error.message})
+      setMessage(`❌ Error: ${error.message}`)
     } else {
-      setMessage('📩 Revisa tu correo para ingresar con el enlace mágico')
+      setMessage('📬 Revisa tu correo para ingresar con el enlace mágico')
     }
+
     setLoading(false)
   }
 
@@ -36,6 +37,7 @@ export default function Login() {
           placeholder="Tu correo"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
           style={{ padding: '0.5rem', marginRight: '0.5rem' }}
         />
         <button type="submit" disabled={loading}>
