@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import Layout from '../components/Layout'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
@@ -9,54 +8,35 @@ export default function Dashboard() {
 
   useEffect(() => {
     const cargar = async () => {
-      // 1) obtener usuario logueado
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        setLoading(false)
-        return
-      }
+      if (!session) { setLoading(false); return }
       setEmail(session.user.email)
 
-      // 2) buscar casos del usuario
-      // OJO: en tu tabla la columna se llama EXACTO:  ID de usuario
       const { data, error } = await supabase
         .from('casos')
         .select('*')
-        .eq('ID de usuario', session.user.id)   // 👈 ¡este nombre tal cual!
+        .eq('ID de usuario', session.user.id)
 
-      if (error) {
-        console.error(error)
-        alert('No pudimos cargar tus casos')
-      } else {
-        setCasos(data || [])
-      }
+      if (!error) setCasos(data || [])
       setLoading(false)
     }
     cargar()
   }, [])
 
-  if (loading) {
-    return (
-      <Layout>
-        <p>Cargando…</p>
-      </Layout>
-    )
-  }
+  if (loading) return <p style={{padding:24}}>Cargando…</p>
 
-  // si no está logueado
   if (!email) {
     return (
-      <Layout>
+      <div style={{padding:24}}>
         <h2>No estás autenticado</h2>
         <p>Volvé al inicio y pedí el enlace mágico por email.</p>
         <a href="/">Ir al inicio</a>
-      </Layout>
+      </div>
     )
   }
 
-  // listado de casos
   return (
-    <Layout>
+    <div style={{padding:24}}>
       <h2>Mis casos</h2>
       {casos.length === 0 ? (
         <p>Por ahora no tenés casos cargados.</p>
@@ -80,6 +60,6 @@ export default function Dashboard() {
           </tbody>
         </table>
       )}
-    </Layout>
+    </div>
   )
 }

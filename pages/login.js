@@ -1,59 +1,52 @@
-// pages/login.js
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import Head from 'next/head'
 
 export default function Login() {
   const [email, setEmail] = useState('')
+  const [ok, setOk] = useState(false)
+  const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [msg, setMsg] = useState(null)
 
-  const handleLogin = async (e) => {
+  const enviar = async (e) => {
     e.preventDefault()
+    setError(null)
     setLoading(true)
-    setMsg(null)
-
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: 'https://saki-portal.vercel.app/dashboard',
-      },
+      options: { emailRedirectTo: ${window.location.origin}/dashboard }
     })
-
-    if (error) {
-      setMsg(`❌ Error: ${error.message}`)
-    } else {
-      setMsg('📮 Revisá tu correo para ingresar con el enlace mágico.')
-    }
     setLoading(false)
+    if (error) setError(error.message)
+    else setOk(true)
+  }
+
+  if (ok) {
+    return (
+      <div style={{padding:24}}>
+        <h1>📩 Revisá tu correo</h1>
+        <p>Te enviamos un link para entrar al portal.</p>
+      </div>
+    )
   }
 
   return (
-    <>
-      <Head><title>Iniciar sesión • SAKI</title></Head>
-      <div className="center-screen">
-        <div className="card">
-          <h1>Iniciar sesión</h1>
-          <p className="sub">Te enviaremos un enlace mágico a tu correo.</p>
-
-          <form onSubmit={handleLogin}>
-            <input
-              className="input"
-              type="email"
-              placeholder="tu@correo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <div style={{ height: 12 }} />
-            <button className="btn" disabled={loading}>
-              {loading ? 'Enviando…' : 'Ingresar'}
-            </button>
-          </form>
-
-          {msg && <div className="msg">{msg}</div>}
-        </div>
-      </div>
-    </>
+    <div style={{maxWidth:420, margin:'24px auto'}}>
+      <h1>Portal SAKI</h1>
+      <p>Ingresá tu email para recibir el enlace mágico.</p>
+      <form onSubmit={enviar}>
+        <input
+          type="email"
+          placeholder="tu@correo.com"
+          value={email}
+          onChange={e=>setEmail(e.target.value)}
+          required
+          style={{width:'100%', padding:12, margin:'8px 0'}}
+        />
+        <button disabled={loading} style={{width:'100%', padding:12}}>
+          {loading ? 'Enviando...' : 'Enviar link'}
+        </button>
+      </form>
+      {error && <p style={{color:'salmon'}}>{error}</p>}
+    </div>
   )
 }
