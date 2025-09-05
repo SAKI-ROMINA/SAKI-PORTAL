@@ -1,3 +1,4 @@
+// pages/login.js
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
@@ -15,6 +16,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOtp({
       email: email,
       options: {
+        // SIN backticks
         emailRedirectTo: window.location.origin + '/dashboard'
       }
     })
@@ -27,7 +29,7 @@ export default function Login() {
   if (ok) {
     return (
       <div style={{ padding: 24 }}>
-        <h1>📩 Revisá tu correo</h1>
+        <h1>📬 Revisá tu correo</h1>
         <p>Te enviamos un link para entrar al portal.</p>
       </div>
     )
@@ -45,14 +47,16 @@ export default function Login() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          style={{ width: '100%', padding: 12, margin: '8px 0' }}
+          style={{ width: '100%', padding: 12, marginBottom: 12 }}
         />
         <button disabled={loading} style={{ width: '100%', padding: 12 }}>
           {loading ? 'Enviando…' : 'Enviar link'}
         </button>
       </form>
 
-      {error && <p style={{ color: 'salmon' }}>{error}</p>}
+      {error && (
+        <p style={{ color: 'salmon', marginTop: 12 }}>{error}</p>
+      )}
     </div>
   )
 }
