@@ -31,3 +31,32 @@ export default function Dashboard() {
     </div>
   )
 }
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '../lib/supabaseClient'
+
+export default function Dashboard() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const check = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) router.replace('/login')
+      else setLoading(false)
+    }
+    check()
+  }, [router])
+
+  if (loading) return <div style={{padding:'2rem'}}>Cargando…</div>
+
+  return (
+    <div className="container">
+      <h1>Bienvenida, Romina</h1>
+      <button className="btn" onClick={() => supabase.auth.signOut().then(()=>router.replace('/login'))}>
+        Cerrar sesión
+      </button>
+    </div>
+  )
+}
