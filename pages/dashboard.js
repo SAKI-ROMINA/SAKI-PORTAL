@@ -26,17 +26,19 @@ export default function Dashboard() {
 
     load()
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_e, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_e, session) => {
       if (!session) window.location.href = '/login'
     })
 
     return () => {
       ignore = true
-      authListener?.subscription?.unsubscribe?.()
+      subscription.unsubscribe()
     }
   }, [])
 
-  if (loading) return <div style={{ padding: '2rem' }}>Cargando…</div>
+  if (loading) return <div style={{ padding: '2rem' }}>Cargando...</div>
 
   return (
     <>
