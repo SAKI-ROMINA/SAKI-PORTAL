@@ -1,0 +1,111 @@
+/* styles/globals.css */
+
+/* Variables de color */
+:root {
+  --bg: #0b1220;        /* fondo oscuro azulado */
+  --panel: #112a3b;     /* tarjetas/paneles */
+  --text: #e8eefc;      /* texto principal */
+  --muted: #a9b4cf;     /* texto secundario */
+  --brand: #3B82F6;     /* azul SAKI */
+  --ok: #22c55e;        /* verde ok */
+  --danger: #ef4444;    /* rojo error */
+  --radius: 14px;
+  --shadow: 0 12px 30px rgba(0, 0, 0, .35);
+}
+
+/* Reset básico */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(1200px 800px at 20% -10%, #13203a 0%, #0b1220 40%, #0b1220 100%);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100%;
+}
+
+/* Links */
+a { color: var(--brand); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Layout general */
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,.25);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: .5px;
+  padding: 14px 20px;
+}
+
+.main {
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+}
+
+.footer {
+  text-align: center;
+  padding: 14px 20px;
+  opacity: .8;
+}
+
+/* Contenedores y tarjetas */
+.container { max-width: 960px; margin: 0 auto; }
+.card {
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+/* Botones */
+.btn {
+  display: inline-block;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--brand);
+  color: #fff;
+  transition: background .2s ease;
+}
+.btn:hover {
+  background: #2563eb;
+}
+
+/* Inputs */
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+/* Mensajes */
+.msg {
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+.msg.error { color: var(--danger); }
+.msg.ok { color: var(--ok); }
