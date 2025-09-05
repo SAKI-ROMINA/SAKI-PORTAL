@@ -149,3 +149,49 @@ a:hover { text-decoration: underline; }
   margin-top: 12px;
   font-size: 14px;
 }
+
+/* ===== Header ===== */
+.site-header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(16, 24, 42, 0.8);
+  border-bottom: 1px solid #1e2a45;
+  backdrop-filter: blur(8px);
+}
+.site-header__inner {
+  max-width: 960px; margin: 0 auto; padding: 12px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand__logo { font-weight: 800; letter-spacing: .5px; font-size: 18px; }
+.brand__tag { color: var(--muted); font-size: 12px; }
+
+.nav { display: flex; align-items: center; gap: 10px; }
+.nav__link {
+  color: var(--text); opacity: .9; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid transparent;
+}
+.nav__link:hover { border-color: #2a3c63; text-decoration: none; }
+.nav__btn {
+  background: var(--brand); color: white; border: 0; padding: 8px 12px; border-radius: 8px; cursor: pointer;
+}
+
+/* ===== Panel del dashboard ===== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 800px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+.tile {
+  display: block;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #1e2a45;
+  background: linear-gradient(180deg, #141f36 0%, #10182a 100%);
+  color: var(--text);
+}
+.tile__title { margin: 0 0 6px; font-weight: 700; }
+.tile__desc { margin: 0; color: var(--muted); font-size: 14px; }
