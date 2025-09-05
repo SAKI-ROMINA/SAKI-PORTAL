@@ -88,3 +88,64 @@ a:hover { text-decoration: underline; }
   .h1 { font-size: 32px; }
   .container { margin: 28px auto; }
 }
+
+/* === helpers para centrar y tarjeta === */
+.center-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--panel);
+  padding: 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.card h1 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 28px;
+}
+
+.card p.sub {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.15);
+  color: var(--text);
+  outline: none;
+}
+
+.btn {
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--brand);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+.msg {
+  margin-top: 12px;
+  font-size: 14px;
+}
