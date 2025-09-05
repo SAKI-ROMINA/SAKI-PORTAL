@@ -1,16 +1,17 @@
 // pages/login.js
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import Head from 'next/head'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState(null)
+  const [msg, setMsg] = useState(null)
 
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setMessage(null)
+    setMsg(null)
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -20,31 +21,39 @@ export default function Login() {
     })
 
     if (error) {
-      setMessage(`❌ Error: ${error.message}`)
+      setMsg(`❌ Error: ${error.message}`)
     } else {
-      setMessage('📬 Revisa tu correo para ingresar con el enlace mágico')
+      setMsg('📮 Revisá tu correo para ingresar con el enlace mágico.')
     }
-
     setLoading(false)
   }
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial' }}>
-      <h1>Iniciar sesión</h1>
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="Tu correo"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: '0.5rem', marginRight: '0.5rem' }}
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? 'Enviando...' : 'Ingresar'}
-        </button>
-      </form>
-      {message && <p>{message}</p>}
-    </div>
+    <>
+      <Head><title>Iniciar sesión • SAKI</title></Head>
+      <div className="center-screen">
+        <div className="card">
+          <h1>Iniciar sesión</h1>
+          <p className="sub">Te enviaremos un enlace mágico a tu correo.</p>
+
+          <form onSubmit={handleLogin}>
+            <input
+              className="input"
+              type="email"
+              placeholder="tu@correo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <div style={{ height: 12 }} />
+            <button className="btn" disabled={loading}>
+              {loading ? 'Enviando…' : 'Ingresar'}
+            </button>
+          </form>
+
+          {msg && <div className="msg">{msg}</div>}
+        </div>
+      </div>
+    </>
   )
 }
