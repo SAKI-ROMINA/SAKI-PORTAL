@@ -8,34 +8,22 @@ export default function Dashboard() {
   const [session, setSession] = useState(null)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    const cargar = async () => {
-      const { data: currentSession } = await supabase.auth.getSession()
-      if (!currentSession || !currentSession.session) {
-        setLoading(false)
-        return
-      }
-      setSession(currentSession.session)
+  useEffect(function () {
+    async function cargar() {
+      const res = await supabase.auth.getSession()
+      const ses = res && res.data ? res.data.session : null
+      if (!ses) { setLoading(false); return }
+      setSession(ses)
 
-      const { data, error } = await supabase
-        .from('casos')
-        .select('*')
-        .eq('user_id', currentSession.session.user.id)
-
-      if (error) {
-        setError(error.message)
-      } else {
-        setCasos(data || [])
-      }
+      const q = await supabase.from('casos').select('*').eq('user_id', ses.user.id)
+      if (q.error) setError(q.error.message)
+      setCasos(q.data || [])
       setLoading(false)
     }
-
     cargar()
   }, [])
 
-  if (loading) {
-    return <div style={{ padding: 24 }}>Cargando...</div>
-  }
+  if (loading) return <div style={{ padding: 24 }}>Cargando...</div>
 
   if (!session) {
     return (
@@ -52,24 +40,23 @@ export default function Dashboard() {
       <h2>Mis casos</h2>
       <p>Sesión: <b>{session.user.email}</b></p>
 
-      {error && <p style={{ color: 'salmon' }}>Error: {error}</p>}
+      {error ? <p style={{ color: 'salmon' }}>Error: {error}</p> : null}
 
       {casos.length === 0 ? (
         <p>No hay casos cargados.</p>
       ) : (
         <ul>
-          {casos.map((c) => (
-            <li key={c.id}>
-              <b>{c.codigo_de_caso}</b>{c.tipo ? ` - ${c.tipo}` : ''}
-            </li>
-          ))}
+          {casos.map(function (c) {
+            return (
+              <li key={c.id}>
+                <b>{c.codigo_de_caso}</b> {c.tipo ? `- ${c.tipo}` : ''}
+              </li>
+          })}
         </ul>
       )}
 
       <button
-        onClick={async () => {
-          await supabase.auth.signOut()
-        }}
+        onClick={async function () { await supabase.auth.signOut() }}
         style={{ marginTop: 12 }}
       >
         Cerrar sesión
