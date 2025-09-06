@@ -1,65 +1,67 @@
-// pages/dashboard.js
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabaseClient'
+// pages/dashboard.js  (solo ASCII)
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 export default function Dashboard() {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [session, setSession] = useState(null)
-  const [casos, setCasos] = useState([])
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [casos, setCasos] = useState([]);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    let unsub = () => {}
-
+  useEffect(function () {
     async function cargar() {
       try {
-        const { data: sess } = await supabase.auth.getSession()
-        if (!sess || !sess.session) {
-          setLoading(false)
-          return
+        // sesion
+        const { data, error: sErr } = await supabase.auth.getSession();
+        if (sErr) throw sErr;
+        const sess = data && data.session ? data.session : null;
+        setSession(sess);
+        if (!sess) {
+          setLoading(false);
+          return;
         }
-        setSession(sess.session)
-
-        const { data, error: qError } = await supabase
+        // datos
+        const { data: rows, error: qErr } = await supabase
           .from('casos')
           .select('*')
-          .eq('user_id', sess.session.user.id)
+          .eq('user_id', sess.user.id);
 
-        if (qError) throw qError
-        setCasos(Array.isArray(data) ? data : [])
+        if (qErr) throw qErr;
+        setCasos(Array.isArray(rows) ? rows : []);
+        setLoading(false);
       } catch (e) {
-        setError(e.message || 'Error inesperado')
-      } finally {
-        setLoading(false)
+        setError(e.message || 'Error desconocido');
+        setLoading(false);
       }
     }
 
-    cargar()
+    cargar();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession)
-    })
-    unsub = () => listener.subscription.unsubscribe()
+    // listener auth (opcional)
+    const { data: sub } = supabase.auth.onAuthStateChange(function () {
+      cargar();
+    });
+    return function () {
+      if (sub && sub.subscription) sub.subscription.unsubscribe();
+    };
+  }, []);
 
-    return () => unsub()
-  }, [])
-
-  if (loading) return <div style={{ padding: 24 }}>Cargando…</div>
+  if (loading) return <div style={{ padding: 24 }}>Cargando...</div>;
 
   if (!session) {
     return (
       <div style={{ padding: 24 }}>
-        <h2>No estás autenticada/o</h2>
-        <p>Volvé al inicio y pedí el enlace mágico por email.</p>
+        <h2>No estas autenticada/o</h2>
+        <p>Volvé al login y pedí el enlace magico por email.</p>
         <a href="/login">Ir al login</a>
       </div>
-    )
+    );
   }
 
   return (
     <div style={{ padding: 24 }}>
       <h2>Mis casos</h2>
-      <p>Sesión: <b>{session.user.email}</b></p>
+      <p>Sesion: <b>{session.user.email}</b></p>
 
       {error ? <p style={{ color: 'salmon' }}>Error: {error}</p> : null}
 
@@ -67,21 +69,23 @@ export default function Dashboard() {
         <p>No hay casos cargados.</p>
       ) : (
         <ul>
-          {casos.map((c) => (
-            <li key={c.id}>
-              <b>{String(c.codigo_de_caso || '')}</b>
-              {c.tipo ? ' - ' + String(c.tipo) : ''}
-            </li>
-          ))}
+          {casos.map(function (c) {
+            return (
+              <li key={c.id}>
+                <b>{String(c.codigo_de_caso || '')}</b>{' '}
+                {c.tipo ? ' - ' + String(c.tipo) : ''}
+              </li>
+            );
+          })}
         </ul>
       )}
 
       <button
-        onClick={async () => { await supabase.auth.signOut() }}
+        onClick={async function () { await supabase.auth.signOut(); }}
         style={{ marginTop: 12 }}
       >
-        Cerrar sesión
+        Cerrar sesion
       </button>
     </div>
-  )
+  );
 }
