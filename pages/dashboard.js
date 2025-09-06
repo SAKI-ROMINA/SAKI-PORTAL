@@ -49,7 +49,7 @@ export default function Dashboard() {
           {casos.map(function (c) {
             return (
               <li key={c.id}>
-                <b>{c.codigo_de_caso}</b> {c.tipo ? `- ${c.tipo}` : ''}
+                <b>{c.codigo_de_caso}</b> {c.tipo ? ' - ' + c.tipo : ''}
               </li>
           })}
         </ul>
