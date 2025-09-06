@@ -81,7 +81,7 @@ export default function Dashboard() {
             return (
               <li key={c.id}>
                 <b>{c.codigo_de_caso ? c.codigo_de_caso : (c.codigo ? c.codigo : c.id)}</b>
-                {c.tipo ? (' - ' + c.tipo) : ''}
+	        {c.tipo ? (' - ' + c.tipo) : ''}
               </li>
             )
           })}
