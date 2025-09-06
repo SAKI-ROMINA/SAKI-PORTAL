@@ -1,3 +1,4 @@
+// pages/dashboard.js
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
@@ -8,26 +9,31 @@ export default function Dashboard() {
 
   useEffect(() => {
     const cargar = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { setLoading(false); return }
-      setEmail(session.user.email)
+      const { data: session } = await supabase.auth.getSession()
+      if (!session || !session.session) {
+        setLoading(false)
+        return
+      }
+
+      setEmail(session.session.user.email)
 
       const { data, error } = await supabase
         .from('casos')
         .select('*')
-        .eq('ID de usuario', session.user.id)
+        .eq('user_id', session.session.user.id) // 👈 acá corregido
 
       if (!error) setCasos(data || [])
       setLoading(false)
     }
+
     cargar()
   }, [])
 
-  if (loading) return <p style={{padding:24}}>Cargando…</p>
+  if (loading) return <p style={{ padding: 24 }}>Cargando...</p>
 
   if (!email) {
     return (
-      <div style={{padding:24}}>
+      <div style={{ padding: 24 }}>
         <h2>No estás autenticado</h2>
         <p>Volvé al inicio y pedí el enlace mágico por email.</p>
         <a href="/">Ir al inicio</a>
@@ -36,29 +42,19 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{padding:24}}>
+    <div style={{ padding: 24 }}>
       <h2>Mis casos</h2>
+      <p>Sesión activa: {email}</p>
       {casos.length === 0 ? (
-        <p>Por ahora no tenés casos cargados.</p>
+        <p>No tenés casos todavía.</p>
       ) : (
-        <table width="100%" cellPadding="10" style={{borderCollapse:'collapse'}}>
-          <thead>
-            <tr style={{borderBottom:'1px solid #223', textAlign:'left'}}>
-              <th>Código</th>
-              <th>Tipo</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {casos.map(caso => (
-              <tr key={caso.identificación} style={{borderBottom:'1px solid #223'}}>
-                <td>{caso['código de caso']}</td>
-                <td>{caso.tipo}</td>
-                <td>{caso.estado || '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul>
+          {casos.map((caso) => (
+            <li key={caso.id}>
+              <strong>{caso.codigo_de_caso}</strong> - {caso.tipo}
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )
