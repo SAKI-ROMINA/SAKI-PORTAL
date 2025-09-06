@@ -4,31 +4,65 @@ import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
-  const [casos, setCasos] = useState([])
-  const [session, setSession] = useState(null)
   const [error, setError] = useState(null)
+  const [session, setSession] = useState(null)
+  const [casos, setCasos] = useState([])
 
-  useEffect(function () {
+  useEffect(() => {
+    let unsub = () => {}
+
     async function cargar() {
-      const res = await supabase.auth.getSession()
-      const ses = res && res.data ? res.data.session : null
-      if (!ses) { setLoading(false); return }
-      setSession(ses)
+      try {
+        setLoading(true)
+        setError(null)
 
-      const q = await supabase.from('casos').select('*').eq('user_id', ses.user.id)
-      if (q.error) setError(q.error.message)
-      setCasos(q.data || [])
-      setLoading(false)
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          setSession(null)
+          setCasos([])
+          setLoading(false)
+          return
+        }
+        setSession(session)
+
+        // Traer casos del usuario logueado
+        const { data, error } = await supabase
+          .from('casos')
+          .select('*')
+          .eq('user_id', session.user.id)
+
+        if (error) throw error
+        setCasos(data || [])
+      } catch (e) {
+        setError(e.message || 'Error al cargar')
+      } finally {
+        setLoading(false)
+      }
     }
+
     cargar()
+
+    // Escucha cambios de sesión (login/logout)
+    const { data: listener } = supabase.auth.onAuthStateChange((_evt, sess) => {
+      setSession(sess)
+      if (sess) cargar()
+      else {
+        setCasos([])
+        setLoading(false)
+      }
+    })
+
+    unsub = () => listener.subscription.unsubscribe()
+    return () => unsub()
   }, [])
 
+  // UI
   if (loading) return <div style={{ padding: 24 }}>Cargando...</div>
 
   if (!session) {
     return (
       <div style={{ padding: 24 }}>
-        <h2>No estás autenticado</h2>
+        <h2>No estás autenticada/o</h2>
         <p>Volvé al login y pedí el enlace mágico por email.</p>
         <a href="/login">Ir al login</a>
       </div>
@@ -46,17 +80,16 @@ export default function Dashboard() {
         <p>No hay casos cargados.</p>
       ) : (
         <ul>
-          {casos.map(function (c) {
-            return (
-              <li key={c.id}>
-                <b>{c.codigo_de_caso}</b> {c.tipo ? ' - ' + c.tipo : ''}
-              </li>
-          })}
+          {casos.map((c) => (
+            <li key={c.id}>
+              <b>{c.codigo_de_caso}</b>{c.tipo ? ' - ' + c.tipo : ''}
+            </li>
+          ))}
         </ul>
       )}
 
       <button
-        onClick={async function () { await supabase.auth.signOut() }}
+        onClick={async () => { await supabase.auth.signOut() }}
         style={{ marginTop: 12 }}
       >
         Cerrar sesión
