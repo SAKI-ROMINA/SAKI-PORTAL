@@ -169,7 +169,7 @@ export default function Dashboard() {
         <ul>
           {casos.map((c) => (
             <li key={c.id}>
-              <b>{String(c.codigo_de_caso || '')}</b>{c.tipo ? ' ' + c.tipo : ''}
+              <b>{c.codigo_de_caso || ''}</b>{c.tipo ? ' ' + c.tipo : ''}
             </li>
           ))}
         </ul>
