@@ -6,40 +6,35 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [session, setSession] = useState(null)
   const [casos, setCasos] = useState([])
-  const [err, setErr] = useState(null)
-  const [hashSeen, setHashSeen] = useState(false)
+  const [error, setError] = useState(null)
 
-  // 1) Al cargar, obtener sesión + escuchar cambios
+  // 1) Obtener sesión y escuchar cambios (forma compatible con supabase-js v2)
   useEffect(() => {
-    let unsub = () => {}
+    let subscription
+
     const init = async () => {
       try {
-        // ¿Vino con token en el hash? (link mágico)
-        if (typeof window !== 'undefined') {
-          const hasToken = window.location.hash.includes('access_token')
-          setHashSeen(hasToken)
-        }
+        const { data: { session } } = await supabase.auth.getSession()
+        setSession(session)
 
-        const { data } = await supabase.auth.getSession()
-        setSession(data.session)
-
-        const sub = supabase.auth.onAuthStateChange((_event, newSession) => {
+        const res = supabase.auth.onAuthStateChange((_event, newSession) => {
           setSession(newSession)
         })
-        unsub = () => sub.data.subscription.unsubscribe()
+        subscription = res.data.subscription
       } catch (e) {
-        setErr(e.message || String(e))
+        setError(e.message || String(e))
       } finally {
         setLoading(false)
       }
     }
+
     init()
-    return () => unsub()
+    return () => { if (subscription) subscription.unsubscribe() }
   }, [])
 
-  // 2) Si ya hay sesión, cargar casos
+  // 2) Cuando hay sesión, traer casos del usuario
   useEffect(() => {
-    const cargarCasos = async () => {
+    const fetchCasos = async () => {
       if (!session) return
       try {
         const { data, error } = await supabase
@@ -50,61 +45,46 @@ export default function Dashboard() {
         if (error) throw error
         setCasos(data || [])
       } catch (e) {
-        setErr(e.message || String(e))
+        setError(e.message || String(e))
       }
     }
-    cargarCasos()
+    fetchCasos()
   }, [session])
 
-  // 3) Reintento corto: a veces el token entra un pelín más tarde
-  useEffect(() => {
-    if (session || !hashSeen) return
-    const t = setTimeout(async () => {
-      const { data } = await supabase.auth.getSession()
-      if (data.session) setSession(data.session)
-    }, 1200)
-    return () => clearTimeout(t)
-  }, [session, hashSeen])
-
-  if (loading) return <div style={{padding:24}}>Cargando…</div>
+  // 3) UI
+  if (loading) return <div style={{ padding: 24 }}>Cargando…</div>
 
   if (!session) {
     return (
-      <div style={{padding:24}}>
-        <div style={{padding:8, marginBottom:12, background:'#111', color:'#fff', fontSize:12}}>
-          Debug: hashConToken={String(hashSeen)}
-        </div>
+      <div style={{ padding: 24 }}>
         <h2>No estás autenticada/o</h2>
-        <p>Volvé al inicio y pedí el enlace mágico por email.</p>
-        <a href="/">Ir al inicio</a>
+        <p>Volvé al login y pedí el enlace mágico.</p>
+        <a href="/login">Ir al login</a>
       </div>
     )
   }
 
   return (
-    <div style={{padding:24}}>
-      <div style={{padding:8, marginBottom:12, background:'#111', color:'#fff', fontSize:12}}>
-        Debug: usuario={session.user.email}
-      </div>
-
+    <div style={{ padding: 24 }}>
       <h2>Mis casos</h2>
-      <p>Sesión activa: <b>{session.user.email}</b></p>
+      <p>Sesión: <b>{session.user.email}</b></p>
 
-      {err && <p style={{color:'salmon'}}>Error: {err}</p>}
+      {error && <p style={{ color: 'salmon' }}>Error: {error}</p>}
 
       {casos.length === 0 ? (
-        <p>Por ahora no tenés casos cargados.</p>
+        <p>No hay casos cargados.</p>
       ) : (
         <ul>
           {casos.map((c) => (
             <li key={c.id}>
-              <b>{c.codigo_de_caso}</b> {c.tipo ? — ${c.tipo} : ''}
+              <b>{c.codigo_de_caso ?? c.codigo ?? c.id}</b>
+              {c.tipo ? ` — ${c.tipo}` : ''}
             </li>
           ))}
         </ul>
       )}
 
-      <button onClick={() => supabase.auth.signOut()} style={{marginTop:16}}>
+      <button onClick={() => supabase.auth.signOut()} style={{ marginTop: 12 }}>
         Cerrar sesión
       </button>
     </div>
