@@ -5,44 +5,37 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const BUCKET = 'saki-cases' // <-- tu bucket
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { docId: string } }
 ) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const { docId } = params
 
-  if (!url || !anon) {
-    return NextResponse.json({ ok: false, error: 'Faltan variables de entorno' }, { status: 500 })
-  }
-
-  const supabase = createClient(url, anon)
-
-  // 1) Buscar file_url del documento
-  const { data: doc, error: docErr } = await supabase
+  // Buscar el documento en la tabla documents
+  const { data: doc, error } = await supabase
     .from('documents')
     .select('file_url')
-    .eq('id', params.docId)
+    .eq('id', docId)
     .single()
 
-  if (docErr || !doc) {
+  if (error || !doc) {
     return NextResponse.json({ ok: false, error: 'Documento no encontrado' }, { status: 404 })
   }
 
-  // 2) Crear URL firmada en Storage (60 segundos)
-  const { data: signed, error: signErr } = await supabase
-    .storage
-    .from(BUCKET)
-    .createSignedUrl(doc.file_url, 60, {
-      download: doc.file_url.split('/').pop()
-    })
+  // Firmar la URL para descarga segura
+  const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+    .from('saki-cases')
+    .createSignedUrl(doc.file_url, 60) // 60 segundos
 
-  if (signErr || !signed) {
-    return NextResponse.json({ ok: false, error: signErr?.message ?? 'No se pudo firmar la URL' }, { status: 500 })
+  if (signedUrlError || !signedUrlData) {
+    return NextResponse.json({ ok: false, error: 'No se pudo generar URL' }, { status: 500 })
   }
 
-  // 3) Devolver URL firmada
-  return NextResponse.json({ ok: true, url: signed.signedUrl, expiresIn: 60 })
+  return NextResponse.json({ ok: true, docId, url: signedUrlData.signedUrl })
 }
+
