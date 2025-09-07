@@ -5,7 +5,7 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const BUCKET = 'saki-cases' // tu bucket
+const BUCKET = 'saki-cases' // <-- tu bucket
 
 export async function GET(
   _req: Request,
@@ -18,10 +18,9 @@ export async function GET(
     return NextResponse.json({ ok: false, error: 'Faltan variables de entorno' }, { status: 500 })
   }
 
-  // Cliente anónimo (sirve mientras el SELECT a documents no requiera sesión)
   const supabase = createClient(url, anon)
 
-  // 1) Buscar el documento
+  // 1) Buscar file_url del documento
   const { data: doc, error: docErr } = await supabase
     .from('documents')
     .select('file_url')
@@ -32,7 +31,7 @@ export async function GET(
     return NextResponse.json({ ok: false, error: 'Documento no encontrado' }, { status: 404 })
   }
 
-  // 2) Firmar URL en Storage
+  // 2) Crear URL firmada en Storage (60 segundos)
   const { data: signed, error: signErr } = await supabase
     .storage
     .from(BUCKET)
@@ -44,6 +43,6 @@ export async function GET(
     return NextResponse.json({ ok: false, error: signErr?.message ?? 'No se pudo firmar la URL' }, { status: 500 })
   }
 
-  // 3) Devolver la URL firmada
+  // 3) Devolver URL firmada
   return NextResponse.json({ ok: true, url: signed.signedUrl, expiresIn: 60 })
 }
