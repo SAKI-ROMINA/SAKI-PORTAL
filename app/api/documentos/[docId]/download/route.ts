@@ -1,41 +1,33 @@
-export const runtime = 'nodejs';           // ⬅️ Fuerza Node.js (necesario para usar secrets)
-export const dynamic = 'force-dynamic';    // ⬅️ Evita caché del handler
+// app/api/documentos/[docId]/download/route.ts
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-
-// Usa service role en el servidor
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',     // fallback vacío para evitar error de build
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''     // idem arriba
-)
 
 export async function GET(
   _req: Request,
   { params }: { params: { docId: string } }
 ) {
-  // 1) Buscar documento
-  const { data: doc, error } = await supabase
-    .from('documentos')
-    .select('storage_path, nombre_archivo')
-    .eq('id', params.docId)
-    .single()
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (error || !doc) {
-    return NextResponse.json({ error: 'Documento no encontrado' }, { status: 404 })
+  if (!url || !key) {
+    return NextResponse.json(
+      { ok: false, error: 'Faltan variables de Supabase (URL/KEY)' },
+      { status: 500 }
+    )
   }
 
-  // 2) Crear signed URL (5 min)
-  const { data: signed, error: sErr } = await supabase
-    .storage.from('saki-cases')
-    .createSignedUrl(doc.storage_path, 300, {
-      download: doc.nombre_archivo ?? 'archivo'
-    })
+  const supabase = createClient(url, key)
 
-  if (sErr || !signed?.signedUrl) {
-    return NextResponse.json({ error: 'No se pudo generar el link' }, { status: 400 })
+  try {
+    // TODO: reemplazar por tu lógica real (ej: generar signed URL del archivo)
+    return NextResponse.json({ ok: true, docId: params.docId })
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e.message }, { status: 500 })
   }
-
-  // 3) Redirigir a la URL firmada
-  return NextResponse.redirect(signed.signedUrl, 302)
 }
