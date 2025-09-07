@@ -1,52 +1,49 @@
-import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
-
-const BUCKET = 'saki-cases'  // el bucket que ya creaste
-
+// app/api/documentos/[docId]/download/route.ts
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export async function GET(req: Request, { params }: { params: { docId: string } }) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+const BUCKET = 'saki-cases' // tu bucket
+
+export async function GET(
+  _req: Request,
+  { params }: { params: { docId: string } }
+) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
   if (!url || !anon) {
-    return NextResponse.json({ ok: false, error: 'Faltan env vars' }, { status: 500 })
+    return NextResponse.json({ ok: false, error: 'Faltan variables de entorno' }, { status: 500 })
   }
 
-  // Cliente autenticado (con cookies)
-  const cookieStore = cookies()
-  const supaSSR = createServerClient(url, anon, {
-    cookies: {
-      get: (name) => cookieStore.get(name)?.value,
-      set: (name, value, options) => cookieStore.set(name, value, options),
-      remove: (name, options) => cookieStore.set(name, '', { ...options, maxAge: 0 })
-    }
-  })
+  // Cliente anónimo (sirve mientras el SELECT a documents no requiera sesión)
+  const supabase = createClient(url, anon)
 
-  // Buscar documento en la DB
-  const { data: doc, error } = await supaSSR
+  // 1) Buscar el documento
+  const { data: doc, error: docErr } = await supabase
     .from('documents')
     .select('file_url')
     .eq('id', params.docId)
     .single()
 
-  if (error || !doc) {
+  if (docErr || !doc) {
     return NextResponse.json({ ok: false, error: 'Documento no encontrado' }, { status: 404 })
   }
 
-  // Cliente directo a Storage
-  const supa = createClient(url, anon)
-  const { data: signed, error: signedErr } = await supa
+  // 2) Firmar URL en Storage
+  const { data: signed, error: signErr } = await supabase
     .storage
     .from(BUCKET)
-    .createSignedUrl(doc.file_url, 60) // válido 60s
+    .createSignedUrl(doc.file_url, 60, {
+      download: doc.file_url.split('/').pop()
+    })
 
-  if (signedErr) {
-    return NextResponse.json({ ok: false, error: signedErr.message }, { status: 500 })
+  if (signErr || !signed) {
+    return NextResponse.json({ ok: false, error: signErr?.message ?? 'No se pudo firmar la URL' }, { status: 500 })
   }
 
-  // Responder con URL firmada
-  return NextResponse.json({ ok: true, url: signed.signedUrl })
+  // 3) Devolver la URL firmada
+  return NextResponse.json({ ok: true, url: signed.signedUrl, expiresIn: 60 })
 }
