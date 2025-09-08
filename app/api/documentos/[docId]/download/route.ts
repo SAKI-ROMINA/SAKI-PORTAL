@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-const BUCKET = 'saki-cases' // ← verifica que el nombre sea EXACTO
+const BUCKET = 'saki-cases'
 
 export async function GET(_: Request, { params }: { params: { docId: string } }) {
   try {
@@ -20,7 +20,6 @@ export async function GET(_: Request, { params }: { params: { docId: string } })
 
     const supabase = createClient(url, serviceKey)
 
-    // 1) Traer el doc
     const { data: row, error: fetchErr } = await supabase
       .from('documents')
       .select('id, file_url')
@@ -34,9 +33,8 @@ export async function GET(_: Request, { params }: { params: { docId: string } })
       return NextResponse.json({ ok: false, step: 'fetch', error: 'Documento no encontrado' }, { status: 404 })
     }
 
-    const filePath = row.file_url // ej: users/<uid>/casos/<case_id>/InformeDominioAA804HC.pdf
+    const filePath = row.file_url
 
-    // 2) Firmar
     const { data: signed, error: signErr } = await supabase
       .storage
       .from(BUCKET)
