@@ -82,3 +82,4 @@ if (redirect === "1") {
 
 // Comportamiento actual: devuelve JSON
 return NextResponse.json({ ok: true, url: signedUrl });
+}
