@@ -1,61 +1,73 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+// app/api/documentos/[docId]/download/route.ts
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-const BUCKET = 'saki-cases'
+const BUCKET = 'saki-cases';
 
-export async function GET(_: Request, { params }: { params: { docId: string } }) {
+// Cliente admin en el servidor para firmar URLs y leer DB
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+type Ctx = { params: { docId: string } };
+
+export async function GET(_req: Request, { params }: Ctx) {
   try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!url || !serviceKey) {
+    const docId = (params?.docId || '').trim();
+    if (!docId) {
       return NextResponse.json(
-        { ok: false, step: 'env', error: 'Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' },
-        { status: 500 }
-      )
+        { ok: false, error: 'docId requerido' },
+        { status: 400 }
+      );
     }
 
-    const supabase = createClient(url, serviceKey)
-
-    const { data: row, error: fetchErr } = await supabase
+    // 1) Buscar el documento en la tabla
+    const { data: doc, error: dbErr } = await supabase
       .from('documents')
-      .select('id, file_url')
-      .eq('id', params.docId)
-      .maybeSingle()
+      .select('file_url')
+      .eq('id', docId)
+      .maybeSingle();
 
-    if (fetchErr) {
-      return NextResponse.json({ ok: false, step: 'fetch', error: fetchErr.message }, { status: 500 })
+    if (dbErr) {
+      return NextResponse.json(
+        { ok: false, error: `DB: ${dbErr.message}` },
+        { status: 500 }
+      );
     }
-    if (!row) {
-      return NextResponse.json({ ok: false, step: 'fetch', error: 'Documento no encontrado' }, { status: 404 })
+    if (!doc || !doc.file_url) {
+      return NextResponse.json(
+        { ok: false, error: 'Documento no encontrado' },
+        { status: 404 }
+      );
     }
 
-    const filePath = row.file_url
+    const filePath = doc.file_url; // p.ej: users/<user_id>/casos/<case_id>/archivo.pdf
 
-    const { data: signed, error: signErr } = await supabase
-      .storage
+    // 2) Firmar URL por 10 minutos
+    const { data: signed, error: signErr } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrl(filePath, 60 * 60)
+      .createSignedUrl(filePath, 60 * 10);
 
-    if (signErr) {
+    if (signErr || !signed?.signedUrl) {
       return NextResponse.json(
-        { ok: false, step: 'sign', bucket: BUCKET, filePath, error: signErr.message },
+        { ok: false, error: 'No se pudo generar URL' },
         { status: 500 }
-      )
+      );
     }
 
-    if (!signed?.signedUrl) {
-      return NextResponse.json(
-        { ok: false, step: 'sign', bucket: BUCKET, filePath, error: 'createSignedUrl no devolvió signedUrl' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ ok: true, docId: row.id, url: signed.signedUrl })
+    // 3) Devolver la URL firmada
+    return NextResponse.json({
+      ok: true,
+      url: signed.signedUrl,
+    });
   } catch (e: any) {
-    return NextResponse.json({ ok: false, step: 'catch', error: e?.message ?? 'Error inesperado' }, { status: 500 })
+    return NextResponse.json(
+      { ok: false, error: e?.message || 'Error inesperado' },
+      { status: 500 }
+    );
   }
 }
