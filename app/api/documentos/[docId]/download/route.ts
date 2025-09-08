@@ -72,7 +72,7 @@ export async function GET(_req: Request, { params }: Ctx) {
   }
 
   // ... luego de obtener `signedUrl` exitosamente:
-const { searchParams } = new URL(req.url);
+const { searchParams } = new URL(request.url);
 const redirect = searchParams.get('redirect');
 
 if (redirect === '1') {
