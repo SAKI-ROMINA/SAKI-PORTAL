@@ -70,4 +70,16 @@ export async function GET(_req: Request, { params }: Ctx) {
       { status: 500 }
     );
   }
+
+  // ... luego de obtener `signedUrl` exitosamente:
+const { searchParams } = new URL(req.url);
+const redirect = searchParams.get('redirect');
+
+if (redirect === '1') {
+  // Abre/descarga directo
+  return NextResponse.redirect(signedUrl);
+}
+
+// Comportamiento actual: devuelve JSON
+return NextResponse.json({ ok: true, url: signedUrl });
 }
