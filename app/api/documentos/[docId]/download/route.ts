@@ -71,15 +71,14 @@ export async function GET(_req: Request, { params }: Ctx) {
     );
   }
 
-  // ... luego de obtener `signedUrl` exitosamente:
+ // ... luego de obtener `signedUrl` exitosamente:
 const { searchParams } = new URL(request.url);
-const redirect = searchParams.get('redirect');
+const redirect = searchParams.get("redirect");
 
-if (redirect === '1') {
-  // Abre/descarga directo
+if (redirect === "1") {
+  // Abre/descarga directo en el navegador
   return NextResponse.redirect(signedUrl);
 }
 
 // Comportamiento actual: devuelve JSON
 return NextResponse.json({ ok: true, url: signedUrl });
-}
