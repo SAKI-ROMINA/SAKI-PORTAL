@@ -1,49 +1,41 @@
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
+// app/api/db-check/route.ts
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-export async function GET(
-  _req: Request,
-  { params }: { params: { docId: string } }
-) {
-  const { docId } = params
+export async function GET() {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // 1) Tomar variables recién dentro del handler
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !anon) {
+      // Te dice exactamente qué falta
+      return NextResponse.json(
+        { ok: false, error: 'Missing env vars', haveUrl: !!url, haveAnon: !!anon },
+        { status: 500 }
+      );
+    }
 
-  if (!url || !serviceKey) {
+    // Chequeo simple contra una tabla que exista (usa la que tengas: profiles, casos, etc.)
+    const supabase = createClient(url, anon);
+    const { error } = await supabase
+      .from('profiles') // cambia por una tabla que esté en tu base
+      .select('id', { head: true, count: 'exact' });
+
+    if (error) {
+      return NextResponse.json(
+        { ok: false, step: 'query', error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (e: any) {
     return NextResponse.json(
-      { ok: false, error: 'Faltan variables NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY' },
+      { ok: false, error: e?.message ?? 'Unexpected error' },
       { status: 500 }
-    )
+    );
   }
-
-  // 2) Crear el cliente acá adentro (no en el top-level)
-  const supabase = createClient(url, serviceKey)
-
-  // 3) Buscar el documento
-  const { data: doc, error } = await supabase
-    .from('documents')
-    .select('file_url')
-    .eq('id', docId)
-    .single()
-
-  if (error || !doc) {
-    return NextResponse.json({ ok: false, error: 'Documento no encontrado' }, { status: 404 })
-  }
-
-  // 4) Firmar URL
-  const { data: signed, error: signErr } = await supabase
-    .storage
-    .from('saki-cases')
-    .createSignedUrl(doc.file_url, 60)
-
-  if (signErr || !signed) {
-    return NextResponse.json({ ok: false, error: 'No se pudo firmar la URL' }, { status: 500 })
-  }
-
-  return NextResponse.json({ ok: true, docId, url: signed.signedUrl })
 }
