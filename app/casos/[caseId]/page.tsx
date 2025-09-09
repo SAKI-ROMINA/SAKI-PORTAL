@@ -1,5 +1,4 @@
 // app/casos/[caseId]/page.tsx
-import Link from "next/link";
 import { headers } from "next/headers";
 
 type DocItem = {
@@ -9,7 +8,6 @@ type DocItem = {
 };
 
 function getBaseUrl() {
-  // Construye la URL absoluta a partir de los headers (sirve en prod y local)
   const h = headers();
   const host = h.get("x-forwarded-host") || h.get("host");
   const proto = h.get("x-forwarded-proto") || "https";
@@ -38,9 +36,7 @@ export default async function CasePage({ params }: { params: { caseId: string } 
     return (
       <main style={{ maxWidth: 880, margin: "32px auto", padding: "0 16px" }}>
         <h1>Documentos del caso</h1>
-        <p style={{ color: "crimson" }}>
-          {data?.error ?? "No se pudo cargar"}
-        </p>
+        <p style={{ color: "crimson" }}>{data?.error ?? "No se pudo cargar"}</p>
       </main>
     );
   }
@@ -71,11 +67,18 @@ export default async function CasePage({ params }: { params: { caseId: string } 
             {items.map((doc) => (
               <tr key={doc.id}>
                 <td style={td}>{doc.kind || "Documento"}</td>
-                <td style={td}>{new Date(doc.created_at).toLocaleString("es-AR")}</td>
+                <td style={td}>
+                  {new Date(doc.created_at).toLocaleString("es-AR")}
+                </td>
                 <td style={{ ...td, textAlign: "right" }}>
-                  <Link href={`/api/documentos/${doc.id}/download?redirect=1`}>
+                  <a
+                    href={`/api/documentos/${doc.id}/download?redirect=1`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={btn}
+                  >
                     Descargar
-                  </Link>
+                  </a>
                 </td>
               </tr>
             ))}
@@ -100,4 +103,15 @@ const td: React.CSSProperties = {
   borderBottom: "1px solid #f0f0f0",
   fontSize: 14,
   color: "#222",
+};
+
+const btn: React.CSSProperties = {
+  display: "inline-block",
+  padding: "6px 12px",
+  border: "1px solid #ddd",
+  borderRadius: 6,
+  textDecoration: "none",
+  background: "#fafafa",
+  fontSize: 14,
+  color: "#0070f3",
 };
