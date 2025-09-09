@@ -1,25 +1,10 @@
 // app/casos/[caseId]/page.tsx
-export const dynamic = "force-dynamic"; // evita caché/SSG
+export const dynamic = "force-dynamic"; // evitá caché/SSG
 
-import * as React from "react";        // ← IMPORTANTE (evita el crash)
-import { headers } from "next/headers";
-
-// Utilidad para armar la URL absoluta del sitio (sirve bien en Vercel)
-function baseUrl() {
-  const h = headers();
-  const host = h.get("x-forwarded-host") || h.get("host");
-  const proto = h.get("x-forwarded-proto") || "https";
-  return `${proto}://${host}`;
-}
+import * as React from "react";
 
 // ------- Componente CLIENTE (fetch en el navegador) -------
-function CaseClient({
-  caseId,
-  absBase,
-}: {
-  caseId: string;
-  absBase: string;
-}) {
+function CaseClient({ caseId }: { caseId: string }) {
   "use client";
 
   const [loading, setLoading] = React.useState(true);
@@ -33,10 +18,10 @@ function CaseClient({
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(
-          `${absBase}/api/casos/${caseId}/documents`,
-          { cache: "no-store" }
-        );
+        // Ruta relativa: corre en el navegador (no en SSR)
+        const res = await fetch(`/api/casos/${caseId}/documents`, {
+          cache: "no-store",
+        });
         const data = await res.json();
         if (!res.ok || !data?.ok) {
           throw new Error(data?.error ?? `HTTP ${res.status}`);
@@ -49,7 +34,7 @@ function CaseClient({
       }
     };
     run();
-  }, [caseId, absBase]);
+  }, [caseId]);
 
   if (loading) return <p>Cargando documentos…</p>;
   if (error) return <p style={{ color: "crimson" }}>Error: {error}</p>;
@@ -104,7 +89,7 @@ function CaseClient({
   );
 }
 
-// ------- Server component que envuelve al cliente -------
+// ------- Server component simple que solo renderiza el cliente -------
 export default function CasePage({ params }: { params: { caseId: string } }) {
   return (
     <main
@@ -119,7 +104,7 @@ export default function CasePage({ params }: { params: { caseId: string } }) {
       <p style={{ color: "#666", marginBottom: 16 }}>
         Caso: <code>{params.caseId}</code>
       </p>
-      <CaseClient caseId={params.caseId} absBase={baseUrl()} />
+      <CaseClient caseId={params.caseId} />
     </main>
   );
 }
