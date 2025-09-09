@@ -1,22 +1,19 @@
-// app/layout.tsx
-import type { Metadata } from "next";
+// app/casos/layout.tsx
 import React from "react";
 
-export const metadata: Metadata = {
-  title: "SAKI",
-  description: "Portal de clientes",
+export const metadata = {
+  title: "SAKI - Casos",
+  description: "Sección de casos",
 };
 
-export default function RootLayout({
+export default function CasosLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
-      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif" }}>
-        {children}
-      </body>
-    </html>
+    <section style={{ padding: 16 }}>
+      {children}
+    </section>
   );
 }
