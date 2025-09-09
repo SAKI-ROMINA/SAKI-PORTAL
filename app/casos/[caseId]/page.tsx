@@ -1,9 +1,10 @@
 // app/casos/[caseId]/page.tsx
 export const dynamic = "force-dynamic"; // evita caché/SSG
 
+import * as React from "react";        // ← IMPORTANTE (evita el crash)
 import { headers } from "next/headers";
 
-// Pequeña utilidad para armar la URL absoluta del sitio (sirve en Vercel)
+// Utilidad para armar la URL absoluta del sitio (sirve bien en Vercel)
 function baseUrl() {
   const h = headers();
   const host = h.get("x-forwarded-host") || h.get("host");
@@ -11,20 +12,31 @@ function baseUrl() {
   return `${proto}://${host}`;
 }
 
-// ------- Componente CLIENTE que hace el fetch en el navegador -------
-function CaseClient({ caseId, absBase }: { caseId: string; absBase: string }) {
+// ------- Componente CLIENTE (fetch en el navegador) -------
+function CaseClient({
+  caseId,
+  absBase,
+}: {
+  caseId: string;
+  absBase: string;
+}) {
   "use client";
 
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [items, setItems] = React.useState<Array<{ id: string; kind: string | null; created_at: string | null }>>([]);
+  const [items, setItems] = React.useState<
+    Array<{ id: string; kind: string | null; created_at: string | null }>
+  >([]);
 
   React.useEffect(() => {
     const run = async () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${absBase}/api/casos/${caseId}/documents`, { cache: "no-store" });
+        const res = await fetch(
+          `${absBase}/api/casos/${caseId}/documents`,
+          { cache: "no-store" }
+        );
         const data = await res.json();
         if (!res.ok || !data?.ok) {
           throw new Error(data?.error ?? `HTTP ${res.status}`);
@@ -39,21 +51,16 @@ function CaseClient({ caseId, absBase }: { caseId: string; absBase: string }) {
     run();
   }, [caseId, absBase]);
 
-  if (loading) {
-    return <p>Cargando documentos…</p>;
-  }
-  if (error) {
-    return <p style={{ color: "crimson" }}>Error: {error}</p>;
-  }
-  if (items.length === 0) {
-    return <p>No hay documentos para este caso.</p>;
-  }
+  if (loading) return <p>Cargando documentos…</p>;
+  if (error) return <p style={{ color: "crimson" }}>Error: {error}</p>;
+  if (items.length === 0) return <p>No hay documentos para este caso.</p>;
 
   return (
     <ul style={{ listStyle: "none", padding: 0 }}>
       {items.map((doc) => {
-        const fecha =
-          doc?.created_at ? new Date(doc.created_at).toLocaleString("es-AR") : "—";
+        const fecha = doc?.created_at
+          ? new Date(doc.created_at).toLocaleString("es-AR")
+          : "—";
         const href = `/api/documentos/${doc.id}/download?redirect=1`;
         return (
           <li key={doc.id} style={{ marginBottom: 10 }}>
@@ -97,12 +104,17 @@ function CaseClient({ caseId, absBase }: { caseId: string; absBase: string }) {
   );
 }
 
-// ------- Server component (simple) que envuelve al cliente -------
-import React from "react";
-
+// ------- Server component que envuelve al cliente -------
 export default function CasePage({ params }: { params: { caseId: string } }) {
   return (
-    <main style={{ maxWidth: 880, margin: "32px auto", padding: "0 16px", fontFamily: "system-ui,sans-serif" }}>
+    <main
+      style={{
+        maxWidth: 880,
+        margin: "32px auto",
+        padding: "0 16px",
+        fontFamily: "system-ui,sans-serif",
+      }}
+    >
       <h1 style={{ marginBottom: 8 }}>Documentos del caso</h1>
       <p style={{ color: "#666", marginBottom: 16 }}>
         Caso: <code>{params.caseId}</code>
