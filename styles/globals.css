@@ -108,4 +108,186 @@ a:hover { text-decoration: underline; }
   font-size: 0.9rem;
 }
 .msg.error { color: var(--danger); }
-.msg.ok { color: var(--ok); }
+.msg.ok { color: var(--ok); 
+}
+
+/* Botones exclusivos del formulario Día */
+.saki-btn {
+  display: inline-block;
+  border: 0;
+  border-radius: 12px;        /* un poco más grande */
+  padding: 12px 20px;         /* más cómodo */
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--brand);   /* usa tu variable de color */
+  color: #fff;
+  font-size: 15px;
+  letter-spacing: .3px;
+  transition: background .2s ease;
+}
+.saki-btn:hover {
+  background: #2563eb;
+}
+
+/* Inputs exclusivos del formulario Día */
+.saki-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+/* Textarea */
+.saki-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+/* Resultados de búsqueda — solo para el módulo Día */
+.saki-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* un poco más chico que 10px */
+  margin-top: 8px;
+  list-style: none;     /* quita viñetas si usás <ul>/<li> */
+  padding: 0;
+  margin: 0;
+}
+.saki-result-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;              /* mas compacto */
+  padding: 8px 10px;    /*antes 10px 12px */
+  border-radius: 10px;
+  background: rgba(255,255,255,.04);
+  text-transform: uppercase;
+  font-size: 13px; /*antes 14px */
+  line-height: 1.15;
+  }
+
+.saki-result-row > * {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.saki-result-code {
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+.saki-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;         /* fija la altura */
+  padding: 0 7px;       /* solo horizontal */
+  border-radius: 10px;
+  font-size: 11px;      /* más compacto */
+  font-weight: 700;
+  line-height: 1;       /* evita que se estire */
+  vertical-align: middle;
+}
+/* FIX FINAL – resultados Día */
+.saki-results,
+.saki-results ul,
+.saki-results li{
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.saki-result-row{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 8px 10px !important;
+  border-radius: 10px !important;
+  background: rgba(255,255,255,.04) !important;
+  text-transform: uppercase !important;
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+}
+
+.saki-result-row > *{ margin: 0 !important; }
+
+.saki-badge{
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 18px !important;
+  padding: 0 7px !important;
+  border-radius: 10px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+.saki-link-btn{
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 22px !important;
+  padding: 0 8px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  background: rgba(255,255,255,.08) !important;
+  cursor: pointer !important;
+}
+
+.saki-badge.in-curso {
+  background: #0ea5e9;
+  color: #001b2b;
+}
+
+.saki-badge.pendiente {
+  background: #fde047;
+  color: #1a1a1a;
+}
+.saki-link-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;         /* más chico que un botón normal */
+  padding: 0 8px;       /* horizontal únicamente */
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  background: rgba(255,255,255,.08);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.saki-results li {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.pedido{background:#1a1f2a;border:1px solid #2a3342;border-radius:10px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.pedido-info{color:#d9e1ee;font-size:.95rem;min-width:0}
+.pedido-info strong{color:#fff;font-size:1rem;display:block;margin-bottom:4px;letter-spacing:.2px}
+.pedido-sub{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{background:#0e1320;border:1px solid #2a3342;color:#a8c1ff;padding:2px 8px;border-radius:999px;font-size:.8rem}
+.sep{color:#b9c6dc;opacity:.9;font-size:.85rem}
+.badges{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.badge{padding:6px 10px;border-radius:8px;font-weight:700;font-size:.75rem;border:none}
+.badge-azul{background:#00aaff;color:#fff}
+.badge-amarillo{background:#FFD700;color:#000}
+.badge-verde{background:#18c29c;color:#00120a}
+.badge-gris{background:#2f3a4d;color:#c9d3e6}
+.badge-link{background:transparent;color:#79a7ff;text-decoration:underline;cursor:pointer;padding:6px 10px;border-radius:8px}
+@media(max-width:720px){.pedido{flex-direction:column;align-items:flex-start}.badges{margin-top:8px}}
+

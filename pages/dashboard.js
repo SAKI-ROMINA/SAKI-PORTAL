@@ -1,82 +1,94 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabaseClient'
+// pages/dashboard.js
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import supabase from '../lib/supabaseClient';
 
 export default function Dashboard() {
-  const [loading, setLoading] = useState(true)
-  const [casos, setCasos] = useState([])
-  const [session, setSession] = useState(null)
-  const [error, setError] = useState(null)
+  const router = useRouter();
+  const [status, setStatus] = useState('Cargando sesión…');
+  const [casos, setCasos] = useState([]);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    const cargar = async () => {
+    const boot = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (error) throw error
-        if (!session) {
-          setLoading(false)
-          return
+        // 1) Chequear que el cliente exista
+        if (!supabase || !supabase.auth) {
+          setErrorMsg('El cliente de Supabase no está disponible.');
+          return;
         }
-        setSession(session)
 
-        const { data, error: casosError } = await supabase
+        // 2) Obtener sesión actual (SDK v2)
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          setErrorMsg(`Auth error: ${error.message}`);
+          return;
+        }
+
+        const session = data?.session;
+        if (!session) {
+          setStatus('Sin sesión. Redirigiendo a login…');
+          router.replace('/login');
+          return;
+        }
+
+        setStatus(`Sesión iniciada como ${session.user.email}`);
+
+        // 3) Traer casos (ajustá el filtro a tu modelo)
+        const { data: rows, error: qErr } = await supabase
           .from('casos')
           .select('*')
-          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
 
-        if (casosError) throw casosError
-        setCasos(data || [])
+        if (qErr) {
+          setErrorMsg(`Error al traer casos: ${qErr.message}`);
+          return;
+        }
+
+        setCasos(rows || []);
       } catch (e) {
-        setError(e.message)
-      } finally {
-        setLoading(false)
+        setErrorMsg(`Error inesperado: ${e?.message || e}`);
       }
+    };
+
+    boot();
+  }, [router]);
+
+  const salir = async () => {
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      router.replace('/login');
     }
-
-    cargar()
-  }, [])
-
-  if (loading) return <p style={{ padding: 24 }}>Cargando...</p>
-
-  if (!session) {
-    return (
-      <div style={{ padding: 24 }}>
-        <h2>No estás autenticada</h2>
-        <p>Volvé al login y pedí el enlace mágico por email.</p>
-        <a href="/login">Ir al login</a>
-      </div>
-    )
-  }
+  };
 
   return (
     <div style={{ padding: 24 }}>
-      <h2>Mis casos</h2>
-      <p>Sesión: <b>{session.user.email}</b></p>
+      <h1>SAKI</h1>
 
-      {error ? (
-        <p style={{ color: 'salmon' }}>Error: {error}</p>
-      ) : null}
+      <p><strong>Sesión:</strong></p>
+      {errorMsg ? (
+        <p style={{ color: '#f55' }}>Error: {errorMsg}</p>
+      ) : (
+        <p>{status}</p>
+      )}
 
+      <h3 style={{ marginTop: 24 }}>Casos</h3>
       {casos.length === 0 ? (
         <p>No hay casos cargados.</p>
       ) : (
         <ul>
           {casos.map((c) => (
             <li key={c.id}>
-              <b>{c.codigo_de_caso || ''}</b>
-              {c.tipo ? ' - ' + String(c.tipo) : ''}
+              {c.id} — {c?.titulo || c?.dominio || 'Sin título'}
             </li>
           ))}
         </ul>
       )}
 
-      <button
-        onClick={async () => {
-          await supabase.auth.signOut()
-        }}
-        style={{ marginTop: 12 }}
-      >
-        Cerrar sesión
-      </button>
+      <button onClick={salir} style={{ marginTop: 24 }}>Cerrar sesión</button>
+
+      <footer style={{ marginTop: 32, opacity: 0.6 }}>© 2025 SAKI</footer>
     </div>
-  )
+  );
 }
