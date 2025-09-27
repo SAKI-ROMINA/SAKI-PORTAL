@@ -15,59 +15,7 @@ const ORDER_TYPES = [
 /* ==================================================== */
 /*                      Página DÍA                      */
 /* ==================================================== */
-
-return (
-  <div style={{ padding: 24 }}>
-    <h1>Página Día</h1>
-
-    {/* Formulario de creación */}
-    <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
-      <input
-        type="text"
-        placeholder="Franquiciado"
-        value={form.franquiciado}
-        onChange={(e) => setForm({ ...form, franquiciado: e.target.value })}
-      />
-      <input
-        type="text"
-        placeholder="Tienda"
-        value={form.tienda}
-        onChange={(e) => setForm({ ...form, tienda: e.target.value })}
-      />
-      <input
-        type="text"
-        placeholder="Dominio"
-        value={form.dominio}
-        onChange={(e) => setForm({ ...form, dominio: e.target.value })}
-      />
-      <select
-        value={form.type}
-        onChange={(e) => setForm({ ...form, type: e.target.value })}
-      >
-        {ORDER_TYPES.map((t) => (
-          <option key={t.key} value={t.key}>
-            {t.label}
-          </option>
-        ))}
-      </select>
-      <button type="submit">Guardar</button>
-    </form>
-
-    {/* Resultados de búsqueda */}
-    <div style={{ marginTop: 24 }}>
-      <h2>Pedidos</h2>
-      {results.length === 0 ? (
-        <p>No se encontraron pedidos.</p>
-      ) : (
-        <ul>
-          {results.map((p) => (
-            <li key={p.id}>{p.dominio} - {p.type}</li>
-          ))}
-        </ul>
-      )}
-    </div>
-  </div>
-);
+export default function DiaIndex() {
 
   const [file, setFile] = useState(null);
 
@@ -612,8 +560,7 @@ const fetchDiaRequests = async () => {
       </div>
     </div>
   );
-}
-
+ 
 /* ==================================================== */
 /*              Subcomponentes / estilos                */
 /* ==================================================== */
