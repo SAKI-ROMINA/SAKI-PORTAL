@@ -649,3 +649,4 @@ const miniBtn = {
   cursor: "pointer",
   fontWeight: 600,
 };
+}
