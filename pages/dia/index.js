@@ -17,14 +17,6 @@ const ORDER_TYPES = [
 /* ==================================================== */
 export default function DiaIndex() {
 
-  const [form, setForm] = useState({
-  franquiciado: "",
-  tienda: "",
-  dominio: "",
-  requester_email: "",
-  type: "INFORME",
-  notes: "",
-});
   const [file, setFile] = useState(null);
 
   /* -------------------- UI state -------------------- */
