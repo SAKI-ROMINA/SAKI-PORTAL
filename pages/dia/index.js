@@ -1,7 +1,7 @@
 // pages/dia/index.js
 import { useMemo, useRef, useState, useEffect } from "react";
 import supabase from "../../lib/supabaseClient";
-import PedidoList from '../../components/PedidoList';
+import PedidoList from "../../components/PedidoList";
 
 /* -------------------- Constantes -------------------- */
 const ORDER_TYPES = [
@@ -12,21 +12,41 @@ const ORDER_TYPES = [
   { key: "OTROS", label: "Otros" },
 ];
 
+/* -------------------- Estilos inline reusables -------------------- */
+const inputStyle = {
+  width: "100%",
+  padding: "12px 14px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.25)",
+  background: "rgba(255,255,255,0.08)",
+  color: "white",
+  outline: "none",
+};
+
+const miniBtn = {
+  padding: "8px 12px",
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.25)",
+  background: "rgba(255,255,255,0.08)",
+  color: "white",
+  cursor: "pointer",
+  fontWeight: 600,
+};
+
 /* ==================================================== */
 /*                      Página DÍA                      */
 /* ==================================================== */
 export default function DiaIndex() {
-
   const [file, setFile] = useState(null);
 
-const [form, setForm] = useState({
-  franquiciado: "",
-  tienda: "",
-  dominio: "",
-  requester_email: "",
-  type: "INFORME",
-  notes: "",
-});
+  const [form, setForm] = useState({
+    franquiciado: "",
+    tienda: "",
+    dominio: "",
+    requester_email: "",
+    type: "INFORME",
+    notes: "",
+  });
 
   /* -------------------- UI state -------------------- */
   const [saving, setSaving] = useState(false);
@@ -76,7 +96,6 @@ const [form, setForm] = useState({
   const onChange = (name) => (e) =>
     setForm((p) => ({ ...p, [name]: e.target.value }));
 
-  // Dominio/patente: a mayúsculas + filtra caracteres válidos
   const onChangeDominio = (e) => {
     const v = e.target.value.toUpperCase().replace(/[^A-Z0-9.\-]/g, "");
     setForm((p) => ({ ...p, dominio: v }));
@@ -111,17 +130,17 @@ const [form, setForm] = useState({
         .select("id, short_code")
         .single();
 
-      if (insErr) {
-        throw insErr;
-      }
+      if (insErr) throw insErr;
 
       setOkId(req.id);
       setShortCode(req.short_code || (req.id || "").slice(0, 8));
 
-      // Subida de archivo (opcional)
       if (file) {
         const ext = file.name?.split(".").pop() || "bin";
-        const safeName = (file.name || `archivo.${ext}`).replace(/[^\w.\-]/g, "_");
+        const safeName = (file.name || `archivo.${ext}`).replace(
+          /[^\w.\-]/g,
+          "_"
+        );
         const path = `${req.id}/${Date.now()}_${safeName}`;
 
         const { error: upErr } = await supabase.storage
@@ -147,13 +166,16 @@ const [form, setForm] = useState({
             .select("id, path, filename, size_kb, content_type")
             .single();
 
-          setUploaded((prev) => [...prev, meta || {
-            id: null,
-            path,
-            filename: file.name,
-            size_kb: Math.round(file.size / 1024),
-            content_type: file.type || null,
-          }]);
+          setUploaded((prev) => [
+            ...prev,
+            meta || {
+              id: null,
+              path,
+              filename: file.name,
+              size_kb: Math.round(file.size / 1024),
+              content_type: file.type || null,
+            },
+          ]);
         }
       }
 
@@ -189,76 +211,90 @@ const [form, setForm] = useState({
       setError(err.message || "No se pudo eliminar el archivo.");
     }
   };
- 
+
   /* Persistir/Restaurar búsqueda en sessionStorage */
   useEffect(() => {
     if (results.length > 0) {
-      sessionStorage.setItem("dia_results", JSON.stringify(results));
+      sessionStorage.setItem("dia_search_results", JSON.stringify(results));
     }
   }, [results]);
 
   useEffect(() => {
-  const savedQ = sessionStorage.getItem("dia_search_q");
-  const savedResults = sessionStorage.getItem("dia_search_results");
-  if (savedQ) setQ(savedQ);
-  if (savedResults) {
-    try {
-      setResults(JSON.parse(savedResults));
-    } catch {}
-  } else {
-    // si no hay cache previa, cargo últimos pedidos
-    fetchDiaRequests();
-  }
-}, []);
+    const savedQ = sessionStorage.getItem("dia_search_q");
+    const savedResults = sessionStorage.getItem("dia_search_results");
+
+    if (savedQ) setQ(savedQ);
+
+    if (savedResults) {
+      try {
+        setResults(JSON.parse(savedResults));
+      } catch {
+        setResults([]);
+      }
+    } else {
+      fetchDiaRequests();
+    }
+  }, []);
 
   const normalize = (row) => ({
-  id: row.id ?? row.request_id ?? row.req_id,
-  pedido_id: row.pedido_id ?? row.request_number ?? row.req_number ?? row.id,
-  nombre: row.nombre ?? row.name ?? row.full_name ?? row.titular ?? "",
-  dominio: row.dominio ?? row.domain ?? row.patente ?? "",
-  email: row.email ?? row.mail ?? "",
-  fecha: row.fecha ?? row.created_at ?? row.createdAt ?? null,
-  estado: row.estado ?? row.status ?? row.estado_actual ?? "EN_CURSO",
-  resultado: row.resultado ?? row.result ?? row.outcome ?? "PENDIENTE",
-});
+    id: row.id ?? row.request_id ?? row.req_id,
+    pedido_id: row.pedido_id ?? row.request_number ?? row.req_number ?? row.id,
+    nombre: row.nombre ?? row.name ?? row.full_name ?? row.titular ?? "",
+    dominio: row.dominio ?? row.domain ?? row.patente ?? "",
+    email: row.email ?? row.mail ?? "",
+    fecha: row.fecha ?? row.created_at ?? row.createdAt ?? null,
+    estado: row.estado ?? row.status ?? row.estado_actual ?? "EN_CURSO",
+    resultado: row.resultado ?? row.result ?? row.outcome ?? "PENDIENTE",
+  });
 
-const fetchDiaRequests = async () => {
-  try {
-    const term = (q || "").trim();
+  const fetchDiaRequests = async () => {
+    try {
+      setSearching(true);
+      setNoResults(false);
 
-    let query = supabase
-      .from("dia_requests")
-      .select("*")
-      .order("created_at", { ascending: false });
+      const term = (q || "").trim();
 
-    if (term) {
-      query = query.or(
-        [
-          `nombre.ilike.%${term}%`,
-          `name.ilike.%${term}%`,
-          `full_name.ilike.%${term}%`,
-          `email.ilike.%${term}%`,
-          `mail.ilike.%${term}%`,
-          `dominio.ilike.%${term}%`,
-          `domain.ilike.%${term}%`,
-          `patente.ilike.%${term}%`,
-          `request_number.ilike.%${term}%`,
-          `pedido_id.ilike.%${term}%`,
-        ].join(",")
-      );
+      let query = supabase
+        .from("dia_requests")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (term) {
+        query = query.or(
+          [
+            `nombre.ilike.%${term}%`,
+            `name.ilike.%${term}%`,
+            `full_name.ilike.%${term}%`,
+            `email.ilike.%${term}%`,
+            `mail.ilike.%${term}%`,
+            `dominio.ilike.%${term}%`,
+            `domain.ilike.%${term}%`,
+            `patente.ilike.%${term}%`,
+            `request_number.ilike.%${term}%`,
+            `pedido_id.ilike.%${term}%`,
+          ].join(",")
+        );
+      }
+
+      const { data, error } = await query.limit(50);
+      if (error) throw error;
+
+      const rows = (data || []).map(normalize);
+      setResults(rows);
+      setLastQuery(term);
+      setNoResults(rows.length === 0);
+
+      sessionStorage.setItem("dia_search_q", term);
+      sessionStorage.setItem("dia_search_results", JSON.stringify(rows));
+    } catch (e) {
+      console.error("Error al buscar dia_requests:", e);
+      setResults([]);
+      setNoResults(true);
+    } finally {
+      setSearching(false);
     }
+  };
 
-    const { data, error } = await query.limit(50);
-    if (error) throw error;
-
-    setResults((data || []).map(normalize));
-  } catch (e) {
-    console.error("Error al buscar dia_requests:", e);
-    setResults([]);
-  }
-};
-
-  /* -------------------- Render -------------------- */
   return (
     <div
       style={{
@@ -271,14 +307,18 @@ const fetchDiaRequests = async () => {
           "linear-gradient(135deg, rgba(10,30,60,1) 0%, rgba(10,45,80,1) 40%, rgba(12,60,100,1) 100%)",
       }}
     >
-      <div style={{ width: "100%", maxWidth: 960, margin: "0 auto", color: "white" }}>
-        {/* Encabezado */}
+      <div
+        style={{ width: "100%", maxWidth: 960, margin: "0 auto", color: "white" }}
+      >
         <div style={{ marginBottom: 16 }}>
-          <h2 style={{ fontSize: 36, fontWeight: 800, margin: 0 }}>Bienvenido Día Argentina</h2>
-          <div style={{ opacity: 0.8, marginTop: 6 }}>El portal que nos conecta</div>
+          <h2 style={{ fontSize: 36, fontWeight: 800, margin: 0 }}>
+            Bienvenido Día Argentina
+          </h2>
+          <div style={{ opacity: 0.8, marginTop: 6 }}>
+            El portal que nos conecta
+          </div>
         </div>
 
-        {/* Formulario */}
         <div
           style={{
             background: "rgba(255,255,255,0.06)",
@@ -291,7 +331,6 @@ const fetchDiaRequests = async () => {
           <h3 style={{ marginTop: 0, marginBottom: 16 }}>Orden de pedido</h3>
 
           <form onSubmit={handleSubmit}>
-            {/* Franquiciado / Tienda / Dominio */}
             <div
               style={{
                 display: "grid",
@@ -334,8 +373,8 @@ const fetchDiaRequests = async () => {
                   onBlur={() =>
                     setForm((p) => ({ ...p, dominio: (p.dominio || "").trim() }))
                   }
-                  inputMode="email"
-                  pattern="[A-Z0-9.\\-]+"
+                  inputMode="text"
+                  pattern="[A-Z0-9.\-]+"
                   title="Usá solo letras, números, punto y guion"
                   style={{ ...inputStyle, textTransform: "uppercase" }}
                   required
@@ -343,10 +382,11 @@ const fetchDiaRequests = async () => {
               </div>
             </div>
 
-            {/* Tipo de trámite */}
             <div style={{ marginTop: 8, marginBottom: 8 }}>
               <label>Tipo de trámite *</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
+              <div
+                style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}
+              >
                 {ORDER_TYPES.map((t) => (
                   <label
                     key={t.key}
@@ -378,7 +418,6 @@ const fetchDiaRequests = async () => {
               </div>
             </div>
 
-            {/* Email analista */}
             <div style={{ marginTop: 12 }}>
               <label>Analista (email de quien solicita) *</label>
               <input
@@ -391,7 +430,6 @@ const fetchDiaRequests = async () => {
               />
             </div>
 
-            {/* Notas */}
             <div style={{ marginTop: 12 }}>
               <label>Notas</label>
               <textarea
@@ -403,7 +441,6 @@ const fetchDiaRequests = async () => {
               />
             </div>
 
-            {/* Archivo (selector custom) */}
             <div style={{ marginTop: 12 }}>
               <label>Archivos adjuntos (opcional)</label>
 
@@ -415,8 +452,14 @@ const fetchDiaRequests = async () => {
                 style={{ display: "none" }}
               />
 
-              <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-                <button type="button" onClick={() => fileRef.current?.click()} style={miniBtn}>
+              <div
+                style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}
+              >
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  style={miniBtn}
+                >
                   Seleccionar archivo
                 </button>
 
@@ -440,7 +483,6 @@ const fetchDiaRequests = async () => {
               </div>
             </div>
 
-            {/* Mensajes */}
             {missing.length > 0 && (
               <div style={{ color: "#ffdf95", marginTop: 10 }}>
                 Falta completar: <b>{missing.join(", ")}</b>.
@@ -451,10 +493,11 @@ const fetchDiaRequests = async () => {
                 No pudimos guardar el pedido: {error}
               </div>
             )}
-            {info && <div style={{ color: "#a7f3d0", marginTop: 10 }}>{info}</div>}
+            {info && (
+              <div style={{ color: "#a7f3d0", marginTop: 10 }}>{info}</div>
+            )}
             {ok && <SuccessBadge okId={okId} shortCode={shortCode} />}
 
-            {/* Guardar */}
             <div style={{ marginTop: 16 }}>
               <button
                 type="submit"
@@ -477,10 +520,11 @@ const fetchDiaRequests = async () => {
             </div>
           </form>
 
-          {/* Lista de archivos subidos post-guardar */}
           {ok && uploaded.length > 0 && (
             <div style={{ marginTop: 16 }}>
-              <div style={{ opacity: 0.9, marginBottom: 6 }}>Archivos del pedido:</div>
+              <div style={{ opacity: 0.9, marginBottom: 6 }}>
+                Archivos del pedido:
+              </div>
               <ul style={{ marginTop: 4 }}>
                 {uploaded.map((f) => (
                   <li key={f.path} style={{ marginBottom: 6 }}>
@@ -505,7 +549,6 @@ const fetchDiaRequests = async () => {
           )}
         </div>
 
-        {/* Buscador */}
         <div
           style={{
             marginTop: 24,
@@ -522,7 +565,9 @@ const fetchDiaRequests = async () => {
               placeholder="Escribí parte del dominio, tienda, franquiciado, short_code o ID…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") fetchDiaRequests(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") fetchDiaRequests();
+              }}
               style={{ ...inputStyle, flex: 1 }}
             />
             <button
@@ -548,114 +593,111 @@ const fetchDiaRequests = async () => {
           {noResults && (
             <div style={{ marginTop: 12, opacity: 0.9 }}>
               No encontramos pedidos
-              {lastQuery ? <> para <b>{lastQuery}</b></> : null}.
+              {lastQuery ? (
+                <>
+                  {" "}
+                  para <b>{lastQuery}</b>
+                </>
+              ) : null}
+              .
             </div>
           )}
 
-          {/* Resultados */}
-<PedidoList
-  pedidos={results}
-  onVerResultado={(p) => {
-    // mismo comportamiento que tu link "Ver resultado"
-    window.location.href = `/dia/r/${p.id}?q=${encodeURIComponent(q || "")}`;
-  }}
-/>
+          <PedidoList
+            pedidos={results}
+            onVerResultado={(p) => {
+              window.location.href = `/dia/r/${p.id}?q=${encodeURIComponent(
+                q || ""
+              )}`;
+            }}
+          />
         </div>
 
-        {/* Footer */}
         <div style={{ opacity: 0.6, fontSize: 12, marginTop: 24 }}>
           © {new Date().getFullYear()} SAKI
         </div>
       </div>
     </div>
   );
- 
-/* ==================================================== */
-/*              Subcomponentes / estilos                */
-/* ==================================================== */
 
-function SuccessBadge({ okId, shortCode }) {
-  const [copied, setCopied] = useState(false);
-  const sc = shortCode || (okId || "").slice(0, 8);
+  function SuccessBadge({ okId, shortCode }) {
+    const [copied, setCopied] = useState(false);
+    const sc = shortCode || (okId || "").slice(0, 8);
 
-  const copyFullId = async () => {
-    try {
-      await navigator.clipboard.writeText(okId || "");
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {}
-  };
+    const copyFullId = async () => {
+      try {
+        await navigator.clipboard.writeText(okId || "");
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      } catch {}
+    };
 
-  return (
-    <div
-      style={{
-        display: "flex",
-        gap: 8,
-        alignItems: "center",
-        marginTop: 10,
-        padding: "10px 12px",
-        borderRadius: 10,
-        background: "rgba(62, 230, 182, 0.12)",
-        border: "1px solid rgba(62, 230, 182, 0.35)",
-        color: "#3ee6b6",
-        flexWrap: "wrap",
-      }}
-    >
-      <span style={{ fontWeight: 700 }}>Pedido enviado ✅</span>
-      <span style={{ opacity: 0.9 }}>
-        Código: <b style={{ color: "white" }}>{sc}</b>
-      </span>
-      <button type="button" onClick={copyFullId} style={miniBtn}>
-        {copied ? "¡Copiado!" : "Copiar ID"}
-      </button>
-    </div>
-  );
-}
-
-/* Badge simple por si lo necesitás en otros lugares */
-function Badge({ kind, value }) {
-  const base = {
-    padding: "2px 8px",
-    borderRadius: 999,
-    fontSize: 12,
-    marginLeft: 8,
-  };
-  let style = {};
-  if (kind === "status") {
-    style =
-      value === "ENTREGADO"
-        ? { background: "rgba(62, 230, 182, 0.25)", border: "1px solid rgba(62,230,182,0.4)" }
-        : { background: "rgba(80, 170, 255, 0.25)", border: "1px solid rgba(80,170,255,0.4)" };
-  } else {
-    if (value === "APROBADO") {
-      style = { background: "rgba(62, 230, 182, 0.25)", border: "1px solid rgba(62,230,182,0.4)" };
-    } else if (value === "OBSERVADO") {
-      style = { background: "rgba(255, 210, 90, 0.25)", border: "1px solid rgba(255,210,90,0.4)" };
-    } else {
-      style = { background: "rgba(200, 200, 200, 0.2)", border: "1px solid rgba(200,200,200,0.35)" };
-    }
+    return (
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          marginTop: 10,
+          padding: "10px 12px",
+          borderRadius: 10,
+          background: "rgba(62, 230, 182, 0.12)",
+          border: "1px solid rgba(62, 230, 182, 0.35)",
+          color: "#3ee6b6",
+          flexWrap: "wrap",
+        }}
+      >
+        <span style={{ fontWeight: 700 }}>Pedido enviado ✅</span>
+        <span style={{ opacity: 0.9 }}>
+          Código: <b style={{ color: "white" }}>{sc}</b>
+        </span>
+        <button type="button" onClick={copyFullId} style={miniBtn}>
+          {copied ? "¡Copiado!" : "Copiar ID"}
+        </button>
+      </div>
+    );
   }
-  return <span style={{ ...base, ...style }}>{value}</span>;
-}
 
-/* -------------------- Estilos inline reusables -------------------- */
-const inputStyle = {
-  width: "100%",
-  padding: "12px 14px",
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.25)",
-  background: "rgba(255,255,255,0.08)",
-  color: "white",
-  outline: "none",
-};
+  function Badge({ kind, value }) {
+    const base = {
+      padding: "2px 8px",
+      borderRadius: 999,
+      fontSize: 12,
+      marginLeft: 8,
+    };
 
-const miniBtn = {
-  padding: "8px 12px",
-  borderRadius: 10,
-  border: "1px solid rgba(255,255,255,0.25)",
-  background: "rgba(255,255,255,0.08)",
-  color: "white",
-  cursor: "pointer",
-  fontWeight: 600,
-};
+    let style = {};
+
+    if (kind === "status") {
+      style =
+        value === "ENTREGADO"
+          ? {
+              background: "rgba(62, 230, 182, 0.25)",
+              border: "1px solid rgba(62,230,182,0.4)",
+            }
+          : {
+              background: "rgba(80, 170, 255, 0.25)",
+              border: "1px solid rgba(80,170,255,0.4)",
+            };
+    } else {
+      if (value === "APROBADO") {
+        style = {
+          background: "rgba(62, 230, 182, 0.25)",
+          border: "1px solid rgba(62,230,182,0.4)",
+        };
+      } else if (value === "OBSERVADO") {
+        style = {
+          background: "rgba(255, 210, 90, 0.25)",
+          border: "1px solid rgba(255,210,90,0.4)",
+        };
+      } else {
+        style = {
+          background: "rgba(200, 200, 200, 0.2)",
+          border: "1px solid rgba(200,200,200,0.35)",
+        };
+      }
+    }
+
+    return <span style={{ ...base, ...style }}>{value}</span>;
+  }
 }
