@@ -19,6 +19,15 @@ export default function DiaIndex() {
 
   const [file, setFile] = useState(null);
 
+const [form, setForm] = useState({
+  franquiciado: "",
+  tienda: "",
+  dominio: "",
+  requester_email: "",
+  type: "INFORME",
+  notes: "",
+});
+
   /* -------------------- UI state -------------------- */
   const [saving, setSaving] = useState(false);
   const [ok, setOk] = useState(false);
