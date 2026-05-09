@@ -362,7 +362,7 @@ const printDate = new Date().toLocaleDateString("es-AR");
 }}
           title="Avisos del módulo"
         >
-          <Bell size={21} />
+          <Bell size={17} />
           {totalAvisosInformes > 0 && !avisosVistos && (
   <span style={informesAvisosBadgeStyle}>{totalAvisosInformes}</span>
 )}
