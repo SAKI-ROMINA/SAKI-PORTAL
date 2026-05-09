@@ -13,6 +13,25 @@ import {
   ClipboardList,
 } from "lucide-react";
 
+function getInitials(nameOrEmail) {
+  const value = (nameOrEmail || "").toString().trim();
+
+  if (!value) return "US";
+
+  const cleanValue = value.includes("@") ? value.split("@")[0] : value;
+
+  const parts = cleanValue
+    .replace(/[._-]+/g, " ")
+    .split(" ")
+    .filter(Boolean);
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
+}
+
 function formatDate(value) {
   if (!value) return "Sin fecha";
 
