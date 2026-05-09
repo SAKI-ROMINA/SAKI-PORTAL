@@ -12,11 +12,6 @@ export default function DiaLogin() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const savedEmail = window.localStorage.getItem("dia_last_email");
-
-    if (savedEmail) {
-      setEmail(savedEmail);
-    }
   }, []);
 
   const enviar = async (e) => {
@@ -36,10 +31,6 @@ export default function DiaLogin() {
     if (error) {
       setError(error.message);
       return;
-    }
-
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("dia_last_email", cleanEmail);
     }
 
     setOk(true);
