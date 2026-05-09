@@ -285,7 +285,7 @@ const totalAvisosPrendas = totalEnCurso + totalObservadas;
         }}
         title="Avisos del módulo"
       >
-        <Bell size={21} />
+        <Bell size={17} />
         {totalAvisosPrendas > 0 && !avisosVistos && (
           <span style={prendasAvisosBadgeStyle}>{totalAvisosPrendas}</span>
         )}
