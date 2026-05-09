@@ -544,6 +544,20 @@ const novedadesFiltradas =
     ? novedadesPortal
     : novedadesPortal.filter((item) => item.tipo === novedadFiltro);
 
+    const displayName =
+  userProfile?.full_name ||
+  userProfile?.name ||
+  userEmail ||
+  "Usuario";
+
+const displaySector = isAdmin
+  ? "Admin SAKI"
+  : userProfile?.sector || "Usuario Día";
+
+const avatarUrl = userProfile?.avatar_url || "";
+
+const displayInitials = getInitials(displayName);
+
 if (checkingSession) {
   return (
     <div style={pageStyle}>
