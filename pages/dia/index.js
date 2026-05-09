@@ -77,6 +77,7 @@ function getWorkspaceInformeTipoLabel(type) {
 export default function PanelPreview() {
     const router = useRouter();
 const [userEmail, setUserEmail] = useState("");
+const [userProfile, setUserProfile] = useState(null);
 const [showUserMenu, setShowUserMenu] = useState(false);
 const [checkingSession, setCheckingSession] = useState(true);
 
@@ -129,7 +130,7 @@ setUserEmail(user?.email || "");
 
 const { data: profile, error: profileError } = await supabase
   .from("profiles")
-  .select("role")
+  .select("role, name, full_name, sector, avatar_url, email")
   .eq("id", user.id)
   .maybeSingle();
 
@@ -138,10 +139,27 @@ if (!active) return;
 if (profileError) {
   console.error("Error cargando perfil del usuario:", profileError);
   setIsAdmin(false);
+  setUserProfile(null);
 } else {
   const role = (profile?.role || "").toString().trim().toLowerCase();
+
   setIsAdmin(role === "admin");
+  setUserProfile(profile || null);
 }
+
+const displayName =
+  userProfile?.full_name ||
+  userProfile?.name ||
+  userEmail ||
+  "Usuario";
+
+const displaySector = isAdmin
+  ? "Admin SAKI"
+  : userProfile?.sector || "Usuario Día";
+
+const avatarUrl = userProfile?.avatar_url || "";
+
+const displayInitials = getInitials(displayName);
 
 setCheckingSession(false);
   }
@@ -538,16 +556,22 @@ if (checkingSession) {
       style={userProfileHeaderStyle}
       onClick={() => setShowUserMenu((prev) => !prev)}
     >
-      <img
-        src="/avatars/alan-godoy.png"
-        alt="Alan Godoy"
-        style={userAvatarStyle}
-      />
+      {avatarUrl ? (
+  <img
+    src={avatarUrl}
+    alt={displayName}
+    style={userAvatarStyle}
+  />
+) : (
+  <div style={userInitialsAvatarStyle}>
+    {displayInitials}
+  </div>
+)}
 
       <div style={userProfileInfoStyle}>
-        <strong style={userProfileNameStyle}>Alan Godoy</strong>
+        <strong style={userProfileNameStyle}>{displayName}</strong>
         <span style={userProfileSectorStyle}>
-          Administración de Franquicias
+          <span style={userProfileSectorStyle}>{displaySector}</span>
         </span>
       </div>
 
@@ -1111,6 +1135,22 @@ const userAvatarStyle = {
   objectFit: "cover",
   border: "1px solid rgba(96,165,250,0.34)",
   boxShadow: "0 0 0 3px rgba(37,99,235,0.12)",
+  flexShrink: 0,
+};
+
+const userInitialsAvatarStyle = {
+  width: "42px",
+  height: "42px",
+  borderRadius: "999px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "linear-gradient(180deg, #1d4ed8, #0f172a)",
+  color: "#ffffff",
+  fontSize: "13px",
+  fontWeight: 900,
+  border: "1px solid rgba(96,165,250,0.26)",
+  boxShadow: "0 0 0 3px rgba(37,99,235,0.10)",
   flexShrink: 0,
 };
 
