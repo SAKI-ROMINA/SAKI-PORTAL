@@ -2,8 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import supabaseDefault, { supabase as supabaseNamed } from "../../../lib/supabaseClient";
-const supabase = supabaseNamed ?? supabaseDefault;
+import { supabase } from "../../../lib/supabaseClient";
 
 // ⚙️ Config
 const BUCKET = "saki-cases";

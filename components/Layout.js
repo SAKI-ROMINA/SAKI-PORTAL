@@ -1,12 +1,33 @@
 export default function Layout({ children }) {
   return (
-    <div style={{fontFamily:'system-ui,-apple-system,Segoe UI,Roboto', maxWidth: 920, margin: '40px auto', padding: '0 16px'}}>
-      <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
-        <h1 style={{margin:0}}>SAKI</h1>
-        <nav><a href="/" style={{marginRight:12}}>Inicio</a><a href="/dashboard">Panel</a></nav>
-      </header>
-      {children}
-      <footer style={{marginTop:48,opacity:.6}}>© {new Date().getFullYear()} SAKI</footer>
+    <div
+      style={{
+        fontFamily: "system-ui,-apple-system,Segoe UI,Roboto",
+        minHeight: "100vh",
+        background:
+          "linear-gradient(180deg, #071a33 0%, #082747 45%, #06172d 100%)",
+        color: "#f8fafc",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 1120,
+          margin: "0 auto",
+          padding: "28px 18px 40px",
+        }}
+      >
+        {children}
+
+        <footer
+          style={{
+            marginTop: 48,
+            color: "rgba(226, 232, 240, 0.45)",
+            fontSize: 13,
+          }}
+        >
+          © {new Date().getFullYear()} SAKI
+        </footer>
+      </div>
     </div>
   );
 }

@@ -1,19 +1,16 @@
-// app/casos/layout.tsx
-import React from "react";
-
 export const metadata = {
-  title: "SAKI - Casos",
-  description: "Sección de casos",
+  title: "SAKI Portal",
+  description: "Portal SAKI",
 };
 
-export default function CasosLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <section style={{ padding: 16 }}>
-      {children}
-    </section>
+    <html lang="es">
+      <body>{children}</body>
+    </html>
   );
 }
