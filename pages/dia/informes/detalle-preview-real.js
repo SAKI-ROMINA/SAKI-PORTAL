@@ -1772,7 +1772,11 @@ const titularAdminCasado =
 <NavItem
   icon={<MessagesSquare size={22} />}
   label="Notas del legajo"
-  onClick={() => setActiveFicha("notas")}
+  hasAlert={hayAvisoNotas}
+  onClick={() => {
+    setActiveFicha("notas");
+    setHayAvisoNotas(false);
+  }}
 />
 
 <NavItem
@@ -4496,10 +4500,13 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
   );
 }
 
-function NavItem({ icon, label, active, onClick }) {
+function NavItem({ icon, label, active, onClick, hasAlert }) {
   return (
     <div
-      style={active ? navItemActiveStyle : navItemStyle}
+      style={{
+        ...(active ? navItemActiveStyle : navItemStyle),
+        position: "relative",
+      }}
       onClick={onClick}
       title={label}
     >
@@ -4508,6 +4515,22 @@ function NavItem({ icon, label, active, onClick }) {
       <span className="sidebar-label" style={active ? navLabelActiveStyle : navLabelStyle}>
         {label}
       </span>
+
+      {hasAlert && (
+        <span
+          style={{
+            position: "absolute",
+            right: "10px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: "8px",
+            height: "8px",
+            borderRadius: "999px",
+            background: "#22c55e",
+            boxShadow: "0 0 0 3px rgba(34,197,94,0.16)",
+          }}
+        />
+      )}
     </div>
   );
 }
