@@ -2995,7 +2995,11 @@ const titularAdminCasado =
 <NavItem
   icon={<MessagesSquare size={22} />}
   label="Notas del legajo"
-  onClick={() => setActiveFicha("notas")}
+  hasAlert={hayAvisoNotas}
+  onClick={() => {
+    setActiveFicha("notas");
+    setHayAvisoNotas(false);
+  }}
 />
 
 <NavItem
