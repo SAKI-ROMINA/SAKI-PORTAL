@@ -11372,10 +11372,18 @@ function FichaEstado({
 }
 
 function FichaDato({ label, value, wide }) {
+  const displayValue =
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    value === "Por completar"
+      ? "—"
+      : value;
+
   return (
     <div style={wide ? fichaDatoWideStyle : {}}>
       <div style={fichaDatoLabelStyle}>{label}</div>
-      <div style={fichaDatoValueStyle}>{value}</div>
+      <div style={fichaDatoValueStyle}>{displayValue}</div>
     </div>
   );
 }
