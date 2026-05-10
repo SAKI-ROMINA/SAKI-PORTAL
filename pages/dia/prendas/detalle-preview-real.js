@@ -9449,16 +9449,7 @@ function FichaPrenda({ row }) {
           label="Plazo"
           value={row?.plazo_anios ? `${row.plazo_anios} meses` : "Por completar"}
         />
-
-        <FichaDato
-          label="Radicación"
-          value={row?.radicacion || "Por completar"}
-        />
-
-        <FichaDato
-          label="Registro interviniente"
-          value={row?.registro_interviniente || "Por completar"}
-        />
+        
       </div>
     </div>
   );
