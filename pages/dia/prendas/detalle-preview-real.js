@@ -242,6 +242,8 @@ const [loadingNotas, setLoadingNotas] = useState(false);
 const [savingNota, setSavingNota] = useState(false);
 const [nuevaNota, setNuevaNota] = useState("");
 const [notaMsg, setNotaMsg] = useState("");
+const [respondiendoNota, setRespondiendoNota] = useState(null);
+const [hayAvisoNotas, setHayAvisoNotas] = useState(false);
 
 const [archivosLegajo, setArchivosLegajo] = useState([]);
 const [loadingArchivos, setLoadingArchivos] = useState(false);
@@ -704,10 +706,13 @@ const authorRole =
   currentProfile?.role ||
   "member";
 
+const parentId = respondiendoNota?.id || null;
+
 const { data: createdNote, error: noteError } = await supabase
   .from("dia_notes")
   .insert({
     prenda_id: id,
+    parent_id: parentId,
     note: notaLimpia,
     author_id: user?.id || null,
     author_name: authorName,
@@ -749,7 +754,13 @@ const { data: createdNote, error: noteError } = await supabase
     }
 
     setNuevaNota("");
-    setNotaMsg("Nota guardada correctamente.");
+setRespondiendoNota(null);
+setHayAvisoNotas(true);
+setNotaMsg(
+  parentId
+    ? "Respuesta guardada correctamente."
+    : "Nota guardada correctamente."
+);
   } catch (error) {
     console.error("Error guardando nota del legajo:", error);
     setNotaMsg(error?.message || "No se pudo guardar la nota.");
@@ -3506,6 +3517,8 @@ const titularAdminCasado =
     setNuevaNota={setNuevaNota}
     savingNota={savingNota}
     onGuardarNota={handleGuardarNotaLegajo}
+    respondiendoNota={respondiendoNota}
+    setRespondiendoNota={setRespondiendoNota}
   />
 )}
 {activeFicha === "archivos" && (
@@ -8955,7 +8968,26 @@ function FichaNotas({
   setNuevaNota,
   savingNota = false,
   onGuardarNota,
+  respondiendoNota = null,
+  setRespondiendoNota,
 }) {
+
+  const notasPrincipales = notasLegajo.filter((nota) => !nota.parent_id);
+
+  const respuestasPorNota = notasLegajo.reduce((acc, nota) => {
+    if (!nota.parent_id) return acc;
+
+    const key = String(nota.parent_id);
+
+    if (!acc[key]) {
+      acc[key] = [];
+    }
+
+    acc[key].push(nota);
+
+    return acc;
+  }, {});
+
   return (
     <div style={credentialStyle}>
       <div style={credentialTopStyle}>
@@ -8981,6 +9013,63 @@ function FichaNotas({
             </div>
           </div>
         </div>
+
+{respondiendoNota && (
+  <div
+    style={{
+      marginTop: "12px",
+      borderRadius: "14px",
+      border: "1px solid rgba(74,222,128,0.24)",
+      background:
+        "linear-gradient(180deg, rgba(22,163,74,0.16), rgba(16,185,129,0.08))",
+      padding: "11px 12px",
+      color: "#d1fae5",
+      fontSize: "12px",
+      lineHeight: 1.45,
+    }}
+  >
+    <div
+      style={{
+        fontWeight: 850,
+        marginBottom: "4px",
+        letterSpacing: "0.04em",
+        textTransform: "uppercase",
+        fontSize: "11px",
+      }}
+    >
+      Respondiendo a
+    </div>
+
+    <div
+      style={{
+        color: "rgba(226,237,249,0.88)",
+        marginBottom: "8px",
+        whiteSpace: "pre-wrap",
+      }}
+    >
+      {respondiendoNota.note || "Nota sin texto"}
+    </div>
+
+    <button
+      type="button"
+      onClick={() => {
+        setRespondiendoNota(null);
+        setNuevaNota("");
+      }}
+      style={{
+        border: "none",
+        background: "transparent",
+        color: "#86efac",
+        fontSize: "12px",
+        fontWeight: 850,
+        cursor: "pointer",
+        padding: 0,
+      }}
+    >
+      Cancelar respuesta
+    </button>
+  </div>
+)}
 
         <textarea
           value={nuevaNota}
@@ -9028,7 +9117,11 @@ function FichaNotas({
               opacity: savingNota ? 0.65 : 1,
             }}
           >
-            {savingNota ? "Guardando..." : "Guardar nota"}
+            {savingNota
+  ? "Guardando..."
+  : respondiendoNota
+  ? "Guardar respuesta"
+  : "Guardar nota"}
           </button>
         </div>
 
@@ -9050,54 +9143,143 @@ function FichaNotas({
             <div style={historyPlaceholderStyle}>
               Cargando notas del legajo...
             </div>
-          ) : notasLegajo.length > 0 ? (
-            notasLegajo.map((nota) => {
-  const isSakiNote =
-    (nota.author_role || "").toString().trim().toLowerCase() === "admin";
+          ) : notasPrincipales.length > 0 ? (
+  notasPrincipales.map((nota) => {
+    const respuestas = respuestasPorNota[String(nota.id)] || [];
 
-  return (
-    <div
-      key={nota.id}
-      style={{
-        borderRadius: "16px",
-        border: isSakiNote
-          ? "1px solid rgba(96,165,250,0.32)"
-          : "1px solid rgba(148,163,184,0.14)",
-        background: isSakiNote
-          ? "linear-gradient(180deg, rgba(37,99,235,0.22), rgba(14,165,233,0.10))"
-          : "rgba(3,18,34,0.42)",
-        padding: "14px",
-        marginBottom: "10px",
-      }}
-    >
-      <div
-        style={{
-          color: isSakiNote ? "#bfdbfe" : "#8fb9e8",
-          fontSize: "11px",
-          fontWeight: 800,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          marginBottom: "6px",
-        }}
-      >
-        {isSakiNote ? "SAKI" : "DÍA"} ·{" "}
-        {formatDate(nota.created_at) || "Sin fecha"}
-        {nota.author_name ? ` · ${nota.author_name}` : ""}
-      </div>
+    const isSakiNote =
+      (nota.author_role || "").toString().trim().toLowerCase() === "admin";
 
-      <div
-        style={{
-          color: "rgba(226,237,249,0.92)",
-          fontSize: "13px",
-          lineHeight: 1.55,
-          whiteSpace: "pre-wrap",
-        }}
-      >
-        {nota.note || "—"}
+    return (
+      <div key={nota.id} style={{ marginBottom: "14px" }}>
+        <div
+          style={{
+            borderRadius: "16px",
+            border: isSakiNote
+              ? "1px solid rgba(74,222,128,0.32)"
+              : "1px solid rgba(148,163,184,0.14)",
+            background: isSakiNote
+              ? "linear-gradient(180deg, rgba(22,163,74,0.24), rgba(16,185,129,0.10))"
+              : "rgba(3,18,34,0.42)",
+            padding: "14px",
+          }}
+        >
+          <div
+            style={{
+              color: isSakiNote ? "#bbf7d0" : "#8fb9e8",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              marginBottom: "6px",
+            }}
+          >
+            {isSakiNote ? "SAKI" : "DÍA"} ·{" "}
+            {formatDate(nota.created_at) || "Sin fecha"}
+            {nota.author_name ? ` · ${nota.author_name}` : ""}
+          </div>
+
+          <div
+            style={{
+              color: "rgba(226,237,249,0.92)",
+              fontSize: "13px",
+              lineHeight: 1.55,
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {nota.note || "—"}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setRespondiendoNota(nota);
+              setNuevaNota("");
+            }}
+            style={{
+              marginTop: "10px",
+              border: "none",
+              background: "transparent",
+              color: "#93c5fd",
+              fontSize: "12px",
+              fontWeight: 800,
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            Responder
+          </button>
+        </div>
+
+        {respuestas.length > 0 && (
+          <div
+            style={{
+              marginTop: "9px",
+              marginLeft: "26px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "9px",
+            }}
+          >
+            {respuestas.map((respuesta) => {
+              const isSakiReply =
+                (respuesta.author_role || "")
+                  .toString()
+                  .trim()
+                  .toLowerCase() === "admin";
+
+              return (
+                <div
+                  key={respuesta.id}
+                  style={{
+                    borderRadius: "16px",
+                    border: isSakiReply
+                      ? "1px solid rgba(74,222,128,0.34)"
+                      : "1px solid rgba(148,163,184,0.14)",
+                    background: isSakiReply
+                      ? "linear-gradient(180deg, rgba(22,163,74,0.28), rgba(16,185,129,0.12))"
+                      : "rgba(15,44,78,0.34)",
+                    padding: "13px",
+                    boxShadow: isSakiReply
+                      ? "0 10px 26px rgba(22,163,74,0.08)"
+                      : "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: isSakiReply ? "#bbf7d0" : "#8fb9e8",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    ↳ {isSakiReply ? "SAKI" : "DÍA"} ·{" "}
+                    {formatDate(respuesta.created_at) || "Sin fecha"}
+                    {respuesta.author_name
+                      ? ` · ${respuesta.author_name}`
+                      : ""}
+                  </div>
+
+                  <div
+                    style={{
+                      color: "rgba(226,237,249,0.92)",
+                      fontSize: "13px",
+                      lineHeight: 1.55,
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {respuesta.note || "—"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
-    </div>
-  );
-})
+    );
+  })
           ) : (
             <div style={historyPlaceholderStyle}>
               No hay notas cargadas para este legajo.
