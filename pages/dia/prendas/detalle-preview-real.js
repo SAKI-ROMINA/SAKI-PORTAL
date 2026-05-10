@@ -3155,42 +3155,6 @@ const titularAdminCasado =
 
 </div>
 
-  <div style={topMenuWrapperStyle}>
-    <button
-      type="button"
-      style={topIconButtonStyle}
-      onClick={() => setTopMenuOpen((prev) => !prev)}
-      title="Opciones"
-    >
-      <MoreVertical size={21} />
-    </button>
-
-    {topMenuOpen && (
-      <div style={topDropdownStyle}>
-        <button
-  type="button"
-  style={topDropdownItemStyle}
-  onClick={() => router.push("/dia")}
->
-  Volver al Workspace
-</button>
-
-        <button
-          type="button"
-          style={topDropdownItemStyle}
-          onClick={() => setActiveFicha("reporte")}
-        >
-          Reportar inconveniente
-        </button>
-
-        <div style={topDropdownDividerStyle} />
-
-        <button type="button" style={topDropdownDangerItemStyle}>
-          Cerrar sesión
-        </button>
-      </div>
-    )}
-  </div>
 </div>
         </div>
 
