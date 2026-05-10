@@ -237,6 +237,12 @@ const [errorMsg, setErrorMsg] = useState("");
 const [row, setRow] = useState(null);
 const [historyRows, setHistoryRows] = useState([]);
 
+const [notasLegajo, setNotasLegajo] = useState([]);
+const [loadingNotas, setLoadingNotas] = useState(false);
+const [savingNota, setSavingNota] = useState(false);
+const [nuevaNota, setNuevaNota] = useState("");
+const [notaMsg, setNotaMsg] = useState("");
+
 const [archivosLegajo, setArchivosLegajo] = useState([]);
 const [loadingArchivos, setLoadingArchivos] = useState(false);
 const [uploadingArchivo, setUploadingArchivo] = useState(false);
@@ -401,7 +407,8 @@ if (historyError) {
   }
 
     fetchPrendaReal();
-  fetchArchivosLegajo();
+fetchArchivosLegajo();
+fetchNotasLegajo();
 }, [id]);
 
 async function fetchArchivosLegajo() {
@@ -633,6 +640,31 @@ async function fetchArchivosLegajo() {
     setArchivoMsg(error?.message || "No se pudieron cargar los archivos.");
   } finally {
     setLoadingArchivos(false);
+  }
+}
+
+async function fetchNotasLegajo() {
+  if (!id) return;
+
+  try {
+    setLoadingNotas(true);
+    setNotaMsg("");
+
+    const { data, error } = await supabase
+      .from("dia_notes")
+      .select("*")
+      .eq("prenda_id", id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    setNotasLegajo(data || []);
+  } catch (error) {
+    console.error("Error cargando notas del legajo:", error);
+    setNotasLegajo([]);
+    setNotaMsg(error?.message || "No se pudieron cargar las notas del legajo.");
+  } finally {
+    setLoadingNotas(false);
   }
 }
 
