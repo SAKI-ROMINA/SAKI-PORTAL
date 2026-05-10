@@ -6168,7 +6168,6 @@ function FichaDominio({ row }) {
         <FichaDato
           label="Registro interviniente"
           value={row?.registro_interviniente || "Por completar"}
-          wide
         />
       </div>
     </div>
