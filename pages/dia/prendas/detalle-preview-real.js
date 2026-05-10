@@ -3215,7 +3215,7 @@ const titularAdminCasado =
     ["Fecha", formatDate(row?.fecha_escritura) || "Por completar"],
     ["Escribanía", row?.escribania || "Por completar"],
   ]}
-  action="Ver ficha →"
+  action={null}
   onClick={() => setActiveFicha("prenda")}
 />
 
@@ -3227,7 +3227,7 @@ const titularAdminCasado =
     ["CUIT", formatCuit(row?.frq_cuit) || "Por completar"],
     ["Tienda", row?.tienda || "Por completar"],
   ]}
-  action="Ver ficha →"
+  action={null}
   onClick={() => setActiveFicha("frq")}
 />
 
@@ -3254,7 +3254,7 @@ const titularAdminCasado =
         : "Por completar",
     ],
   ]}
-  action="Ver ficha →"
+  action={null}
   onClick={() => setActiveFicha("garante")}
 />
 
@@ -8671,11 +8671,11 @@ function TimelineCard({ estado, fecha, texto, onClick }) {
   />
 </div>
 
-      <div style={cardFooterStyle}>
-        <button style={linkButtonStyle} onClick={onClick}>
-          Ver historial del trámite →
-        </button>
-      </div>
+      <div style={{ ...cardFooterStyle, visibility: "hidden" }}>
+  <button style={linkButtonStyle} onClick={onClick}>
+    Ver historial del trámite →
+  </button>
+</div>
     </div>
   );
 }
