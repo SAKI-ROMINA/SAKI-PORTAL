@@ -360,16 +360,7 @@ const totalAvisosPrendas = totalEnCurso + totalObservadas;
 
       {topMenuOpen && (
         <div style={prendasTopDropdownStyle}>
-          <button
-            type="button"
-            style={prendasTopDropdownItemStyle}
-            onClick={() => {
-              window.location.href = "/dia";
-            }}
-          >
-            Volver al Workspace
-          </button>
-
+          
           <button
             type="button"
             style={prendasTopDropdownItemStyle}
