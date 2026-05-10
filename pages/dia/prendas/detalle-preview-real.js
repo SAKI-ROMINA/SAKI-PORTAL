@@ -700,6 +700,10 @@ const authorEmail =
 
 const createdAt = new Date().toISOString();
 
+const authorRole =
+  currentProfile?.role ||
+  "member";
+
 const { data: createdNote, error: noteError } = await supabase
   .from("dia_notes")
   .insert({
@@ -708,6 +712,7 @@ const { data: createdNote, error: noteError } = await supabase
     author_id: user?.id || null,
     author_name: authorName,
     author_email: authorEmail,
+    author_role: authorRole,
     created_at: createdAt,
   })
   .select("*")
@@ -9046,43 +9051,53 @@ function FichaNotas({
               Cargando notas del legajo...
             </div>
           ) : notasLegajo.length > 0 ? (
-            notasLegajo.map((nota) => (
-              <div
-                key={nota.id}
-                style={{
-                  borderRadius: "16px",
-                  border: "1px solid rgba(148,163,184,0.14)",
-                  background: "rgba(3,18,34,0.42)",
-                  padding: "14px",
-                  marginBottom: "10px",
-                }}
-              >
-                <div
-                  style={{
-                    color: "#8fb9e8",
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    marginBottom: "6px",
-                  }}
-                >
-                  {formatDate(nota.created_at) || "Sin fecha"}
-                  {nota.author_name ? ` · ${nota.author_name}` : ""}
-                </div>
+            notasLegajo.map((nota) => {
+  const isSakiNote =
+    (nota.author_role || "").toString().trim().toLowerCase() === "admin";
 
-                <div
-                  style={{
-                    color: "rgba(226,237,249,0.92)",
-                    fontSize: "13px",
-                    lineHeight: 1.55,
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {nota.note || "—"}
-                </div>
-              </div>
-            ))
+  return (
+    <div
+      key={nota.id}
+      style={{
+        borderRadius: "16px",
+        border: isSakiNote
+          ? "1px solid rgba(96,165,250,0.32)"
+          : "1px solid rgba(148,163,184,0.14)",
+        background: isSakiNote
+          ? "linear-gradient(180deg, rgba(37,99,235,0.22), rgba(14,165,233,0.10))"
+          : "rgba(3,18,34,0.42)",
+        padding: "14px",
+        marginBottom: "10px",
+      }}
+    >
+      <div
+        style={{
+          color: isSakiNote ? "#bfdbfe" : "#8fb9e8",
+          fontSize: "11px",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          marginBottom: "6px",
+        }}
+      >
+        {isSakiNote ? "SAKI" : "DÍA"} ·{" "}
+        {formatDate(nota.created_at) || "Sin fecha"}
+        {nota.author_name ? ` · ${nota.author_name}` : ""}
+      </div>
+
+      <div
+        style={{
+          color: "rgba(226,237,249,0.92)",
+          fontSize: "13px",
+          lineHeight: 1.55,
+          whiteSpace: "pre-wrap",
+        }}
+      >
+        {nota.note || "—"}
+      </div>
+    </div>
+  );
+})
           ) : (
             <div style={historyPlaceholderStyle}>
               No hay notas cargadas para este legajo.
@@ -9783,6 +9798,16 @@ const getHistoryTitle = (item) => {
 
   const formatHistoryDetail = (item) => {
   const detalle = item?.detalle;
+  if (item?.tipo_evento === "nota_agregada" && detalle) {
+  const nota = detalle?.nota || "sin texto";
+  const autor =
+    detalle?.autor ||
+    item?.created_by_name ||
+    item?.created_by_email ||
+    "usuario no identificado";
+
+  return `Nota operativa registrada por ${autor}: ${nota}`;
+}
 
   if (item?.tipo_evento === "archivo_subido" && detalle) {
   const categoria =
