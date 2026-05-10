@@ -3497,6 +3497,10 @@ const titularAdminCasado =
     notasLegajo={notasLegajo}
     loadingNotas={loadingNotas}
     notaMsg={notaMsg}
+    nuevaNota={nuevaNota}
+    setNuevaNota={setNuevaNota}
+    savingNota={savingNota}
+    onGuardarNota={handleGuardarNotaLegajo}
   />
 )}
 {activeFicha === "archivos" && (
