@@ -4398,12 +4398,22 @@ function InfoCard({ icon, title, items, action, onClick }) {
       </div>
 
       <div style={infoBodyStyle}>
-        {items.map(([label, value]) => (
-          <div key={label}>
-            <div style={smallLabelStyle}>{label}</div>
-            <div style={smallValueStyle}>{value}</div>
-          </div>
-        ))}
+        {items.map(([label, value]) => {
+  const displayValue =
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    value === "Por completar"
+      ? "—"
+      : value;
+
+  return (
+    <div key={label}>
+      <div style={smallLabelStyle}>{label}</div>
+      <div style={smallValueStyle}>{displayValue}</div>
+    </div>
+  );
+})}
       </div>
 
       <div style={cardFooterStyle}>
@@ -6529,10 +6539,18 @@ function FichaGarante({ row }) {
 }
 
 function FichaDato({ label, value, wide }) {
+  const displayValue =
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    value === "Por completar"
+      ? "—"
+      : value;
+
   return (
     <div style={wide ? fichaDatoWideStyle : {}}>
       <div style={fichaDatoLabelStyle}>{label}</div>
-      <div style={fichaDatoValueStyle}>{value}</div>
+      <div style={fichaDatoValueStyle}>{displayValue}</div>
     </div>
   );
 }
