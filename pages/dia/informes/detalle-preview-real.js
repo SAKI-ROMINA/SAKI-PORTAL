@@ -6665,7 +6665,7 @@ const navDividerStyle = {
 };
 
 const backButtonStyle = {
-  marginTop: "auto",
+  marginTop: "18px",
   minHeight: "50px",
   borderRadius: "12px",
   border: "1px solid rgba(148,163,184,0.18)",
