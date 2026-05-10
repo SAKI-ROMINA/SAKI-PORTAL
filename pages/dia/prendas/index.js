@@ -365,9 +365,14 @@ const totalAvisosPrendas = totalEnCurso + totalObservadas;
             type="button"
             style={prendasTopDropdownItemStyle}
             onClick={() => {
-              setTopMenuOpen(false);
-              alert("Canal de reporte pendiente de configuración.");
-            }}
+  setTopMenuOpen(false);
+
+  const mensaje = encodeURIComponent(
+    "Hola SAKI, quiero reportar un inconveniente en el Portal Día.\n\nMódulo: Informes\nDetalle:"
+  );
+
+  window.open(`https://wa.me/5491157714212?text=${mensaje}`, "_blank");
+}}
           >
             Reportar inconveniente
           </button>
