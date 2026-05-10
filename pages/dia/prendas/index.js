@@ -402,21 +402,18 @@ const totalAvisosPrendas = totalEnCurso + totalObservadas;
     </div>
 
     <button
-      type="button"
-      onClick={() => {
-        setSearch("");
-        setSelectedPrenda(null);
-        setAvisosOpen(false);
-        setTopMenuOpen(false);
-      }}
-      style={{
-        ...resultBadgeStyle,
-        cursor: "pointer",
-      }}
-      title="Ver todas las prendas"
-    >
-      {loading ? "Cargando..." : `Ver listado · ${rows.length}`}
-    </button>
+  type="button"
+  onClick={() => {
+    window.location.href = "/dia";
+  }}
+  style={{
+    ...resultBadgeStyle,
+    cursor: "pointer",
+  }}
+  title="Volver al Workspace"
+>
+  ← Workspace
+</button>
   </div>
 
   <div style={searchInputWrapStyle}>
