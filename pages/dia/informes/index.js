@@ -74,12 +74,12 @@ function getInformePillStyle(status) {
 
   switch (status) {
     case "solicitado":
-      return {
-        ...base,
-        background: "rgba(245, 158, 11, 0.16)",
-        color: "#fde68a",
-        border: "1px solid rgba(245, 158, 11, 0.30)",
-      };
+  return {
+    ...base,
+    background: "rgba(20,184,166,0.09)",
+    border: "1px solid rgba(20,184,166,0.16)",
+    color: "#99f6e4",
+  };
 
     case "curso":
       return {
