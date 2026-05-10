@@ -668,6 +668,91 @@ async function fetchNotasLegajo() {
   }
 }
 
+async function handleGuardarNotaLegajo() {
+  if (!id) return;
+
+  const notaLimpia = nuevaNota.trim();
+
+  if (!notaLimpia) {
+    setNotaMsg("Escribí una nota antes de guardar.");
+    return;
+  }
+
+  try {
+    setSavingNota(true);
+    setNotaMsg("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const authorName =
+  currentProfile?.full_name ||
+  currentProfile?.name ||
+  user?.user_metadata?.full_name ||
+  user?.email ||
+  "Usuario";
+
+const authorEmail =
+  currentProfile?.email ||
+  user?.email ||
+  null;
+
+const createdAt = new Date().toISOString();
+
+const { data: createdNote, error: noteError } = await supabase
+  .from("dia_notes")
+  .insert({
+    prenda_id: id,
+    note: notaLimpia,
+    author_id: user?.id || null,
+    author_name: authorName,
+    author_email: authorEmail,
+    created_at: createdAt,
+  })
+  .select("*")
+  .single();
+
+    if (noteError) throw noteError;
+
+    const { data: createdHistory, error: historyError } = await supabase
+  .from("dia_request_prendas_history")
+  .insert({
+    prenda_id: id,
+    tipo_evento: "nota_agregada",
+    titulo: "Nota agregada al legajo",
+    detalle: {
+      nota: notaLimpia,
+      autor: authorName,
+      email: authorEmail,
+    },
+    created_by_name: authorName,
+    created_by_email: authorEmail,
+    created_at: createdAt,
+  })
+  .select("*")
+  .single();
+
+    if (historyError) throw historyError;
+
+    if (createdNote) {
+      setNotasLegajo((prev) => [createdNote, ...(prev || [])]);
+    }
+
+    if (createdHistory) {
+      setHistoryRows((prev) => [createdHistory, ...(prev || [])]);
+    }
+
+    setNuevaNota("");
+    setNotaMsg("Nota guardada correctamente.");
+  } catch (error) {
+    console.error("Error guardando nota del legajo:", error);
+    setNotaMsg(error?.message || "No se pudo guardar la nota.");
+  } finally {
+    setSavingNota(false);
+  }
+}
+
 function handleOpenDatosLegajoEditor() {
   setDatosLegajoForm(buildDatosLegajoForm(row));
   setDatosLegajoError("");
@@ -8852,7 +8937,16 @@ Detalle del inconveniente:
   );
 }
 
-function FichaNotas({ row, notasLegajo = [], loadingNotas = false, notaMsg = "" }) {
+function FichaNotas({
+  row,
+  notasLegajo = [],
+  loadingNotas = false,
+  notaMsg = "",
+  nuevaNota = "",
+  setNuevaNota,
+  savingNota = false,
+  onGuardarNota,
+}) {
   return (
     <div style={credentialStyle}>
       <div style={credentialTopStyle}>
@@ -8863,73 +8957,133 @@ function FichaNotas({ row, notasLegajo = [], loadingNotas = false, notaMsg = "" 
         <div>
           <div style={credentialKickerStyle}>Notas del legajo</div>
 
-          <h2 style={credentialNameStyle}>
-            {row?.dominio || "Legajo"}
-          </h2>
+          <h2 style={credentialNameStyle}>{row?.dominio || "Legajo"}</h2>
         </div>
       </div>
 
       <div style={notesContentStyle}>
-        {loadingNotas ? (
-          <div style={historyPlaceholderStyle}>
-            Cargando notas del legajo...
-          </div>
-        ) : notaMsg ? (
-          <div style={historyPlaceholderStyle}>
-            {notaMsg}
-          </div>
-        ) : notasLegajo.length > 0 ? (
-          notasLegajo.map((nota) => (
-            <div
-              key={nota.id}
-              style={{
-                borderRadius: "16px",
-                border: "1px solid rgba(148,163,184,0.14)",
-                background: "rgba(3,18,34,0.42)",
-                padding: "14px",
-                marginBottom: "10px",
-              }}
-            >
-              <div
-                style={{
-                  color: "#8fb9e8",
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  marginBottom: "6px",
-                }}
-              >
-                {formatDate(nota.created_at) || "Sin fecha"}
-              </div>
+        <div style={helpBoxStyle}>
+          <div>
+            <div style={helpTitleStyle}>Agregar nota operativa</div>
 
-              <div
-                style={{
-                  color: "rgba(226,237,249,0.92)",
-                  fontSize: "13px",
-                  lineHeight: 1.55,
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {nota.note || "—"}
-              </div>
+            <div style={helpTextStyle}>
+              Registrá comunicaciones, aclaraciones o comentarios internos
+              vinculados al trámite.
             </div>
-          ))
-        ) : (
-          <div style={historyPlaceholderStyle}>
-            No hay notas cargadas para este legajo.
+          </div>
+        </div>
+
+        <textarea
+          value={nuevaNota}
+          onChange={(e) => setNuevaNota(e.target.value)}
+          placeholder="Escribí una nota para este legajo..."
+          style={{
+            width: "100%",
+            minHeight: "96px",
+            resize: "vertical",
+            borderRadius: "16px",
+            border: "1px solid rgba(148, 163, 184, 0.18)",
+            background: "rgba(3, 11, 24, 0.72)",
+            color: "#f8fbff",
+            padding: "13px 14px",
+            fontSize: "13px",
+            lineHeight: 1.45,
+            outline: "none",
+            boxSizing: "border-box",
+            fontFamily: "inherit",
+            marginTop: "12px",
+          }}
+        />
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginTop: "10px",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onGuardarNota}
+            disabled={savingNota}
+            style={{
+              height: "38px",
+              padding: "0 14px",
+              borderRadius: "999px",
+              border: "none",
+              background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
+              color: "#ffffff",
+              fontSize: "12px",
+              fontWeight: 800,
+              cursor: savingNota ? "not-allowed" : "pointer",
+              opacity: savingNota ? 0.65 : 1,
+            }}
+          >
+            {savingNota ? "Guardando..." : "Guardar nota"}
+          </button>
+        </div>
+
+        {notaMsg && (
+          <div
+            style={{
+              marginTop: "10px",
+              color: "#bfdbfe",
+              fontSize: "12px",
+              lineHeight: 1.4,
+            }}
+          >
+            {notaMsg}
           </div>
         )}
 
-        <div style={helpBoxStyle}>
-          <div>
-            <div style={helpTitleStyle}>Notas operativas</div>
-
-            <div style={helpTextStyle}>
-              Este espacio muestra comunicaciones, aclaraciones y comentarios
-              internos vinculados al trámite.
+        <div style={{ marginTop: "18px" }}>
+          {loadingNotas ? (
+            <div style={historyPlaceholderStyle}>
+              Cargando notas del legajo...
             </div>
-          </div>
+          ) : notasLegajo.length > 0 ? (
+            notasLegajo.map((nota) => (
+              <div
+                key={nota.id}
+                style={{
+                  borderRadius: "16px",
+                  border: "1px solid rgba(148,163,184,0.14)",
+                  background: "rgba(3,18,34,0.42)",
+                  padding: "14px",
+                  marginBottom: "10px",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#8fb9e8",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    marginBottom: "6px",
+                  }}
+                >
+                  {formatDate(nota.created_at) || "Sin fecha"}
+                  {nota.author_name ? ` · ${nota.author_name}` : ""}
+                </div>
+
+                <div
+                  style={{
+                    color: "rgba(226,237,249,0.92)",
+                    fontSize: "13px",
+                    lineHeight: 1.55,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {nota.note || "—"}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={historyPlaceholderStyle}>
+              No hay notas cargadas para este legajo.
+            </div>
+          )}
         </div>
       </div>
     </div>
