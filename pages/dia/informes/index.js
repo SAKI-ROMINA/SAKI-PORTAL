@@ -503,24 +503,15 @@ const printDate = new Date().toLocaleDateString("es-AR");
 <button
   type="button"
   onClick={() => {
-    setQuickFilter("TODOS");
-    setSearchTerm("");
-    setSelectedInforme(null);
-    setSelectedInformeFilesCount(0);
-    setError("");
-    setPrintListMenuOpen(false);
-
-    if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", "/dia/informes");
-    }
+    window.location.href = "/dia";
   }}
   style={{
     ...resultBadgeStyle,
     cursor: "pointer",
   }}
-  title="Ver todos los informes"
+  title="Volver al Workspace"
 >
-  {loading ? "Cargando..." : `Ver listado · ${informes.length}`}
+  ← Workspace
 </button>
             </div>
 
