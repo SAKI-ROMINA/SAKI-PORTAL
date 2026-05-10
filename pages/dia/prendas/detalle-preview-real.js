@@ -3406,7 +3406,14 @@ const titularAdminCasado =
     }}
   />
 )}
-{activeFicha === "notas" && <FichaNotas row={row} />}
+{activeFicha === "notas" && (
+  <FichaNotas
+    row={row}
+    notasLegajo={notasLegajo}
+    loadingNotas={loadingNotas}
+    notaMsg={notaMsg}
+  />
+)}
 {activeFicha === "archivos" && (
   <FichaArchivos
     row={row}
@@ -8845,7 +8852,7 @@ Detalle del inconveniente:
   );
 }
 
-function FichaNotas({ row }) {
+function FichaNotas({ row, notasLegajo = [], loadingNotas = false, notaMsg = "" }) {
   return (
     <div style={credentialStyle}>
       <div style={credentialTopStyle}>
@@ -8857,29 +8864,70 @@ function FichaNotas({ row }) {
           <div style={credentialKickerStyle}>Notas del legajo</div>
 
           <h2 style={credentialNameStyle}>
-            {row?.dominio || "Legajo por completar"}
+            {row?.dominio || "Legajo"}
           </h2>
         </div>
       </div>
 
       <div style={notesContentStyle}>
-        <div style={historyPlaceholderStyle}>
-          Todavía no hay notas cargadas para este legajo.
-        </div>
+        {loadingNotas ? (
+          <div style={historyPlaceholderStyle}>
+            Cargando notas del legajo...
+          </div>
+        ) : notaMsg ? (
+          <div style={historyPlaceholderStyle}>
+            {notaMsg}
+          </div>
+        ) : notasLegajo.length > 0 ? (
+          notasLegajo.map((nota) => (
+            <div
+              key={nota.id}
+              style={{
+                borderRadius: "16px",
+                border: "1px solid rgba(148,163,184,0.14)",
+                background: "rgba(3,18,34,0.42)",
+                padding: "14px",
+                marginBottom: "10px",
+              }}
+            >
+              <div
+                style={{
+                  color: "#8fb9e8",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  marginBottom: "6px",
+                }}
+              >
+                {formatDate(nota.created_at) || "Sin fecha"}
+              </div>
+
+              <div
+                style={{
+                  color: "rgba(226,237,249,0.92)",
+                  fontSize: "13px",
+                  lineHeight: 1.55,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {nota.note || "—"}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div style={historyPlaceholderStyle}>
+            No hay notas cargadas para este legajo.
+          </div>
+        )}
 
         <div style={helpBoxStyle}>
           <div>
-            <div style={helpTitleStyle}>Uso previsto</div>
+            <div style={helpTitleStyle}>Notas operativas</div>
 
             <div style={helpTextStyle}>
-              Este espacio quedará reservado para registrar comunicaciones,
-              aclaraciones operativas y comentarios internos vinculados al
-              trámite.
-            </div>
-
-            <div style={helpDisclaimerStyle}>
-              Las notas reales se conectarán luego a la tabla correspondiente
-              del legajo.
+              Este espacio muestra comunicaciones, aclaraciones y comentarios
+              internos vinculados al trámite.
             </div>
           </div>
         </div>
