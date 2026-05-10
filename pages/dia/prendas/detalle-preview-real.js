@@ -2827,7 +2827,12 @@ const titularAdminCasado =
 
 <div className="sidebar-label" style={navTitleStyle}>NAVEGACIÓN</div>
 
-<NavItem active icon={<Home size={22} />} label="Resumen" />
+<NavItem
+  active
+  icon={<Home size={22} />}
+  label="Workspace"
+  onClick={() => router.push("/dia")}
+/>
 <NavItem
   icon={<ShieldCheck size={22} />}
   label="Prenda"
