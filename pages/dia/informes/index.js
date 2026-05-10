@@ -453,22 +453,13 @@ const printDate = new Date().toLocaleDateString("es-AR");
           }}
           title="Opciones"
         >
-          <MoreVertical size={21} />
+          <MoreVertical size={17} />
         </button>
 
         {topMenuOpen && (
           <div style={informesTopDropdownStyle}>
             
-            <button
-              type="button"
-              style={informesTopDropdownItemStyle}
-              onClick={() => {
-                window.location.href = "/dia";
-              }}
-            >
-              Volver al Workspace
-            </button>
-
+            
             <button
               type="button"
               style={informesTopDropdownItemStyle}

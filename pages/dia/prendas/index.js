@@ -355,7 +355,7 @@ const totalAvisosPrendas = totalEnCurso + totalObservadas;
         }}
         title="Opciones"
       >
-        <MoreVertical size={21} />
+        <MoreVertical size={17} />
       </button>
 
       {topMenuOpen && (
