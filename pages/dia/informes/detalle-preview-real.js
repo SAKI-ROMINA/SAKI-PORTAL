@@ -4536,9 +4536,15 @@ function ContextItem({ icon, label, value }) {
   );
 }
 
-function InfoCard({ icon, title, items, action, onClick }) {
+function InfoCard({ icon, title, items, onClick }) {
   return (
-    <div style={infoCardStyle}>
+    <div
+      style={{
+        ...infoCardStyle,
+        cursor: "pointer",
+      }}
+      onClick={onClick}
+    >
       <div style={infoHeaderStyle}>
         <div style={infoIconStyle}>{icon}</div>
         <div style={infoTitleStyle}>{title}</div>
@@ -4546,27 +4552,21 @@ function InfoCard({ icon, title, items, action, onClick }) {
 
       <div style={infoBodyStyle}>
         {items.map(([label, value]) => {
-  const displayValue =
-    value === null ||
-    value === undefined ||
-    value === "" ||
-    value === "Por completar"
-      ? "—"
-      : value;
+          const displayValue =
+            value === null ||
+            value === undefined ||
+            value === "" ||
+            value === "Por completar"
+              ? "—"
+              : value;
 
-  return (
-    <div key={label}>
-      <div style={smallLabelStyle}>{label}</div>
-      <div style={smallValueStyle}>{displayValue}</div>
-    </div>
-  );
-})}
-      </div>
-
-      <div style={cardFooterStyle}>
-        <button style={linkButtonStyle} onClick={onClick}>
-          {action}
-        </button>
+          return (
+            <div key={label}>
+              <div style={smallLabelStyle}>{label}</div>
+              <div style={smallValueStyle}>{displayValue}</div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
