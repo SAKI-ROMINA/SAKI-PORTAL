@@ -391,9 +391,11 @@ const totalAvisosPrendas = totalEnCurso + totalObservadas;
     </div>
   </div>
 
+{canCreatePrenda && (
   <Link href="/dia/prendas/nueva" style={primaryButtonStyle}>
     + Nueva prenda
   </Link>
+)}
 </div>
 </section>
 

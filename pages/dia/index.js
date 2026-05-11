@@ -102,6 +102,8 @@ const [checkingSession, setCheckingSession] = useState(true);
 
 const [isAdmin, setIsAdmin] = useState(false);
 
+const [canCreatePrenda, setCanCreatePrenda] = useState(false);
+
 const [ultimosMovimientos, setUltimosMovimientos] = useState([]);
 const [pendientesResumen, setPendientesResumen] = useState({
   prendasObservadas: 0,
