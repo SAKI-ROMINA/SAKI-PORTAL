@@ -1723,10 +1723,16 @@ const mostrarCondominosAdmin =
 const titularAdminCasado =
   datosLegajoForm.titular_estado_civil === "CASADO/A";
 
-  const informeTipoKey = (row?.type || "").toString().trim();
+const informeTipoKey = (row?.type || "").toString().trim();
 
 const dominioNoAplica =
   informeTipoKey === "anotaciones_personales";
+
+const titularInformeLabel =
+  informeTipoKey === "informe_dominio" ||
+  informeTipoKey === "certificado_dominio"
+    ? "Titular del dominio"
+    : "Persona consultada";
 
   return (
     <div style={pageStyle}>
@@ -1770,7 +1776,7 @@ const dominioNoAplica =
 
 <NavItem
   icon={<UserRound size={22} />}
-  label="Titular / Garante"
+  label={titularInformeLabel}
   onClick={() => setActiveFicha("garante")}
 />
 
@@ -2129,7 +2135,7 @@ value={
 
   <InfoCard
     icon={<UserRound size={30} />}
-    title="TITULAR / GARANTE"
+    title={titularInformeLabel.toUpperCase()}
     items={[
       ["Nombre", row?.titular_dominio || row?.identificacion_nombre || "Por completar"],
       ["CUIT / DNI", row?.titular_cuit || row?.identificacion_cuit || row?.identificacion_dni || "Por completar"],
