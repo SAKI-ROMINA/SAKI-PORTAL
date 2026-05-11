@@ -264,6 +264,7 @@ const [printMode, setPrintMode] = useState(null);
 
 const [currentProfile, setCurrentProfile] = useState(null);
 const [isAdmin, setIsAdmin] = useState(false);
+const [canOperatePrendas, setCanOperatePrendas] = useState(false);
 
 const [showReprogramarEnvio, setShowReprogramarEnvio] = useState(false);
 const [nuevaFechaEnvio, setNuevaFechaEnvio] = useState("");
@@ -1302,10 +1303,11 @@ useEffect(() => {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        setCurrentProfile(null);
-        setIsAdmin(false);
-        return;
-      }
+  setCurrentProfile(null);
+  setIsAdmin(false);
+  setCanOperatePrendas(false);
+  return;
+}
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
@@ -1314,16 +1316,32 @@ useEffect(() => {
         .maybeSingle();
 
       if (profileError) {
-        console.error("Error cargando perfil actual:", profileError);
-        setCurrentProfile(null);
-        setIsAdmin(false);
-        return;
-      }
+  console.error("Error cargando perfil actual:", profileError);
+  setCurrentProfile(null);
+  setIsAdmin(false);
+  setCanOperatePrendas(false);
+  return;
+}
 
-      const role = (profile?.role || "").toString().trim().toLowerCase();
+const role = (profile?.role || "").toString().trim().toLowerCase();
 
-      setCurrentProfile(profile || null);
-      setIsAdmin(role === "admin");
+const sector = (profile?.sector || "")
+  .toString()
+  .trim()
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "");
+
+const userIsAdmin = role === "admin";
+
+const userCanOperatePrendas =
+  userIsAdmin ||
+  (sector.includes("creditos") && sector.includes("cobranzas"));
+
+setCurrentProfile(profile || null);
+setIsAdmin(userIsAdmin);
+setCanOperatePrendas(userCanOperatePrendas);
+
     } catch (error) {
       console.error("Error verificando perfil actual:", error);
       setCurrentProfile(null);
@@ -3387,6 +3405,7 @@ const titularAdminCasado =
     estadoFechaInfo={estadoFechaInfo}
     proximaAccionInfo={proximaAccionInfo}
     isAdmin={isAdmin}
+    canOperatePrendas={canOperatePrendas}
     onReprogramarEnvio={() => {
       setNuevaFechaEnvio(row?.fecha_envio_oficina || "");
       setShowReprogramarEnvio(true);
@@ -11359,6 +11378,7 @@ function FichaEstado({
   estadoFechaInfo,
   proximaAccionInfo,
   isAdmin,
+  canOperatePrendas,
   onReprogramarEnvio,
   onRecibirPrenda,
   onAprobarRevision,
@@ -11441,7 +11461,7 @@ function FichaEstado({
   wide
 />
 
-{estadoActualKey === "PENDIENTE DE ENVIO" && (
+{estadoActualKey === "PENDIENTE DE ENVIO" && canOperatePrendas && (
   <div
     style={{
       ...fichaDatoWideStyle,
