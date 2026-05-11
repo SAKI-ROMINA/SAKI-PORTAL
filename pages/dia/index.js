@@ -171,12 +171,7 @@ if (profileError) {
 
   const userIsAdmin = role === "admin";
 
-  const userCanCreatePrenda =
-    userIsAdmin ||
-    (sector.includes("creditos") && sector.includes("cobranzas"));
-
   setIsAdmin(userIsAdmin);
-  setCanCreatePrenda(userCanCreatePrenda);
   setUserProfile(profile || null);
 }
 
