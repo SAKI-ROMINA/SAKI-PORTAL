@@ -2133,17 +2133,26 @@ value={
     onClick={() => setActiveFicha("frq")}
   />
 
-  <InfoCard
-    icon={<UserRound size={30} />}
-    title={titularInformeLabel.toUpperCase()}
-    items={[
-      ["Nombre", row?.titular_dominio || row?.identificacion_nombre || "Por completar"],
-      ["CUIT / DNI", row?.titular_cuit || row?.identificacion_cuit || row?.identificacion_dni || "Por completar"],
-      ["Estado civil", row?.estado_civil || row?.titular_estado_civil || "Por completar"],
-    ]}
-    action="Ver ficha →"
-    onClick={() => setActiveFicha("garante")}
-  />
+<InfoCard
+  icon={<UserRound size={30} />}
+  title={titularInformeLabel.toUpperCase()}
+  items={[
+    [
+      "Nombre",
+      row?.titular_dominio ||
+        row?.identificacion_nombre ||
+        "Por completar",
+    ],
+    [
+      "CUIT / DNI",
+      row?.titular_cuit ||
+        row?.identificacion_cuit ||
+        row?.identificacion_dni ||
+        "Por completar",
+    ],
+  ]}
+  onClick={() => setActiveFicha("garante")}
+/>
 </section>
 
       </main>
