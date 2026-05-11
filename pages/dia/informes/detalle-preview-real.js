@@ -6632,25 +6632,6 @@ function FichaDominio({ row }) {
           />
 
           <FichaDato
-            label="Persona consultada"
-            value={
-              row?.titular_dominio ||
-              row?.identificacion_nombre ||
-              "Por completar"
-            }
-          />
-
-          <FichaDato
-            label="CUIT / DNI"
-            value={
-              row?.titular_cuit ||
-              row?.identificacion_cuit ||
-              row?.identificacion_dni ||
-              "Por completar"
-            }
-          />
-
-          <FichaDato
             label="Aclaración"
             value="Este tipo de informe no se solicita sobre un dominio automotor."
             wide
