@@ -2158,7 +2158,9 @@ value={
             {activeFicha === "informe" && <FichaInforme row={row} />}
 {activeFicha === "dominio" && <FichaDominio row={row} />}
 {activeFicha === "frq" && <FichaFrq row={row} />}
-{activeFicha === "garante" && <FichaGarante row={row} />}
+{activeFicha === "garante" && (
+  <FichaGarante row={row} titularInformeLabel={titularInformeLabel} />
+)}
 {activeFicha === "notas" && (
   <FichaNotas
     row={row}
@@ -6701,7 +6703,7 @@ function FichaFrq({ row }) {
   );
 }
 
-function FichaGarante({ row }) {
+function FichaGarante({ row, titularInformeLabel = "Persona consultada" }) {
   const parsePercent = (value) => {
     if (value === null || value === undefined || value === "") return null;
 
@@ -6775,7 +6777,7 @@ function FichaGarante({ row }) {
         </div>
 
         <div>
-          <div style={credentialKickerStyle}>Garante / Titular</div>
+          <div style={credentialKickerStyle}>{titularInformeLabel}</div>
           <h2 style={credentialNameStyle}>{tituloFicha}</h2>
         </div>
       </div>
