@@ -6587,6 +6587,79 @@ function getTrazabilidadTone(tone) {
 }
 
 function FichaDominio({ row }) {
+  const informeTipoKey = (row?.type || "").toString().trim();
+
+  const dominioNoAplica =
+    informeTipoKey === "anotaciones_personales";
+
+  if (dominioNoAplica) {
+    return (
+      <div
+        style={{
+          ...credentialStyle,
+          opacity: 0.58,
+          filter: "grayscale(0.25)",
+        }}
+      >
+        <div style={credentialTopStyle}>
+          <div style={avatarStyle}>
+            <Car size={34} />
+          </div>
+
+          <div>
+            <div style={credentialKickerStyle}>Dominio</div>
+
+            <h2 style={credentialNameStyle}>
+              No aplica
+            </h2>
+          </div>
+        </div>
+
+        <div style={credentialInfoGridStyle}>
+          <FichaDato
+            label="Estado"
+            value="No aplica"
+          />
+
+          <FichaDato
+            label="Motivo"
+            value="Informe sobre persona"
+          />
+
+          <FichaDato
+            label="Tipo de informe"
+            value={getInformeTipoLabel(row?.type)}
+          />
+
+          <FichaDato
+            label="Persona consultada"
+            value={
+              row?.titular_dominio ||
+              row?.identificacion_nombre ||
+              "Por completar"
+            }
+          />
+
+          <FichaDato
+            label="CUIT / DNI"
+            value={
+              row?.titular_cuit ||
+              row?.identificacion_cuit ||
+              row?.identificacion_dni ||
+              "Por completar"
+            }
+          />
+
+          <FichaDato
+            label="Aclaración"
+            value="Este tipo de informe no se solicita sobre un dominio automotor."
+            wide
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={credentialStyle}>
       <div style={credentialTopStyle}>
@@ -6809,11 +6882,6 @@ function FichaGarante({ row, titularInformeLabel = "Persona consultada" }) {
         <FichaDato
           label="Titularidad"
           value={formatPercent(row?.porcentaje_titular)}
-        />
-
-        <FichaDato
-          label="Estado civil"
-          value={estadoCivilTitular || "Por completar"}
         />
 
         {row?.titular_dni && (
