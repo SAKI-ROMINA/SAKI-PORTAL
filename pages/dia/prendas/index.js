@@ -132,6 +132,67 @@ async function handleLogout() {
   window.location.href = "/dia/login";
 }
 
+useEffect(() => {
+  let active = true;
+
+  async function fetchUserProfile() {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      if (!active) return;
+
+      setUserProfile(null);
+      setIsAdmin(false);
+      setCanCreatePrenda(false);
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role, name, full_name, sector, avatar_url, email")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!active) return;
+
+    if (profileError) {
+      console.error("Error cargando perfil del usuario", profileError);
+      setUserProfile(null);
+      setIsAdmin(false);
+      setCanCreatePrenda(false);
+      return;
+    }
+
+    const role = (profile?.role || "").toString().trim().toLowerCase();
+
+    const sector = (profile?.sector || "")
+      .toString()
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+    const userIsAdmin = role === "admin";
+
+    const userCanCreatePrenda =
+      userIsAdmin ||
+      (sector.includes("creditos") && sector.includes("cobranzas"));
+
+    setUserProfile(profile || null);
+    setIsAdmin(userIsAdmin);
+    setCanCreatePrenda(userCanCreatePrenda);
+  }
+
+  fetchUserProfile();
+
+  return () => {
+    active = false;
+  };
+}, []);
+
   useEffect(() => {
     fetchPrendas();
   }, []);
