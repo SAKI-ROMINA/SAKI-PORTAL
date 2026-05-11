@@ -123,6 +123,10 @@ export default function DiaPrendasIndex() {
 const [avisosOpen, setAvisosOpen] = useState(false);
 const [avisosVistos, setAvisosVistos] = useState(false);
 
+const [userProfile, setUserProfile] = useState(null);
+const [isAdmin, setIsAdmin] = useState(false);
+const [canCreatePrenda, setCanCreatePrenda] = useState(false);
+
 async function handleLogout() {
   await supabase.auth.signOut();
   window.location.href = "/dia/login";

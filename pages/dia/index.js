@@ -102,8 +102,6 @@ const [checkingSession, setCheckingSession] = useState(true);
 
 const [isAdmin, setIsAdmin] = useState(false);
 
-const [canCreatePrenda, setCanCreatePrenda] = useState(false);
-
 const [ultimosMovimientos, setUltimosMovimientos] = useState([]);
 const [pendientesResumen, setPendientesResumen] = useState({
   prendasObservadas: 0,
@@ -164,7 +162,21 @@ if (profileError) {
 } else {
   const role = (profile?.role || "").toString().trim().toLowerCase();
 
-  setIsAdmin(role === "admin");
+  const sector = (profile?.sector || "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  const userIsAdmin = role === "admin";
+
+  const userCanCreatePrenda =
+    userIsAdmin ||
+    (sector.includes("creditos") && sector.includes("cobranzas"));
+
+  setIsAdmin(userIsAdmin);
+  setCanCreatePrenda(userCanCreatePrenda);
   setUserProfile(profile || null);
 }
 
