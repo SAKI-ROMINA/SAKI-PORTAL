@@ -1723,6 +1723,11 @@ const mostrarCondominosAdmin =
 const titularAdminCasado =
   datosLegajoForm.titular_estado_civil === "CASADO/A";
 
+  const informeTipoKey = (row?.type || "").toString().trim();
+
+const dominioNoAplica =
+  informeTipoKey === "anotaciones_personales";
+
   return (
     <div style={pageStyle}>
       <aside
@@ -2077,16 +2082,38 @@ value={
   />
 
   <InfoCard
-    icon={<Car size={30} />}
-    title="DOMINIO"
-    items={[
-      ["Dominio", row?.dominio || "Por completar"],
-      ["Titular", row?.titular_dominio || row?.identificacion_nombre || "Por completar"],
-      ["CUIT / DNI", row?.identificacion_cuit || row?.identificacion_dni || "Por completar"],
-    ]}
-    action="Ver ficha →"
-    onClick={() => setActiveFicha("dominio")}
-  />
+  icon={<Car size={30} />}
+  title="DOMINIO"
+  disabled={dominioNoAplica}
+  items={
+    dominioNoAplica
+      ? [
+          ["Estado", "No aplica"],
+          ["Motivo", "Informe sobre persona"],
+          ["Dominio", "—"],
+        ]
+      : [
+          ["Dominio", row?.dominio || "Por completar"],
+          [
+            "Titular",
+            row?.titular_dominio ||
+              row?.identificacion_nombre ||
+              "Por completar",
+          ],
+          [
+            "CUIT / DNI",
+            row?.identificacion_cuit ||
+              row?.identificacion_dni ||
+              "Por completar",
+          ],
+        ]
+  }
+  onClick={() => {
+    if (!dominioNoAplica) {
+      setActiveFicha("dominio");
+    }
+  }}
+/>
 
   <InfoCard
     icon={<Store size={30} />}
@@ -4536,14 +4563,16 @@ function ContextItem({ icon, label, value }) {
   );
 }
 
-function InfoCard({ icon, title, items, onClick }) {
+function InfoCard({ icon, title, items, onClick, disabled = false }) {
   return (
     <div
       style={{
         ...infoCardStyle,
-        cursor: "pointer",
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.46 : 1,
+        filter: disabled ? "grayscale(0.35)" : "none",
       }}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
     >
       <div style={infoHeaderStyle}>
         <div style={infoIconStyle}>{icon}</div>
