@@ -2684,7 +2684,7 @@ value={
       ["Tipo", getInformeTipoLabel(row?.type)],
       ["Estado", row?.status || row?.estado || "Por completar"],
       ["Resultado", row?.result || "Pendiente"],
-      ["Pedido", formatDate(row?.created_at) || "Por completar"],
+      ["Pedido", formatDate(fechaPedidoVisible) || "Por completar"],
     ]}
     action="Ver ficha →"
     onClick={() => setActiveFicha("informe")}
