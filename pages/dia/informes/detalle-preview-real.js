@@ -7264,15 +7264,53 @@ function FichaHistorial({ row, historyRows }) {
       return "El informe fue entregado y quedó disponible para consulta.";
     }
 
-    if (item?.tipo_evento === "informe_observado") {
-      const observacion =
-        detalle?.observed_status ||
-        detalle?.observed_other ||
-        detalle?.motivo ||
-        "sin detalle adicional cargado";
+if (item?.tipo_evento === "informe_observado") {
+  if (item?.detalle_texto) {
+    return item.detalle_texto;
+  }
 
-      return `El informe fue entregado con observación: ${observacion}.`;
-    }
+  if (Array.isArray(detalle?.observaciones) && detalle.observaciones.length > 0) {
+    const resumen = detalle.observaciones
+      .map((obs, index) => {
+        const tipo =
+          obs?.tipo_observacion === "prenda"
+            ? "Prenda"
+            : obs?.tipo_observacion === "embargo"
+            ? "Embargo"
+            : obs?.tipo_observacion === "inhibicion"
+            ? "Inhibición"
+            : obs?.tipo_observacion === "medida_cautelar"
+            ? "Medida cautelar"
+            : "Otro";
+
+        const partes = [
+          tipo,
+          obs?.tipo_medida,
+          obs?.acreedor ? `Acreedor: ${obs.acreedor}` : "",
+          obs?.juzgado ? `Juzgado: ${obs.juzgado}` : "",
+          obs?.actor ? `Actor: ${obs.actor}` : "",
+          obs?.expediente ? `Expediente: ${obs.expediente}` : "",
+          obs?.fecha_inscripcion ? `Fecha inscripción: ${obs.fecha_inscripcion}` : "",
+          obs?.monto ? `Monto: ${obs.monto}` : "",
+          obs?.estado ? `Estado: ${obs.estado}` : "",
+        ].filter(Boolean);
+
+        return `${index + 1}. ${partes.join(" · ")}`;
+      })
+      .join(" | ");
+
+    return `Informe entregado con resultado observado. ${resumen}`;
+  }
+
+  const observacion =
+    detalle?.observacion ||
+    detalle?.observed_status ||
+    detalle?.observed_other ||
+    detalle?.motivo ||
+    "sin detalle adicional cargado";
+
+  return `El informe fue entregado con observación: ${observacion}.`;
+}
 
     if (item?.tipo_evento === "informe_anulado") {
       const motivo =
@@ -7427,9 +7465,9 @@ function FichaHistorial({ row, historyRows }) {
           <div>
             <div style={credentialKickerStyle}>Historial del informe</div>
 
-            <h2 style={credentialNameStyle}>
-              {row?.dominio || "Legajo por completar"}
-            </h2>
+<h2 style={credentialNameStyle}>
+  {row?.dominio || getInformeTipoLabel(row?.type) || "Informe"}
+</h2>
           </div>
         </div>
 
@@ -8169,6 +8207,19 @@ function FichaDominio({ row }) {
 }
 
 function FichaFrq({ row }) {
+  const nombreFranquiciado =
+    row?.frq_razon_social ||
+    row?.franquiciado ||
+    row?.frq ||
+    row?.identificacion_nombre ||
+    "Por completar";
+
+  const cuitFranquiciado =
+    row?.frq_cuit ||
+    row?.cuit ||
+    row?.identificacion_cuit ||
+    "Por completar";
+
   return (
     <div style={credentialStyle}>
       <div style={credentialTopStyle}>
@@ -8180,20 +8231,26 @@ function FichaFrq({ row }) {
           <div style={credentialKickerStyle}>Franquiciado</div>
 
           <h2 style={credentialNameStyle}>
-            {row?.frq || "Franquiciado por completar"}
+            {nombreFranquiciado}
           </h2>
         </div>
       </div>
 
       <div style={credentialInfoGridStyle}>
-        <FichaDato label="Nombre / Razón social" value={row?.frq || "Por completar"} />
+        <FichaDato
+          label="Nombre / Razón social"
+          value={nombreFranquiciado}
+        />
 
         <FichaDato
           label="CUIT"
-          value={formatCuit(row?.frq_cuit) || "Por completar"}
+          value={formatCuit(cuitFranquiciado) || cuitFranquiciado}
         />
 
-        <FichaDato label="Tienda" value={row?.tienda || "Por completar"} />
+        <FichaDato
+          label="Tienda"
+          value={row?.tienda || "Por completar"}
+        />
 
         <FichaDato
           label="Mail"
@@ -8203,11 +8260,6 @@ function FichaFrq({ row }) {
         <FichaDato
           label="Teléfono"
           value={row?.frq_telefono || "Por completar"}
-        />
-
-        <FichaDato
-          label="Estado civil"
-          value={row?.frq_estado_civil || "Por completar"}
         />
 
         <FichaDato
