@@ -568,7 +568,7 @@ const printDate = new Date().toLocaleDateString("es-AR");
     icon={<AlertCircle size={25} />}
     label="Observados"
     value={totalObservados}
-    text="Requieren revisión o documentación."
+    text="Entregados con resultado observado."
     active={quickFilter === "OBSERVADOS"}
     onClick={() => {
       setQuickFilter("OBSERVADOS");
