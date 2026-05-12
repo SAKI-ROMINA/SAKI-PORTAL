@@ -234,6 +234,10 @@ const [errorMsg, setErrorMsg] = useState("");
 const [row, setRow] = useState(null);
 const [historyRows, setHistoryRows] = useState([]);
 
+const [observacionesInforme, setObservacionesInforme] = useState([]);
+const [loadingObservacionesInforme, setLoadingObservacionesInforme] = useState(false);
+const [observacionInformeMsg, setObservacionInformeMsg] = useState("");
+
 const [notasLegajo, setNotasLegajo] = useState([]);
 const [loadingNotas, setLoadingNotas] = useState(false);
 const [savingNota, setSavingNota] = useState(false);
@@ -314,8 +318,35 @@ if (historyError) {
 fetchInformeReal();
 fetchArchivosLegajo();
 fetchNotasLegajo();
+fetchObservacionesInforme();
 }, [id]);
 
+async function fetchObservacionesInforme() {
+  if (!id) return;
+
+  try {
+    setLoadingObservacionesInforme(true);
+    setObservacionInformeMsg("");
+
+    const { data, error } = await supabase
+      .from("dia_request_informe_observaciones")
+      .select("*")
+      .eq("request_id", id)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    setObservacionesInforme(data || []);
+  } catch (error) {
+    console.error("Error cargando observaciones del informe:", error);
+    setObservacionesInforme([]);
+    setObservacionInformeMsg(
+      error?.message || "No se pudieron cargar las observaciones del informe."
+    );
+  } finally {
+    setLoadingObservacionesInforme(false);
+  }
+}
 
 async function fetchArchivosLegajo() {
   if (!id) return;
@@ -5652,6 +5683,31 @@ function FichaInforme({ row }) {
   const estado = row?.status || row?.estado || "Por completar";
   const resultado = row?.result || "Pendiente";
 
+  const informeTipoKey = (row?.type || "").toString().trim();
+
+  const esInformeSobreDominio =
+    informeTipoKey === "informe_dominio" ||
+    informeTipoKey === "certificado_dominio";
+
+  const personaInformeLabel = esInformeSobreDominio
+    ? "Titular del dominio"
+    : "Persona consultada";
+
+  const personaInformeNombre =
+    row?.titular_dominio ||
+    row?.identificacion_nombre ||
+    row?.titular_razon_social ||
+    `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim() ||
+    "Por completar";
+
+  const personaInformeDocumento =
+    row?.titular_cuit ||
+    row?.titular_cuil_cuit ||
+    row?.identificacion_cuit ||
+    row?.identificacion_dni ||
+    row?.titular_dni ||
+    "Por completar";
+
   return (
     <div style={credentialStyle}>
       <div style={credentialTopStyle}>
@@ -5688,6 +5744,16 @@ function FichaInforme({ row }) {
           label="Fecha del pedido"
           value={formatDate(row?.created_at) || "Por completar"}
         />
+
+        <FichaDato
+  label={personaInformeLabel}
+  value={personaInformeNombre}
+/>
+
+<FichaDato
+  label="CUIT / DNI"
+  value={personaInformeDocumento}
+/>
 
         <FichaDato
           label="Dominio"
