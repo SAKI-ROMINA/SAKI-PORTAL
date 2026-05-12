@@ -380,6 +380,99 @@ const dominioPlaceholder = esAnotaciones
   onChange={handleChange("dominio")}
 />
       </div>
+      {isAdmin && (
+  <>
+    <div style={sectionDividerStyle} />
+
+    <div style={extraBlockHeaderStyle}>
+      <h2 style={sectionTitleStyle}>Carga histórica / administrativa</h2>
+
+      <p style={sectionTextStyle}>
+        Uso exclusivo SAKI. Permite cargar informes ya pedidos o entregados con
+        sus fechas reales.
+      </p>
+    </div>
+
+    <div style={{ ...reportTypeGridStyle, marginBottom: "16px" }}>
+      <ReportTypeOption
+        active={usarCargaHistorica}
+        onClick={() => setUsarCargaHistorica((prev) => !prev)}
+        title={
+          usarCargaHistorica
+            ? "Carga histórica activada"
+            : "Usar fechas manuales"
+        }
+      />
+    </div>
+
+    {usarCargaHistorica && (
+      <div style={gridThreeStyle}>
+        <Field
+          label="Fecha real del pedido"
+          placeholder="AAAA-MM-DD"
+          icon={<FileText size={18} />}
+          value={historicoForm.fecha_pedido_real}
+          onChange={handleHistoricoChange("fecha_pedido_real")}
+        />
+
+        <div style={fieldWrapStyle}>
+          <label style={labelStyle}>Estado operativo</label>
+          <div style={inputWrapStyle}>
+            <span style={inputIconStyle}>
+              <ShieldCheck size={18} />
+            </span>
+
+            <select
+              value={historicoForm.status}
+              onChange={handleHistoricoChange("status")}
+              style={{
+                ...inputStyle,
+                cursor: "pointer",
+              }}
+            >
+              <option value="SOLICITADO">SOLICITADO</option>
+              <option value="EN CURSO">EN CURSO</option>
+              <option value="ENTREGADO">ENTREGADO</option>
+              <option value="ANULADO">ANULADO</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={fieldWrapStyle}>
+          <label style={labelStyle}>Resultado</label>
+          <div style={inputWrapStyle}>
+            <span style={inputIconStyle}>
+              <ShieldCheck size={18} />
+            </span>
+
+            <select
+              value={historicoForm.result}
+              onChange={handleHistoricoChange("result")}
+              style={{
+                ...inputStyle,
+                cursor: "pointer",
+              }}
+            >
+              <option value="PENDIENTE">PENDIENTE</option>
+              <option value="APROBADO">APROBADO</option>
+              <option value="OBSERVADO">OBSERVADO</option>
+            </select>
+          </div>
+        </div>
+
+        {historicoForm.status === "ENTREGADO" && (
+          <Field
+            label="Fecha real de entrega"
+            placeholder="AAAA-MM-DD"
+            icon={<FileText size={18} />}
+            value={historicoForm.fecha_entrega_real}
+            onChange={handleHistoricoChange("fecha_entrega_real")}
+          />
+        )}
+      </div>
+    )}
+  </>
+)}
 
       {muestraBloqueExtra && (
         <>
