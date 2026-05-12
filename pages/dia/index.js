@@ -93,6 +93,32 @@ function getWorkspaceInformeTipoLabel(type) {
   return value ? value.replaceAll("_", " ") : "Informe";
 }
 
+function getWorkspaceInformeTitle(item) {
+  const tipo = (item?.type || "").toString().trim();
+
+  const esInformePersonal =
+    tipo === "anotaciones_personales" ||
+    tipo === "informe_nominal" ||
+    tipo === "indice_titularidad";
+
+  const personaConsultada =
+    item?.titular_dominio ||
+    item?.identificacion_nombre ||
+    item?.titular_razon_social ||
+    `${item?.titular_apellido || ""} ${item?.titular_nombres || ""}`.trim();
+
+  if (esInformePersonal) {
+    return personaConsultada || getWorkspaceInformeTipoLabel(tipo) || "Informe";
+  }
+
+  return (
+    item?.dominio ||
+    personaConsultada ||
+    getWorkspaceInformeTipoLabel(tipo) ||
+    "Informe"
+  );
+}
+
 export default function PanelPreview() {
     const router = useRouter();
 const [userEmail, setUserEmail] = useState("");
@@ -247,7 +273,7 @@ useEffect(() => {
         return {
           id: `informe-${item.id}`,
           type: tipo,
-       title: item.dominio || "Sin dominio",
+       title: getWorkspaceInformeTitle(item),
           detail: `${tipo} · ${formatDate(fechaMovimiento)}`,
           status: estadoInforme,
           danger: estadoKey === "ANULADO" || item.result === "OBSERVADO",
@@ -380,7 +406,7 @@ useEffect(() => {
         .map((item) => ({
           id: `informe-${item.id}`,
           modulo: "Informe",
-          titulo: item.dominio || "Sin dominio",
+          titulo: getWorkspaceInformeTitle(item),
           subtitulo: getWorkspaceInformeTipoLabel(item.type),
           detalle: [
             item.tienda ? `Tienda ${item.tienda}` : null,
