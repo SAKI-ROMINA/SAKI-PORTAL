@@ -10057,66 +10057,62 @@ const esInformeSobreDominio =
 
       <div style={credentialInfoGridStyle}>
         <FichaDato
-          label="Nombre / Razón social"
-          value={getNombreTitular()}
-        />
+  label="Nombre / Razón social"
+  value={getNombreTitular()}
+/>
 
-        <FichaDato
-          label="CUIT"
-          value={
-            row?.titular_cuil_cuit ||
-            row?.titular_cuit ||
-            "Por completar"
-          }
-        />
+<FichaDato
+  label="DNI"
+  value={row?.titular_dni || row?.identificacion_dni || "Por completar"}
+/>
 
-        <FichaDato
-          label="Titularidad"
-          value={formatPercent(row?.porcentaje_titular)}
-        />
+<FichaDato
+  label="CUIT"
+  value={
+    row?.titular_cuil_cuit ||
+    row?.titular_cuit ||
+    row?.identificacion_cuit ||
+    "Por completar"
+  }
+/>
 
-        {row?.titular_dni && (
-          <FichaDato label="DNI" value={row.titular_dni} />
-        )}
+<FichaDato
+  label="Titular desde"
+  value={
+    row?.titular_desde
+      ? formatDate(row.titular_desde)
+      : "Por completar"
+  }
+/>
 
-        {row?.titular_desde && (
-          <FichaDato
-            label="Titular desde"
-            value={formatDate(row.titular_desde)}
-          />
-        )}
+<FichaDato
+  label="Titularidad"
+  value={formatPercent(row?.porcentaje_titular)}
+/>
 
-        {row?.titular_domicilio && (
-          <FichaDato
-            label="Domicilio"
-            value={row.titular_domicilio}
-            wide
-          />
-        )}
+<div />
 
-        {mostrarConyugeTitular && (
-          <>
-            <div style={{ gridColumn: "1 / 2" }}>
-  <FichaDato
-    label="Cónyuge del titular"
-    value={formatConyugeName(
-      row?.titular_conyuge_apellido,
-      row?.titular_conyuge_nombres
-    )}
-  />
-</div>
+{mostrarConyugeTitular && (
+  <>
+    <FichaDato
+      label="Cónyuge del titular"
+      value={formatConyugeName(
+        row?.titular_conyuge_apellido,
+        row?.titular_conyuge_nombres
+      )}
+    />
 
-            <FichaDato
-              label="DNI cónyuge"
-              value={row?.titular_conyuge_dni || "Por completar"}
-            />
+    <FichaDato
+      label="DNI cónyuge"
+      value={row?.titular_conyuge_dni || "Por completar"}
+    />
 
-            <FichaDato
-              label="CUIL / CUIT cónyuge"
-              value={row?.titular_conyuge_cuil_cuit || "Por completar"}
-            />
-          </>
-        )}
+    <FichaDato
+      label="CUIL / CUIT cónyuge"
+      value={row?.titular_conyuge_cuil_cuit || "Por completar"}
+    />
+  </>
+)}
 
         {condominos.length > 0 && (
           <>
