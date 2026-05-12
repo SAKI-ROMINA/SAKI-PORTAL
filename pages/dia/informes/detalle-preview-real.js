@@ -7860,6 +7860,8 @@ titular / garante, observaciones y cierre del legajo.
 
 function FichaImpresion({
   row,
+  observacionesInforme = [],
+  vehiculosNominal = [],
   onPrintResumen,
   onPrintInforme,
   onPrintDominio,
@@ -7868,6 +7870,62 @@ function FichaImpresion({
   onPrintHistorial,
   onPrintTrazabilidad,
 }) {
+  const informeTipoKey = (row?.type || "").toString().trim();
+
+  const esInformeSobreDominio =
+    informeTipoKey === "informe_dominio" ||
+    informeTipoKey === "certificado_dominio";
+
+  const esInformeNominal =
+    informeTipoKey === "informe_nominal" ||
+    informeTipoKey === "indice_titularidad";
+
+  const esInformePersonal =
+    informeTipoKey === "anotaciones_personales" || esInformeNominal;
+
+  const personaConsultada =
+    row?.titular_dominio ||
+    row?.identificacion_nombre ||
+    row?.titular_razon_social ||
+    `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim();
+
+  const tituloCentroImpresion =
+    esInformeSobreDominio
+      ? row?.dominio || getInformeTipoLabel(row?.type)
+      : personaConsultada || getInformeTipoLabel(row?.type) || "Informe";
+
+  const tituloFichaDominio = esInformeNominal
+    ? "Imprimir vehículos informados"
+    : esInformePersonal
+    ? "Imprimir dominio no aplicable"
+    : "Imprimir ficha Dominio";
+
+  const textoFichaDominio = esInformeNominal
+    ? `Listado de vehículos informados por el informe nominal. ${
+        Array.isArray(vehiculosNominal)
+          ? `${vehiculosNominal.length} vehículo/s cargado/s.`
+          : ""
+      }`
+    : esInformePersonal
+    ? "Constancia de que este informe no se solicita sobre un dominio automotor."
+    : "Datos identificatorios del automotor, motor, chasis, radicación y registro interviniente.";
+
+  const tituloFichaPersona = esInformeSobreDominio
+    ? "Imprimir titular del dominio"
+    : "Imprimir persona consultada";
+
+  const textoFichaPersona = esInformeSobreDominio
+    ? "Datos del titular vinculado al dominio informado."
+    : "Datos de la persona o razón social consultada en el informe.";
+
+  const textoResumen =
+    (row?.result || "").toString().toUpperCase() === "OBSERVADO"
+      ? `Resumen general del informe con estado, resultado observado y ${
+          Array.isArray(observacionesInforme)
+            ? `${observacionesInforme.length} observación/es cargada/s.`
+            : "detalle de observación."
+        }`
+      : "Resumen general con datos principales, estado operativo, resultado, persona consultada y franquiciado.";
 
   return (
     <div style={credentialStyle}>
@@ -7878,8 +7936,9 @@ function FichaImpresion({
 
         <div>
           <div style={credentialKickerStyle}>Centro de impresión</div>
+
           <h2 style={credentialNameStyle}>
-            {row?.dominio || "Legajo por completar"}
+            {tituloCentroImpresion}
           </h2>
         </div>
       </div>
@@ -7896,33 +7955,31 @@ function FichaImpresion({
           onClick={onPrintResumen}
           style={printOptionStyle}
         >
-          <div style={printOptionTitleStyle}>Imprimir resumen del legajo</div>
+          <div style={printOptionTitleStyle}>Imprimir resumen del informe</div>
           <div style={printOptionTextStyle}>
-            Vista general con datos principales, estado actual, informe,
-dominio, franquiciado y titularidad.
+            {textoResumen}
           </div>
         </button>
 
         <button
-  type="button"
-  onClick={onPrintInforme}
-  style={printOptionStyle}
->
-  <div style={printOptionTitleStyle}>Imprimir ficha Informe</div>
-  <div style={printOptionTextStyle}>
-    Tipo de informe, estado, resultado, fecha de pedido y datos principales del legajo.
-  </div>
-</button>
+          type="button"
+          onClick={onPrintInforme}
+          style={printOptionStyle}
+        >
+          <div style={printOptionTitleStyle}>Imprimir ficha Informe</div>
+          <div style={printOptionTextStyle}>
+            Tipo de informe, estado operativo, resultado, fecha del pedido y datos principales.
+          </div>
+        </button>
 
         <button
           type="button"
           onClick={onPrintDominio}
           style={printOptionStyle}
         >
-          <div style={printOptionTitleStyle}>Imprimir ficha Dominio</div>
+          <div style={printOptionTitleStyle}>{tituloFichaDominio}</div>
           <div style={printOptionTextStyle}>
-            Datos identificatorios del automotor, motor, chasis, radicación y
-            registro interviniente.
+            {textoFichaDominio}
           </div>
         </button>
 
@@ -7933,8 +7990,7 @@ dominio, franquiciado y titularidad.
         >
           <div style={printOptionTitleStyle}>Imprimir ficha Franquiciado</div>
           <div style={printOptionTextStyle}>
-            Tienda, franquiciado, CUIT y datos complementarios cargados por
-            SAKI.
+            Tienda, franquiciado, CUIT y datos complementarios cargados por SAKI.
           </div>
         </button>
 
@@ -7944,10 +8000,10 @@ dominio, franquiciado y titularidad.
           style={printOptionStyle}
         >
           <div style={printOptionTitleStyle}>
-            Imprimir ficha Garante / Titular
+            {tituloFichaPersona}
           </div>
           <div style={printOptionTextStyle}>
-            Titular/garante, estado civil, cónyuge, titularidad y condóminos.
+            {textoFichaPersona}
           </div>
         </button>
 
@@ -7958,8 +8014,7 @@ dominio, franquiciado y titularidad.
         >
           <div style={printOptionTitleStyle}>Imprimir historial</div>
           <div style={printOptionTextStyle}>
-            Movimientos del trámite, cambios de estado, archivos y operaciones
-            registradas.
+            Movimientos del trámite, cambios de estado, archivos, observaciones y operaciones registradas.
           </div>
         </button>
 
@@ -7970,8 +8025,7 @@ dominio, franquiciado y titularidad.
         >
           <div style={printOptionTitleStyle}>Imprimir trazabilidad</div>
           <div style={printOptionTextStyle}>
-            Línea operativa del trámite con hitos, fechas y estado actual del
-            circuito.
+            Línea operativa del trámite con hitos, fechas, estado actual y resultado del circuito.
           </div>
         </button>
       </div>
