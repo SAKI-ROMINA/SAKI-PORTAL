@@ -2825,15 +2825,17 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
 
 {activeFicha === "impresion" && (
   <FichaImpresion
-  row={row}
-  onPrintResumen={handlePrintResumenLegajo}
-  onPrintInforme={handlePrintFichaInforme}
-  onPrintDominio={handlePrintFichaDominio}
-  onPrintFranquiciado={handlePrintFichaFranquiciado}
-  onPrintGarante={handlePrintFichaGarante}
-  onPrintHistorial={handlePrintHistorial}
-  onPrintTrazabilidad={handlePrintTrazabilidad}
-/>
+    row={row}
+    observacionesInforme={observacionesInforme}
+    vehiculosNominal={vehiculosNominal}
+    onPrintResumen={handlePrintResumenLegajo}
+    onPrintInforme={handlePrintFichaInforme}
+    onPrintDominio={handlePrintFichaDominio}
+    onPrintFranquiciado={handlePrintFichaFranquiciado}
+    onPrintGarante={handlePrintFichaGarante}
+    onPrintHistorial={handlePrintHistorial}
+    onPrintTrazabilidad={handlePrintTrazabilidad}
+  />
 )}
 
 {activeFicha === "historial" && (
@@ -7906,23 +7908,9 @@ function FichaImpresion({
   const esInformeNominal =
     informeTipoKey === "informe_nominal" ||
     informeTipoKey === "indice_titularidad";
-    
-const esInformePersonal =
-  informeTipoKey === "anotaciones_personales" || esInformeNominal;
 
-const personaConsultadaHeader =
-  row?.titular_dominio ||
-  row?.identificacion_nombre ||
-  row?.titular_razon_social ||
-  `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim();
-
-const headerDatoPrincipalLabel = esInformePersonal
-  ? "PERSONA CONSULTADA"
-  : "DOMINIO";
-
-const headerDatoPrincipalValue = esInformePersonal
-  ? personaConsultadaHeader || "—"
-  : row?.dominio || "—";
+  const esAnotacionesPersonales =
+    informeTipoKey === "anotaciones_personales";
 
   const personaConsultada =
     row?.titular_dominio ||
@@ -7930,43 +7918,23 @@ const headerDatoPrincipalValue = esInformePersonal
     row?.titular_razon_social ||
     `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim();
 
-  const tituloCentroImpresion =
-    esInformeSobreDominio
-      ? row?.dominio || getInformeTipoLabel(row?.type)
-      : personaConsultada || getInformeTipoLabel(row?.type) || "Informe";
+  const tituloCentroImpresion = esInformeSobreDominio
+    ? row?.dominio || getInformeTipoLabel(row?.type)
+    : personaConsultada || getInformeTipoLabel(row?.type) || "Informe";
 
-  const tituloFichaDominio = esInformeNominal
-    ? "Imprimir vehículos informados"
-    : esInformePersonal
-    ? "Imprimir dominio no aplicable"
-    : "Imprimir ficha Dominio";
-
-  const textoFichaDominio = esInformeNominal
-    ? `Listado de vehículos informados por el informe nominal. ${
+  const textoResumen = esInformeNominal
+    ? `Resumen completo con persona consultada, estado, resultado, franquiciado y ${
         Array.isArray(vehiculosNominal)
-          ? `${vehiculosNominal.length} vehículo/s cargado/s.`
-          : ""
+          ? `${vehiculosNominal.length} vehículo/s informado/s.`
+          : "vehículos informados."
       }`
-    : esInformePersonal
-    ? "Constancia de que este informe no se solicita sobre un dominio automotor."
-    : "Datos identificatorios del automotor, motor, chasis, radicación y registro interviniente.";
-
-  const tituloFichaPersona = esInformeSobreDominio
-    ? "Imprimir titular del dominio"
-    : "Imprimir persona consultada";
-
-  const textoFichaPersona = esInformeSobreDominio
-    ? "Datos del titular vinculado al dominio informado."
-    : "Datos de la persona o razón social consultada en el informe.";
-
-  const textoResumen =
-    (row?.result || "").toString().toUpperCase() === "OBSERVADO"
-      ? `Resumen general del informe con estado, resultado observado y ${
-          Array.isArray(observacionesInforme)
-            ? `${observacionesInforme.length} observación/es cargada/s.`
-            : "detalle de observación."
-        }`
-      : "Resumen general con datos principales, estado operativo, resultado, persona consultada y franquiciado.";
+    : esAnotacionesPersonales
+    ? `Resumen completo con persona consultada, estado, resultado, franquiciado y ${
+        Array.isArray(observacionesInforme)
+          ? `${observacionesInforme.length} observación/es cargada/s.`
+          : "observaciones registrales."
+      }`
+    : "Resumen completo con datos principales, dominio, estado, resultado, franquiciado y titular del dominio.";
 
   return (
     <div style={credentialStyle}>
@@ -7997,9 +7965,7 @@ const headerDatoPrincipalValue = esInformePersonal
           style={printOptionStyle}
         >
           <div style={printOptionTitleStyle}>Imprimir resumen del informe</div>
-          <div style={printOptionTextStyle}>
-            {textoResumen}
-          </div>
+          <div style={printOptionTextStyle}>{textoResumen}</div>
         </button>
 
         <button
@@ -8009,18 +7975,55 @@ const headerDatoPrincipalValue = esInformePersonal
         >
           <div style={printOptionTitleStyle}>Imprimir ficha Informe</div>
           <div style={printOptionTextStyle}>
-            Tipo de informe, estado operativo, resultado, fecha del pedido y datos principales.
+            Carátula breve: tipo de informe, estado operativo, resultado, fecha del pedido,
+            persona consultada, tienda y franquiciado.
           </div>
         </button>
 
+        {esInformeSobreDominio && (
+          <button
+            type="button"
+            onClick={onPrintDominio}
+            style={printOptionStyle}
+          >
+            <div style={printOptionTitleStyle}>Imprimir ficha Dominio</div>
+            <div style={printOptionTextStyle}>
+              Datos identificatorios del automotor, motor, chasis, radicación y registro interviniente.
+            </div>
+          </button>
+        )}
+
+        {esInformeNominal && (
+          <button
+            type="button"
+            onClick={onPrintDominio}
+            style={printOptionStyle}
+          >
+            <div style={printOptionTitleStyle}>Imprimir vehículos informados</div>
+            <div style={printOptionTextStyle}>
+              Listado de vehículos informados por el informe nominal.{" "}
+              {Array.isArray(vehiculosNominal)
+                ? `${vehiculosNominal.length} vehículo/s cargado/s.`
+                : ""}
+            </div>
+          </button>
+        )}
+
         <button
           type="button"
-          onClick={onPrintDominio}
+          onClick={onPrintGarante}
           style={printOptionStyle}
         >
-          <div style={printOptionTitleStyle}>{tituloFichaDominio}</div>
+          <div style={printOptionTitleStyle}>
+            {esInformeSobreDominio
+              ? "Imprimir titular del dominio"
+              : "Imprimir persona consultada"}
+          </div>
+
           <div style={printOptionTextStyle}>
-            {textoFichaDominio}
+            {esInformeSobreDominio
+              ? "Datos del titular vinculado al dominio informado."
+              : "Datos de la persona o razón social consultada en el informe."}
           </div>
         </button>
 
@@ -8032,19 +8035,6 @@ const headerDatoPrincipalValue = esInformePersonal
           <div style={printOptionTitleStyle}>Imprimir ficha Franquiciado</div>
           <div style={printOptionTextStyle}>
             Tienda, franquiciado, CUIT y datos complementarios cargados por SAKI.
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={onPrintGarante}
-          style={printOptionStyle}
-        >
-          <div style={printOptionTitleStyle}>
-            {tituloFichaPersona}
-          </div>
-          <div style={printOptionTextStyle}>
-            {textoFichaPersona}
           </div>
         </button>
 
