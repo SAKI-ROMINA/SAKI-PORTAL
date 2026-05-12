@@ -289,14 +289,6 @@ if ((form.notes || "").trim()) {
       notes: "",
     });
 
-    setUsarCargaHistorica(false);
-setHistoricoForm({
-  fecha_pedido_real: "",
-  status: "ENTREGADO",
-  result: "APROBADO",
-  fecha_entrega_real: "",
-});
-
     setNotasOpen(false);
   } catch (err) {
     setError(err.message || "No se pudo guardar la solicitud.");
