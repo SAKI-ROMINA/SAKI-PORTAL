@@ -8444,7 +8444,7 @@ function FichaInforme({
 
 <FichaDato
   label="Fecha del pedido"
-  value={formatDate(row?.created_at) || "Por completar"}
+  value={formatDate(row?.fecha_pedido_real || row?.created_at) || "Por completar"}
 />
 
 <FichaDato
@@ -9040,7 +9040,7 @@ function FichaTrazabilidad({ row, observacionesInforme = [] }) {
     items: limpiarItems([
       {
         label: "Pedido creado por Día",
-        value: fecha(row?.created_at),
+        value: fecha(row?.fecha_pedido_real || row?.created_at),
         note: row?.requester_email
           ? `Solicitado por ${row.requester_email}`
           : null,
