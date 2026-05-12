@@ -5758,24 +5758,25 @@ function FichaInforme({
 
       <div style={credentialInfoGridStyle}>
         <FichaDato
-          label="Tipo de informe"
-          value={getInformeTipoLabel(row?.type)}
-        />
+  label="Tipo de informe"
+  value={getInformeTipoLabel(row?.type)}
+/>
 
-        <FichaDato
-          label="Estado operativo"
-          value={estado}
-        />
+<FichaDato
+  label="Estado operativo"
+  value={estado}
+/>
 
-        <FichaDato
-          label="Resultado"
-          value={resultado}
-        />
+<FichaDato
+  label="Resultado"
+  value={resultado}
+/>
 
-        <FichaDato
-          label="Fecha del pedido"
-          value={formatDate(row?.created_at) || "Por completar"}
-        />
+<FichaDato
+  label="Fecha del pedido"
+  value={formatDate(row?.created_at) || "Por completar"}
+/>
+
 <FichaDato
   label={personaInformeLabel}
   value={personaInformeNombre}
@@ -5786,46 +5787,36 @@ function FichaInforme({
   value={personaInformeDocumento}
 />
 
-        <FichaDato
-          label={personaInformeLabel}
-          value={personaInformeNombre}
-        />
+{esInformeSobreDominio && (
+  <FichaDato
+    label="Dominio"
+    value={row?.dominio || "Por completar"}
+  />
+)}
 
-        <FichaDato
-          label="CUIT / DNI"
-          value={personaInformeDocumento}
-        />
+<FichaDato
+  label="Tienda"
+  value={row?.tienda || "Por completar"}
+/>
 
-        {esInformeSobreDominio && (
-          <FichaDato
-            label="Dominio"
-            value={row?.dominio || "Por completar"}
-          />
-        )}
+<FichaDato
+  label="Franquiciado"
+  value={
+    row?.franquiciado ||
+    row?.frq_razon_social ||
+    row?.frq ||
+    "Por completar"
+  }
+/>
 
-        <FichaDato
-          label="Tienda"
-          value={row?.tienda || "Por completar"}
-        />
-
-        <FichaDato
-          label="Franquiciado"
-          value={
-            row?.franquiciado ||
-            row?.frq_razon_social ||
-            row?.frq ||
-            "Por completar"
-          }
-        />
-
-        <FichaDato
-          label="CUIT FRQ"
-          value={
-            row?.frq_cuit ||
-            row?.identificacion_cuit ||
-            "Por completar"
-          }
-        />
+<FichaDato
+  label="CUIT FRQ"
+  value={
+    row?.frq_cuit ||
+    row?.identificacion_cuit ||
+    "Por completar"
+  }
+/>
 
         {tieneObservacion && (
           <div
