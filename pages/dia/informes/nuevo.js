@@ -122,6 +122,26 @@ const getOnlyDigits = (value) => {
   return (value || "").replace(/\D/g, "");
 };
 
+const normalizeDateForDb = (value) => {
+  const raw = (value || "").toString().trim();
+
+  if (!raw) return null;
+
+  // Si ya viene como AAAA-MM-DD, lo dejamos igual.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+
+  // Acepta DD/MM/AAAA o DD-MM-AAAA
+  const match = raw.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+
+  if (!match) return raw;
+
+  const [, day, month, year] = match;
+
+  return `${year}-${month}-${day}`;
+};
+
 const validateInformeForm = () => {
   if (!tipoInforme) {
     return "Seleccioná el tipo de informe.";
@@ -223,12 +243,12 @@ const resultInicial = esHistoricoObservado
   : null;
 
 const fechaPedidoReal = esCargaHistoricaAdmin
-  ? historicoForm.fecha_pedido_real || null
+  ? normalizeDateForDb(historicoForm.fecha_pedido_real)
   : null;
 
 const fechaEntregaReal =
   esCargaHistoricaAdmin && historicoForm.status === "ENTREGADO"
-    ? historicoForm.fecha_entrega_real || null
+    ? normalizeDateForDb(historicoForm.fecha_entrega_real)
     : null;
 
 
