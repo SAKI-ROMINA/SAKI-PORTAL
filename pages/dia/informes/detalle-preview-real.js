@@ -2298,6 +2298,23 @@ const titularInformeLabel =
     ? "Titular del dominio"
     : "Persona consultada";
 
+    const personaConsultadaHeader =
+  row?.titular_dominio ||
+  row?.identificacion_nombre ||
+  row?.titular_razon_social ||
+  `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim();
+
+const headerEsPersona =
+  informeTipoKey === "anotaciones_personales" || esInformeNominal;
+
+const headerDatoPrincipalLabel = headerEsPersona
+  ? "PERSONA CONSULTADA"
+  : "DOMINIO";
+
+const headerDatoPrincipalValue = headerEsPersona
+  ? personaConsultadaHeader || "—"
+  : row?.dominio || "—";
+
   return (
     <div style={pageStyle}>
       <aside
@@ -2530,7 +2547,7 @@ value={
 />
 
 <ContextItem
-  icon={esInformePersonal ? <UserRound size={32} /> : <Car size={32} />}
+  icon={headerEsPersona ? <UserRound size={32} /> : <Car size={32} />}
   label={headerDatoPrincipalLabel}
   value={headerDatoPrincipalValue}
 />
