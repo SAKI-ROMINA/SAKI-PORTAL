@@ -10096,13 +10096,15 @@ const esInformeSobreDominio =
 
         {mostrarConyugeTitular && (
           <>
-            <FichaDato
-              label="Cónyuge del titular"
-              value={formatConyugeName(
-                row?.titular_conyuge_apellido,
-                row?.titular_conyuge_nombres
-              )}
-            />
+            <div style={{ gridColumn: "1 / 2" }}>
+  <FichaDato
+    label="Cónyuge del titular"
+    value={formatConyugeName(
+      row?.titular_conyuge_apellido,
+      row?.titular_conyuge_nombres
+    )}
+  />
+</div>
 
             <FichaDato
               label="DNI cónyuge"
