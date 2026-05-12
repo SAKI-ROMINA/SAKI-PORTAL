@@ -6767,6 +6767,70 @@ function FichaFrq({ row }) {
 }
 
 function FichaGarante({ row, titularInformeLabel = "Persona consultada" }) {
+      const informeTipoKey = (row?.type || "").toString().trim();
+
+const esInformeSobreDominio =
+  titularInformeLabel === "Titular del dominio" &&
+  (
+    informeTipoKey === "informe_dominio" ||
+    informeTipoKey === "certificado_dominio"
+  );
+
+  const nombrePersonaConsultada =
+    row?.titular_dominio ||
+    row?.identificacion_nombre ||
+    row?.titular_razon_social ||
+    `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim() ||
+    "Por completar";
+
+  const documentoPersonaConsultada =
+    row?.titular_cuit ||
+    row?.titular_cuil_cuit ||
+    row?.identificacion_cuit ||
+    row?.identificacion_dni ||
+    row?.titular_dni ||
+    "Por completar";
+
+  if (!esInformeSobreDominio) {
+    return (
+      <div style={credentialStyle}>
+        <div style={credentialTopStyle}>
+          <div style={avatarStyle}>
+            <UserRound size={34} />
+          </div>
+
+          <div>
+            <div style={credentialKickerStyle}>{titularInformeLabel}</div>
+            <h2 style={credentialNameStyle}>{nombrePersonaConsultada}</h2>
+          </div>
+        </div>
+
+        <div style={credentialInfoGridStyle}>
+          <FichaDato
+            label="Nombre"
+            value={nombrePersonaConsultada}
+          />
+
+          <FichaDato
+            label="CUIT / DNI"
+            value={documentoPersonaConsultada}
+          />
+
+          <FichaDato
+            label="Tipo de informe"
+            value={getInformeTipoLabel(row?.type)}
+          />
+
+          <FichaDato
+            label="Aclaración"
+            value="Esta ficha identifica a la persona o razón social consultada en el informe."
+            wide
+          />
+        </div>
+      </div>
+    );
+  }
+
   const parsePercent = (value) => {
     if (value === null || value === undefined || value === "") return null;
 
