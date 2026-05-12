@@ -2286,6 +2286,9 @@ const esInformeNominal =
   informeTipoKey === "informe_nominal" ||
   informeTipoKey === "indice_titularidad";
 
+  const esInformePersonal =
+  informeTipoKey === "anotaciones_personales" || esInformeNominal;
+
 const dominioNoAplica =
   informeTipoKey === "anotaciones_personales";
   
