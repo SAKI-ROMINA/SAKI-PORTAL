@@ -255,6 +255,10 @@ const [observacionesInforme, setObservacionesInforme] = useState([]);
 const [loadingObservacionesInforme, setLoadingObservacionesInforme] = useState(false);
 const [observacionInformeMsg, setObservacionInformeMsg] = useState("");
 
+const [vehiculosNominal, setVehiculosNominal] = useState([]);
+const [loadingVehiculosNominal, setLoadingVehiculosNominal] = useState(false);
+const [vehiculosNominalMsg, setVehiculosNominalMsg] = useState("");
+
 const [showObservacionInformeModal, setShowObservacionInformeModal] = useState(false);
 const [savingObservacionInforme, setSavingObservacionInforme] = useState(false);
 const [observacionesForm, setObservacionesForm] = useState([
@@ -342,6 +346,7 @@ fetchInformeReal();
 fetchArchivosLegajo();
 fetchNotasLegajo();
 fetchObservacionesInforme();
+fetchVehiculosNominal();
 }, [id]);
 
 async function fetchObservacionesInforme() {
@@ -368,6 +373,33 @@ async function fetchObservacionesInforme() {
     );
   } finally {
     setLoadingObservacionesInforme(false);
+  }
+}
+
+async function fetchVehiculosNominal() {
+  if (!id) return;
+
+  try {
+    setLoadingVehiculosNominal(true);
+    setVehiculosNominalMsg("");
+
+    const { data, error } = await supabase
+      .from("dia_request_informe_nominal_vehiculos")
+      .select("*")
+      .eq("request_id", id)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    setVehiculosNominal(data || []);
+  } catch (error) {
+    console.error("Error cargando vehículos del informe nominal:", error);
+    setVehiculosNominal([]);
+    setVehiculosNominalMsg(
+      error?.message || "No se pudieron cargar los vehículos del informe nominal."
+    );
+  } finally {
+    setLoadingVehiculosNominal(false);
   }
 }
 
@@ -2011,9 +2043,13 @@ const titularAdminCasado =
 
 const informeTipoKey = (row?.type || "").toString().trim();
 
+const esInformeNominal =
+  informeTipoKey === "informe_nominal" ||
+  informeTipoKey === "indice_titularidad";
+
 const dominioNoAplica =
   informeTipoKey === "anotaciones_personales";
-
+  
 const titularInformeLabel =
   informeTipoKey === "informe_dominio" ||
   informeTipoKey === "certificado_dominio"
@@ -2375,7 +2411,7 @@ value={
 
   <InfoCard
   icon={<Car size={30} />}
-  title="DOMINIO"
+  title={esInformeNominal ? "VEHÍCULOS INFORMADOS" : "DOMINIO"}
   disabled={dominioNoAplica}
   items={
     dominioNoAplica
@@ -2383,6 +2419,31 @@ value={
           ["Estado", "No aplica"],
           ["Motivo", "Informe sobre persona"],
           ["Dominio", "—"],
+        ]
+      : esInformeNominal
+      ? [
+          [
+            "Vehículos",
+            Array.isArray(vehiculosNominal)
+              ? `${vehiculosNominal.length}`
+              : "0",
+          ],
+          [
+            "Titular actual",
+            Array.isArray(vehiculosNominal)
+              ? `${vehiculosNominal.filter(
+                  (v) => v.condicion_titular === "titular_actual"
+                ).length}`
+              : "0",
+          ],
+          [
+            "Titular histórico",
+            Array.isArray(vehiculosNominal)
+              ? `${vehiculosNominal.filter(
+                  (v) => v.condicion_titular === "titular_historico"
+                ).length}`
+              : "0",
+          ],
         ]
       : [
           ["Dominio", row?.dominio || "Por completar"],
@@ -2458,7 +2519,13 @@ value={
   />
 )}
 
-{activeFicha === "dominio" && <FichaDominio row={row} />}
+{activeFicha === "dominio" && (
+  <FichaDominio
+    row={row}
+    vehiculosNominal={vehiculosNominal}
+    loadingVehiculosNominal={loadingVehiculosNominal}
+  />
+)}
 {activeFicha === "frq" && <FichaFrq row={row} />}
 {activeFicha === "garante" && (
   <FichaGarante row={row} titularInformeLabel={titularInformeLabel} />
@@ -8078,11 +8145,25 @@ function getTrazabilidadTone(tone) {
   };
 }
 
-function FichaDominio({ row }) {
+function FichaDominio({
+  row,
+  vehiculosNominal = [],
+  loadingVehiculosNominal = false,
+}) {
   const informeTipoKey = (row?.type || "").toString().trim();
 
   const dominioNoAplica =
     informeTipoKey === "anotaciones_personales";
+
+  const esInformeNominal =
+    informeTipoKey === "informe_nominal" ||
+    informeTipoKey === "indice_titularidad";
+
+  const getCondicionTitularLabel = (value) => {
+    if (value === "titular_actual") return "Titular actual";
+    if (value === "titular_historico") return "Titular histórico";
+    return value || "Por completar";
+  };
 
   if (dominioNoAplica) {
     return (
@@ -8128,6 +8209,130 @@ function FichaDominio({ row }) {
             value="Este tipo de informe no se solicita sobre un dominio automotor."
             wide
           />
+        </div>
+      </div>
+    );
+  }
+
+  if (esInformeNominal) {
+    return (
+      <div style={credentialStyle}>
+        <div style={credentialTopStyle}>
+          <div style={avatarStyle}>
+            <Car size={34} />
+          </div>
+
+          <div>
+            <div style={credentialKickerStyle}>Informe nominal</div>
+
+            <h2 style={credentialNameStyle}>
+              Vehículos informados
+            </h2>
+          </div>
+        </div>
+
+        <div style={credentialInfoGridStyle}>
+          {loadingVehiculosNominal ? (
+            <FichaDato
+              label="Vehículos"
+              value="Cargando vehículos informados..."
+              wide
+            />
+          ) : Array.isArray(vehiculosNominal) &&
+            vehiculosNominal.length > 0 ? (
+            vehiculosNominal.map((vehiculo, index) => (
+              <div
+                key={vehiculo.id || index}
+                style={{
+                  gridColumn: "1 / -1",
+                  border: "1px solid rgba(96,165,250,0.18)",
+                  borderRadius: "18px",
+                  background:
+                    "linear-gradient(180deg, rgba(7,31,58,0.72), rgba(3,18,34,0.58))",
+                  padding: "14px",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#93c5fd",
+                    fontSize: "12px",
+                    fontWeight: 900,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    marginBottom: "12px",
+                  }}
+                >
+                  {getCondicionTitularLabel(vehiculo?.condicion_titular)}
+                </div>
+
+                <div style={credentialInfoGridStyle}>
+                  <FichaDato
+                    label="Dominio"
+                    value={vehiculo?.dominio || "Por completar"}
+                  />
+
+                  <FichaDato
+                    label="Marca"
+                    value={vehiculo?.marca || "Por completar"}
+                  />
+
+                  <FichaDato
+                    label="Modelo"
+                    value={vehiculo?.modelo || "Por completar"}
+                  />
+
+                  <FichaDato
+                    label="Tipo"
+                    value={vehiculo?.tipo || "Por completar"}
+                  />
+
+                  <FichaDato
+                    label="Año modelo"
+                    value={vehiculo?.modelo_anio || "Por completar"}
+                  />
+
+                  <FichaDato
+                    label="Registro seccional"
+                    value={vehiculo?.registro_seccional || "Por completar"}
+                  />
+
+                  <FichaDato
+                    label="Titular"
+                    value={vehiculo?.titular || "Por completar"}
+                  />
+
+                  <FichaDato
+                    label="CUIT / DNI"
+                    value={vehiculo?.documento_titular || "Por completar"}
+                  />
+
+                  <FichaDato
+                    label="% titular"
+                    value={vehiculo?.porcentaje_titular || "Por completar"}
+                  />
+
+                  <FichaDato
+                    label="Fecha titular"
+                    value={vehiculo?.fecha_titular || "Por completar"}
+                  />
+
+                  {vehiculo?.observacion && (
+                    <FichaDato
+                      label="Observación"
+                      value={vehiculo.observacion}
+                      wide
+                    />
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <FichaDato
+              label="Vehículos informados"
+              value="Todavía no hay vehículos cargados para este informe nominal."
+              wide
+            />
+          )}
         </div>
       </div>
     );
