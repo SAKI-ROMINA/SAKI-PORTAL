@@ -1293,7 +1293,7 @@ async function handleGuardarObservacionInforme() {
         result: "OBSERVADO",
         observed_status: "OBSERVADO",
         observed_date: now,
-        observed_amount: primerMonto,
+        observed_amount: null,
         observed_other: resumenObservaciones,
         datos_legajo_actualizado_en: now,
       })
