@@ -9057,9 +9057,13 @@ function FichaTrazabilidad({ row, observacionesInforme = [] }) {
         value: row?.status || row?.estado || null,
       },
       {
-        label: "Datos del legajo actualizados",
-        value: fecha(row?.datos_legajo_actualizado_en),
-      },
+  label: "Datos del legajo actualizados",
+  value: fecha(
+    row?.fecha_entrega_real ||
+      row?.datos_legajo_actualizado_en ||
+      row?.updated_at
+  ),
+},
     ]),
   },
   {
