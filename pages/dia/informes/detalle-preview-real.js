@@ -1162,6 +1162,196 @@ function handleRemoveObservacionForm(index) {
   });
 }
 
+async function handleGuardarObservacionInforme() {
+  if (!id || !isAdmin || savingObservacionInforme) return;
+
+  const observacionesLimpias = (Array.isArray(observacionesForm)
+    ? observacionesForm
+    : []
+  )
+    .map((obs) => ({
+      tipo_observacion: (obs?.tipo_observacion || "prenda").toString().trim(),
+      tipo_medida: (obs?.tipo_medida || "").toString().trim(),
+      acreedor: (obs?.acreedor || "").toString().trim(),
+      grado: (obs?.grado || "").toString().trim(),
+      juzgado: (obs?.juzgado || "").toString().trim(),
+      actor: (obs?.actor || "").toString().trim(),
+      expediente: (obs?.expediente || "").toString().trim(),
+      fecha_contrato: (obs?.fecha_contrato || "").toString().trim(),
+      fecha_inscripcion: (obs?.fecha_inscripcion || "").toString().trim(),
+      monto: (obs?.monto || "").toString().trim(),
+      estado: (obs?.estado || "").toString().trim(),
+      observacion: (obs?.observacion || "").toString().trim(),
+    }))
+    .filter((obs) => {
+      return (
+        obs.tipo_observacion ||
+        obs.tipo_medida ||
+        obs.acreedor ||
+        obs.grado ||
+        obs.juzgado ||
+        obs.actor ||
+        obs.expediente ||
+        obs.fecha_contrato ||
+        obs.fecha_inscripcion ||
+        obs.monto ||
+        obs.estado ||
+        obs.observacion
+      );
+    });
+
+  if (observacionesLimpias.length === 0) {
+    setObservacionInformeMsg("Cargá al menos una observación para entregar el informe como observado.");
+    return;
+  }
+
+  try {
+    setSavingObservacionInforme(true);
+    setObservacionInformeMsg("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const authorName =
+      currentProfile?.full_name ||
+      currentProfile?.name ||
+      user?.user_metadata?.full_name ||
+      user?.email ||
+      "Usuario";
+
+    const authorEmail = currentProfile?.email || user?.email || null;
+
+    const now = new Date().toISOString();
+
+    const observacionesPayload = observacionesLimpias.map((obs) => ({
+      request_id: id,
+      tipo_observacion: obs.tipo_observacion,
+      tipo_medida: obs.tipo_medida || null,
+      acreedor: obs.acreedor || null,
+      grado: obs.grado || null,
+      juzgado: obs.juzgado || null,
+      actor: obs.actor || null,
+      expediente: obs.expediente || null,
+      fecha_contrato: obs.fecha_contrato || null,
+      fecha_inscripcion: obs.fecha_inscripcion || null,
+      monto: obs.monto || null,
+      estado: obs.estado || null,
+      observacion: obs.observacion || null,
+      created_by: user?.id || null,
+      created_by_email: authorEmail,
+      created_at: now,
+    }));
+
+    const { data: createdObservaciones, error: observacionesError } =
+      await supabase
+        .from("dia_request_informe_observaciones")
+        .insert(observacionesPayload)
+        .select("*");
+
+    if (observacionesError) throw observacionesError;
+
+    const getTipoObservacionLabel = (value) => {
+      const key = (value || "").toString().trim();
+
+      if (key === "prenda") return "Prenda";
+      if (key === "embargo") return "Embargo";
+      if (key === "inhibicion") return "Inhibición";
+      if (key === "medida_cautelar") return "Medida cautelar";
+      if (key === "otro") return "Otro";
+
+      return key || "Observación";
+    };
+
+    const resumenObservaciones = observacionesLimpias
+      .map((obs, index) => {
+        const tipo = getTipoObservacionLabel(obs.tipo_observacion);
+
+        const partes = [
+          tipo,
+          obs.tipo_medida,
+          obs.acreedor ? `Acreedor: ${obs.acreedor}` : "",
+          obs.juzgado ? `Juzgado: ${obs.juzgado}` : "",
+          obs.actor ? `Actor: ${obs.actor}` : "",
+          obs.expediente ? `Expediente: ${obs.expediente}` : "",
+          obs.fecha_inscripcion ? `Fecha inscripción: ${obs.fecha_inscripcion}` : "",
+          obs.monto ? `Monto: ${obs.monto}` : "",
+          obs.estado ? `Estado: ${obs.estado}` : "",
+        ].filter(Boolean);
+
+        return `${index + 1}. ${partes.join(" · ")}`;
+      })
+      .join(" | ");
+
+    const primerMonto =
+      observacionesLimpias.find((obs) => obs.monto)?.monto || null;
+
+    const { data: updatedInforme, error: updateError } = await supabase
+      .from("dia_requests")
+      .update({
+        status: "ENTREGADO",
+        result: "OBSERVADO",
+        observed_status: "OBSERVADO",
+        observed_date: now,
+        observed_amount: primerMonto,
+        observed_other: resumenObservaciones,
+        datos_legajo_actualizado_en: now,
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (updateError) throw updateError;
+
+    const { data: createdHistory, error: historyError } = await supabase
+      .from("dia_requests_history")
+      .insert({
+        request_id: id,
+        tipo_evento: "informe_observado",
+        titulo: "Informe entregado observado",
+        detalle: {
+          resultado: "OBSERVADO",
+          observaciones: observacionesLimpias,
+          cantidad_observaciones: observacionesLimpias.length,
+        },
+        detalle_texto: `Informe entregado con resultado observado. ${resumenObservaciones}`,
+        created_by_name: authorName,
+        created_by_email: authorEmail,
+        created_at: now,
+      })
+      .select("*")
+      .single();
+
+    if (historyError) throw historyError;
+
+    setRow(updatedInforme);
+
+    if (Array.isArray(createdObservaciones)) {
+      setObservacionesInforme((prev) => [
+        ...(Array.isArray(prev) ? prev : []),
+        ...createdObservaciones,
+      ]);
+    }
+
+    if (createdHistory) {
+      setHistoryRows((prev) => [createdHistory, ...(prev || [])]);
+    }
+
+    setObservacionesForm([createEmptyInformeObservacion()]);
+    setShowObservacionInformeModal(false);
+    setObservacionInformeMsg("");
+
+    await fetchObservacionesInforme();
+  } catch (error) {
+    console.error("Error guardando observación del informe:", error);
+    setObservacionInformeMsg(
+      error?.message || "No se pudo guardar la observación del informe."
+    );
+  } finally {
+    setSavingObservacionInforme(false);
+  }
+}
+
 async function handleEntregarInformeAprobado() {
   const confirmar = window.confirm(
     "¿Confirmás que el informe fue entregado sin observaciones?"
@@ -2323,7 +2513,12 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
 {activeFicha === "historial" && (
   <FichaHistorial row={row} historyRows={historyRows} />
 )}
-{activeFicha === "trazabilidad" && <FichaTrazabilidad row={row} />}
+{activeFicha === "trazabilidad" && (
+  <FichaTrazabilidad
+    row={row}
+    observacionesInforme={observacionesInforme}
+  />
+)}
 {activeFicha === "avisos" && <FichaAvisos />}
 {activeFicha === "reporte" && <FichaReporte />}
           </div>
@@ -3135,6 +3330,914 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
         </div>
       )}
     </section>
+  </div>
+)}
+
+{showObservacionInformeModal && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(2, 8, 18, 0.72)",
+      backdropFilter: "blur(8px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10000,
+      padding: "24px",
+    }}
+    onClick={handleCancelObservacionInformeModal}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "min(980px, 100%)",
+        maxHeight: "88vh",
+        overflowY: "auto",
+        borderRadius: "24px",
+        background:
+          "linear-gradient(180deg, rgba(18,52,91,0.98) 0%, rgba(10,31,58,0.98) 100%)",
+        border: "1px solid rgba(148,163,184,0.18)",
+        boxShadow: "0 34px 90px rgba(0,0,0,0.48)",
+        padding: "24px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "18px",
+          alignItems: "flex-start",
+          marginBottom: "22px",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: "11px",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "#8fb9e8",
+              fontWeight: 850,
+              marginBottom: "8px",
+            }}
+          >
+            Resultado del informe
+          </div>
+
+          <h3
+            style={{
+              margin: 0,
+              color: "#ffffff",
+              fontSize: "25px",
+              fontWeight: 800,
+              letterSpacing: "-0.035em",
+            }}
+          >
+            Entregar informe observado
+          </h3>
+
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "rgba(214,228,245,0.78)",
+              fontSize: "13px",
+              lineHeight: 1.5,
+              maxWidth: "720px",
+            }}
+          >
+            Cargá una o más observaciones registrales detectadas en el informe.
+            El trámite quedará como entregado con resultado observado.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleCancelObservacionInformeModal}
+          style={{
+            width: "34px",
+            height: "34px",
+            borderRadius: "999px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(255,255,255,0.04)",
+            color: "#dbeafe",
+            fontSize: "22px",
+            lineHeight: "30px",
+            cursor: "pointer",
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+        }}
+      >
+        {observacionesForm.map((obs, index) => (
+          <div
+            key={index}
+            style={{
+              borderRadius: "20px",
+              border: "1px solid rgba(248,113,113,0.24)",
+              background:
+                "linear-gradient(180deg, rgba(127,29,29,0.18), rgba(3,18,34,0.48))",
+              padding: "18px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: "12px",
+                alignItems: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <div
+                style={{
+                  color: "#fecaca",
+                  fontSize: "12px",
+                  fontWeight: 900,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Observación {index + 1}
+              </div>
+
+              {observacionesForm.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveObservacionForm(index)}
+                  style={{
+                    border: "1px solid rgba(248,113,113,0.28)",
+                    background: "rgba(127,29,29,0.22)",
+                    color: "#fecaca",
+                    borderRadius: "999px",
+                    padding: "7px 10px",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  Quitar
+                </button>
+              )}
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: "12px",
+              }}
+            >
+              <div>
+                <label style={modalFieldLabelStyle}>Tipo de observación</label>
+                <select
+                  style={modalInputStyle}
+                  value={obs.tipo_observacion}
+                  onChange={(e) =>
+                    handleObservacionFormChange(
+                      index,
+                      "tipo_observacion",
+                      e.target.value
+                    )
+                  }
+                >
+                  <option value="prenda">Prenda</option>
+                  <option value="embargo">Embargo</option>
+                  <option value="inhibicion">Inhibición</option>
+                  <option value="medida_cautelar">Medida cautelar</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+
+              {obs.tipo_observacion === "prenda" ? (
+                <>
+                  <div>
+                    <label style={modalFieldLabelStyle}>Acreedor</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.acreedor}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "acreedor",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Ej. DÍA ARGENTINA S.A."
+                    />
+                  </div>
+
+                  <div>
+                    <label style={modalFieldLabelStyle}>Grado</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.grado}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "grado",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Ej. 1°"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={modalFieldLabelStyle}>Fecha contrato</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.fecha_contrato}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "fecha_contrato",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Ej. 21/05/25"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label style={modalFieldLabelStyle}>Tipo de medida</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.tipo_medida}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "tipo_medida",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Ej. INHIBICIÓN / EMBARGO"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={modalFieldLabelStyle}>Juzgado</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.juzgado}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "juzgado",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Juzgado interviniente"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={modalFieldLabelStyle}>Actor</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.actor}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "actor",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Actor"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={modalFieldLabelStyle}>Expediente</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.expediente}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "expediente",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Expediente"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label style={modalFieldLabelStyle}>Fecha inscripción</label>
+                <input
+                  style={modalInputStyle}
+                  value={obs.fecha_inscripcion}
+                  onChange={(e) =>
+                    handleObservacionFormChange(
+                      index,
+                      "fecha_inscripcion",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Ej. 11/2025"
+                />
+              </div>
+
+              <div>
+                <label style={modalFieldLabelStyle}>Monto</label>
+                <input
+                  style={modalInputStyle}
+                  value={obs.monto}
+                  onChange={(e) =>
+                    handleObservacionFormChange(
+                      index,
+                      "monto",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Ej. $ 490.918,06 + INT $ 73.637,71"
+                />
+              </div>
+
+              <div>
+                <label style={modalFieldLabelStyle}>Estado</label>
+                <input
+                  style={modalInputStyle}
+                  value={obs.estado}
+                  onChange={(e) =>
+                    handleObservacionFormChange(
+                      index,
+                      "estado",
+                      e.target.value.toUpperCase()
+                    )
+                  }
+                  placeholder="Ej. VIGENTE"
+                />
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={modalFieldLabelStyle}>Observación</label>
+                <input
+                  style={modalInputStyle}
+                  value={obs.observacion}
+                  onChange={(e) =>
+                    handleObservacionFormChange(
+                      index,
+                      "observacion",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Detalle adicional"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={handleAddObservacionForm}
+          style={{
+            alignSelf: "flex-start",
+            border: "1px solid rgba(96, 165, 250, 0.34)",
+            background: "rgba(37, 99, 235, 0.14)",
+            color: "#bfdbfe",
+            borderRadius: "999px",
+            padding: "9px 14px",
+            fontSize: "13px",
+            fontWeight: 850,
+            cursor: "pointer",
+          }}
+        >
+          + Agregar otra observación
+        </button>
+
+        {observacionInformeMsg && (
+          <div
+            style={{
+              borderRadius: "14px",
+              border: "1px solid rgba(56,189,248,0.22)",
+              background: "rgba(14,165,233,0.10)",
+              color: "#bae6fd",
+              padding: "11px 12px",
+              fontSize: "13px",
+              lineHeight: 1.45,
+            }}
+          >
+            {observacionInformeMsg}
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "12px",
+            marginTop: "4px",
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleCancelObservacionInformeModal}
+            style={{
+              height: "42px",
+              padding: "0 15px",
+              borderRadius: "12px",
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(255,255,255,0.03)",
+              color: "#dbeafe",
+              fontSize: "13px",
+              fontWeight: 750,
+              cursor: "pointer",
+            }}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGuardarObservacionInforme}
+            disabled={savingObservacionInforme}
+            style={{
+              height: "42px",
+              padding: "0 17px",
+              borderRadius: "12px",
+              border: "none",
+              background: "linear-gradient(180deg, #ef4444, #b91c1c)",
+              color: "#ffffff",
+              fontSize: "13px",
+              fontWeight: 850,
+              opacity: savingObservacionInforme ? 0.65 : 1,
+              cursor: savingObservacionInforme ? "not-allowed" : "pointer",
+            }}
+          >
+            {savingObservacionInforme
+              ? "Guardando..."
+              : "Guardar y entregar observado"}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+{showObservacionInformeModal && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(2, 8, 18, 0.72)",
+      backdropFilter: "blur(8px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10000,
+      padding: "24px",
+    }}
+    onClick={handleCancelObservacionInformeModal}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "min(980px, 100%)",
+        maxHeight: "88vh",
+        overflowY: "auto",
+        borderRadius: "24px",
+        background:
+          "linear-gradient(180deg, rgba(18,52,91,0.98) 0%, rgba(10,31,58,0.98) 100%)",
+        border: "1px solid rgba(148,163,184,0.18)",
+        boxShadow: "0 34px 90px rgba(0,0,0,0.48)",
+        padding: "24px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "18px",
+          alignItems: "flex-start",
+          marginBottom: "22px",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: "11px",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "#8fb9e8",
+              fontWeight: 850,
+              marginBottom: "8px",
+            }}
+          >
+            Resultado del informe
+          </div>
+
+          <h3
+            style={{
+              margin: 0,
+              color: "#ffffff",
+              fontSize: "25px",
+              fontWeight: 800,
+              letterSpacing: "-0.035em",
+            }}
+          >
+            Entregar informe observado
+          </h3>
+
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "rgba(214,228,245,0.78)",
+              fontSize: "13px",
+              lineHeight: 1.5,
+              maxWidth: "720px",
+            }}
+          >
+            Cargá una o más observaciones registrales detectadas en el informe.
+            El trámite quedará como entregado con resultado observado.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleCancelObservacionInformeModal}
+          style={{
+            width: "34px",
+            height: "34px",
+            borderRadius: "999px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(255,255,255,0.04)",
+            color: "#dbeafe",
+            fontSize: "22px",
+            lineHeight: "30px",
+            cursor: "pointer",
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+        }}
+      >
+        {observacionesForm.map((obs, index) => (
+          <div
+            key={index}
+            style={{
+              borderRadius: "20px",
+              border: "1px solid rgba(248,113,113,0.24)",
+              background:
+                "linear-gradient(180deg, rgba(127,29,29,0.18), rgba(3,18,34,0.48))",
+              padding: "18px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: "12px",
+                alignItems: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <div
+                style={{
+                  color: "#fecaca",
+                  fontSize: "12px",
+                  fontWeight: 900,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Observación {index + 1}
+              </div>
+
+              {observacionesForm.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveObservacionForm(index)}
+                  style={{
+                    border: "1px solid rgba(248,113,113,0.28)",
+                    background: "rgba(127,29,29,0.22)",
+                    color: "#fecaca",
+                    borderRadius: "999px",
+                    padding: "7px 10px",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  Quitar
+                </button>
+              )}
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: "12px",
+              }}
+            >
+              <div>
+                <label style={modalFieldLabelStyle}>Tipo de observación</label>
+                <select
+                  style={modalInputStyle}
+                  value={obs.tipo_observacion}
+                  onChange={(e) =>
+                    handleObservacionFormChange(
+                      index,
+                      "tipo_observacion",
+                      e.target.value
+                    )
+                  }
+                >
+                  <option value="prenda">Prenda</option>
+                  <option value="embargo">Embargo</option>
+                  <option value="inhibicion">Inhibición</option>
+                  <option value="medida_cautelar">Medida cautelar</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+
+              {obs.tipo_observacion === "prenda" ? (
+                <>
+                  <div>
+                    <label style={modalFieldLabelStyle}>Acreedor</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.acreedor}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "acreedor",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Ej. DÍA ARGENTINA S.A."
+                    />
+                  </div>
+
+                  <div>
+                    <label style={modalFieldLabelStyle}>Grado</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.grado}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "grado",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Ej. 1°"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={modalFieldLabelStyle}>Fecha contrato</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.fecha_contrato}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "fecha_contrato",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Ej. 21/05/25"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label style={modalFieldLabelStyle}>Tipo de medida</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.tipo_medida}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "tipo_medida",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Ej. INHIBICIÓN / EMBARGO"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={modalFieldLabelStyle}>Juzgado</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.juzgado}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "juzgado",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Juzgado interviniente"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={modalFieldLabelStyle}>Actor</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.actor}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "actor",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Actor"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={modalFieldLabelStyle}>Expediente</label>
+                    <input
+                      style={modalInputStyle}
+                      value={obs.expediente}
+                      onChange={(e) =>
+                        handleObservacionFormChange(
+                          index,
+                          "expediente",
+                          e.target.value.toUpperCase()
+                        )
+                      }
+                      placeholder="Expediente"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label style={modalFieldLabelStyle}>Fecha inscripción</label>
+                <input
+                  style={modalInputStyle}
+                  value={obs.fecha_inscripcion}
+                  onChange={(e) =>
+                    handleObservacionFormChange(
+                      index,
+                      "fecha_inscripcion",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Ej. 11/2025"
+                />
+              </div>
+
+              <div>
+                <label style={modalFieldLabelStyle}>Monto</label>
+                <input
+                  style={modalInputStyle}
+                  value={obs.monto}
+                  onChange={(e) =>
+                    handleObservacionFormChange(index, "monto", e.target.value)
+                  }
+                  placeholder="Ej. $ 490.918,06 + INT $ 73.637,71"
+                />
+              </div>
+
+              <div>
+                <label style={modalFieldLabelStyle}>Estado</label>
+                <input
+                  style={modalInputStyle}
+                  value={obs.estado}
+                  onChange={(e) =>
+                    handleObservacionFormChange(
+                      index,
+                      "estado",
+                      e.target.value.toUpperCase()
+                    )
+                  }
+                  placeholder="Ej. VIGENTE"
+                />
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={modalFieldLabelStyle}>Observación</label>
+                <input
+                  style={modalInputStyle}
+                  value={obs.observacion}
+                  onChange={(e) =>
+                    handleObservacionFormChange(
+                      index,
+                      "observacion",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Detalle adicional"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={handleAddObservacionForm}
+          style={{
+            alignSelf: "flex-start",
+            border: "1px solid rgba(96, 165, 250, 0.34)",
+            background: "rgba(37, 99, 235, 0.14)",
+            color: "#bfdbfe",
+            borderRadius: "999px",
+            padding: "9px 14px",
+            fontSize: "13px",
+            fontWeight: 850,
+            cursor: "pointer",
+          }}
+        >
+          + Agregar otra observación
+        </button>
+
+        {observacionInformeMsg && (
+          <div
+            style={{
+              borderRadius: "14px",
+              border: "1px solid rgba(56,189,248,0.22)",
+              background: "rgba(14,165,233,0.10)",
+              color: "#bae6fd",
+              padding: "11px 12px",
+              fontSize: "13px",
+              lineHeight: 1.45,
+            }}
+          >
+            {observacionInformeMsg}
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "12px",
+            marginTop: "4px",
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleCancelObservacionInformeModal}
+            style={{
+              height: "42px",
+              padding: "0 15px",
+              borderRadius: "12px",
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(255,255,255,0.03)",
+              color: "#dbeafe",
+              fontSize: "13px",
+              fontWeight: 750,
+              cursor: "pointer",
+            }}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGuardarObservacionInforme}
+            disabled={savingObservacionInforme}
+            style={{
+              height: "42px",
+              padding: "0 17px",
+              borderRadius: "12px",
+              border: "none",
+              background: "linear-gradient(180deg, #ef4444, #b91c1c)",
+              color: "#ffffff",
+              fontSize: "13px",
+              fontWeight: 850,
+              opacity: savingObservacionInforme ? 0.65 : 1,
+              cursor: savingObservacionInforme ? "not-allowed" : "pointer",
+            }}
+          >
+            {savingObservacionInforme
+              ? "Guardando..."
+              : "Guardar y entregar observado"}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 )}
 
@@ -6381,7 +7484,7 @@ function FichaHistorial({ row, historyRows }) {
   );
 }
 
-function FichaTrazabilidad({ row }) {
+function FichaTrazabilidad({ row, observacionesInforme = [] }) {
   const fecha = (value) => {
     if (!value) return null;
     return formatDate(value);
@@ -6435,6 +7538,39 @@ function FichaTrazabilidad({ row }) {
         label: "Resultado",
         value: row?.result || null,
       },
+{
+  label: "Detalle observado",
+  value:
+    (row?.result || "").toString().toUpperCase() === "OBSERVADO" &&
+    Array.isArray(observacionesInforme) &&
+    observacionesInforme.length > 0
+      ? `${observacionesInforme.length} observación/es cargada/s`
+      : null,
+  note:
+    (row?.result || "").toString().toUpperCase() === "OBSERVADO" &&
+    Array.isArray(observacionesInforme) &&
+    observacionesInforme.length > 0
+      ? observacionesInforme
+          .map((obs, index) => {
+            const tipo =
+              obs?.tipo_observacion === "prenda"
+                ? "Prenda"
+                : obs?.tipo_observacion === "embargo"
+                ? "Embargo"
+                : obs?.tipo_observacion === "inhibicion"
+                ? "Inhibición"
+                : obs?.tipo_observacion === "medida_cautelar"
+                ? "Medida cautelar"
+                : "Otro";
+
+            return `${index + 1}. ${tipo}${
+              obs?.estado ? ` · ${obs.estado}` : ""
+            }${obs?.monto ? ` · ${obs.monto}` : ""}`;
+          })
+          .join(" | ")
+      : null,
+},
+
       {
         label: "Fecha de observación",
         value: fecha(row?.observed_date),
