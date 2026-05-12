@@ -2325,7 +2325,7 @@ const titularInformeLabel =
 
 <NavItem
   icon={<Car size={22} />}
-  label="Dominio"
+  label={esInformeNominal ? "Vehículos informados" : "Dominio"}
   onClick={() => setActiveFicha("dominio")}
 />
 
