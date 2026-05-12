@@ -107,6 +107,23 @@ function formatDocumentoInput(value) {
   );
 }
 
+function createEmptyInformeObservacion() {
+  return {
+    tipo_observacion: "prenda",
+    tipo_medida: "",
+    acreedor: "",
+    grado: "",
+    juzgado: "",
+    actor: "",
+    expediente: "",
+    fecha_contrato: "",
+    fecha_inscripcion: "",
+    monto: "",
+    estado: "",
+    observacion: "",
+  };
+}
+
 function createEmptyPrendaCondomino() {
   return {
     apellido: "",
@@ -237,6 +254,12 @@ const [historyRows, setHistoryRows] = useState([]);
 const [observacionesInforme, setObservacionesInforme] = useState([]);
 const [loadingObservacionesInforme, setLoadingObservacionesInforme] = useState(false);
 const [observacionInformeMsg, setObservacionInformeMsg] = useState("");
+
+const [showObservacionInformeModal, setShowObservacionInformeModal] = useState(false);
+const [savingObservacionInforme, setSavingObservacionInforme] = useState(false);
+const [observacionesForm, setObservacionesForm] = useState([
+  createEmptyInformeObservacion(),
+]);
 
 const [notasLegajo, setNotasLegajo] = useState([]);
 const [loadingNotas, setLoadingNotas] = useState(false);
@@ -1094,6 +1117,48 @@ async function handleTomarGestionInforme() {
     detalleHistorial: {
       accion: "SAKI tomó intervención y el informe pasó a estar en gestión.",
     },
+  });
+}
+
+function handleOpenObservacionInformeModal() {
+  setObservacionInformeMsg("");
+  setObservacionesForm([createEmptyInformeObservacion()]);
+  setShowObservacionInformeModal(true);
+}
+
+function handleCancelObservacionInformeModal() {
+  if (savingObservacionInforme) return;
+
+  setObservacionInformeMsg("");
+  setObservacionesForm([createEmptyInformeObservacion()]);
+  setShowObservacionInformeModal(false);
+}
+
+function handleObservacionFormChange(index, field, value) {
+  setObservacionesForm((prev) => {
+    const next = Array.isArray(prev) ? [...prev] : [];
+    next[index] = {
+      ...(next[index] || createEmptyInformeObservacion()),
+      [field]: value,
+    };
+    return next;
+  });
+}
+
+function handleAddObservacionForm() {
+  setObservacionesForm((prev) => [
+    ...(Array.isArray(prev) ? prev : []),
+    createEmptyInformeObservacion(),
+  ]);
+}
+
+function handleRemoveObservacionForm(index) {
+  setObservacionesForm((prev) => {
+    const next = Array.isArray(prev)
+      ? prev.filter((_, itemIndex) => itemIndex !== index)
+      : [];
+
+    return next.length > 0 ? next : [createEmptyInformeObservacion()];
   });
 }
 
@@ -3338,7 +3403,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
 
         <button
           type="button"
-          onClick={handleEntregarInformeObservado}
+          onClick={handleOpenObservacionInformeModal}
           disabled={savingEstadoInforme}
           style={{
             height: "38px",
