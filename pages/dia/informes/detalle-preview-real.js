@@ -2837,8 +2837,9 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       <div className="print-brand">SAKI</div>
       <h1>Resumen del informe</h1>
       <p>
-        Dominio: <strong>{row?.dominio || "—"}</strong>
-      </p>
+  {headerDatoPrincipalLabel}:{" "}
+  <strong>{headerDatoPrincipalValue}</strong>
+</p>
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
@@ -2975,8 +2976,9 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       <div className="print-brand">SAKI</div>
       <h1>Ficha Informe</h1>
       <p>
-        Dominio: <strong>{row?.dominio || "—"}</strong>
-      </p>
+  {headerDatoPrincipalLabel}:{" "}
+  <strong>{headerDatoPrincipalValue}</strong>
+</p>
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
@@ -3071,8 +3073,9 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       <div className="print-brand">SAKI</div>
       <h1>Ficha Dominio / Automotor</h1>
       <p>
-        Dominio: <strong>{row?.dominio || "—"}</strong>
-      </p>
+  {headerDatoPrincipalLabel}:{" "}
+  <strong>{headerDatoPrincipalValue}</strong>
+</p>
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
@@ -3145,8 +3148,9 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       <div className="print-brand">SAKI</div>
       <h1>Ficha Franquiciado</h1>
       <p>
-        Dominio: <strong>{row?.dominio || "—"}</strong>
-      </p>
+  {headerDatoPrincipalLabel}:{" "}
+  <strong>{headerDatoPrincipalValue}</strong>
+</p>
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
@@ -3209,8 +3213,9 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       <div className="print-brand">SAKI</div>
       <h1>Ficha Garante / Titular</h1>
       <p>
-        Dominio: <strong>{row?.dominio || "—"}</strong>
-      </p>
+  {headerDatoPrincipalLabel}:{" "}
+  <strong>{headerDatoPrincipalValue}</strong>
+</p>
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
@@ -3417,8 +3422,9 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       <div className="print-brand">SAKI</div>
       <h1>Historial del trámite</h1>
       <p>
-        Dominio: <strong>{row?.dominio || "—"}</strong>
-      </p>
+  {headerDatoPrincipalLabel}:{" "}
+  <strong>{headerDatoPrincipalValue}</strong>
+</p>
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
@@ -3504,8 +3510,9 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       <div className="print-brand">SAKI</div>
       <h1>Trazabilidad del informe</h1>
       <p>
-        Dominio: <strong>{row?.dominio || "—"}</strong>
-      </p>
+  {headerDatoPrincipalLabel}:{" "}
+  <strong>{headerDatoPrincipalValue}</strong>
+</p>
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
