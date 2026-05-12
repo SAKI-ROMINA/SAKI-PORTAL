@@ -269,6 +269,50 @@ observed_status:
 
 if (insertError) throw insertError;
 
+const tituloHistorialInicial = esCargaHistoricaAdmin
+  ? "Carga histórica del informe"
+  : "Solicitud de informe creada";
+
+const detalleHistorialInicial = esCargaHistoricaAdmin
+  ? {
+      carga_historica: true,
+      fecha_pedido_real: fechaPedidoReal,
+      fecha_entrega_real: fechaEntregaReal,
+      status: statusInicial,
+      result: resultInicial,
+      descripcion:
+        "SAKI cargó administrativamente un informe solicitado con anterioridad al uso del portal.",
+    }
+  : {
+      carga_historica: false,
+      status: statusInicial,
+      descripcion: "Día creó una nueva solicitud de informe desde el portal.",
+    };
+
+const { error: historyError } = await supabase
+  .from("dia_requests_history")
+  .insert({
+    request_id: requestData.id,
+    tipo_evento: esCargaHistoricaAdmin
+      ? "carga_historica_informe"
+      : "solicitud_informe_creada",
+    titulo: tituloHistorialInicial,
+    detalle: detalleHistorialInicial,
+    detalle_texto: esCargaHistoricaAdmin
+      ? `Carga histórica registrada por SAKI. Fecha real del pedido: ${
+          fechaPedidoReal || "sin informar"
+        }${
+          fechaEntregaReal
+            ? `. Fecha real de entrega: ${fechaEntregaReal}`
+            : ""
+        }.`
+      : "Solicitud de informe creada por Día desde el portal.",
+    created_by_email: requesterEmail || null,
+    created_at: new Date().toISOString(),
+  });
+
+if (historyError) throw historyError;
+
 if ((form.notes || "").trim()) {
   const { error: noteError } = await supabase.from("dia_notes").insert({
     request_id: requestData.id,
