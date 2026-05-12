@@ -205,11 +205,18 @@ if (
   return;
 }
 
-const statusInicial = esCargaHistoricaAdmin
+const esHistoricoObservado =
+  esCargaHistoricaAdmin && historicoForm.result === "OBSERVADO";
+
+const statusInicial = esHistoricoObservado
+  ? "EN CURSO"
+  : esCargaHistoricaAdmin
   ? historicoForm.status
   : "SOLICITADO";
 
-const resultInicial = esCargaHistoricaAdmin
+const resultInicial = esHistoricoObservado
+  ? null
+  : esCargaHistoricaAdmin
   ? historicoForm.result === "PENDIENTE"
     ? null
     : historicoForm.result
