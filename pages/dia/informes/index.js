@@ -304,7 +304,7 @@ const totalAvisosInformes =
   totalObservados;
 
 const totalEntregados = informes.filter(
-  (row) => row.status === "ENTREGADO" && row.result !== "OBSERVADO"
+  (row) => row.status === "ENTREGADO"
 ).length;
 
 const printDate = new Date().toLocaleDateString("es-AR");
