@@ -540,7 +540,7 @@ const printDate = new Date().toLocaleDateString("es-AR");
     icon={<FileText size={25} />}
     label="Informes"
     value={totalInformes}
-    text="Solicitudes registrales activas."
+    text="Solicitudes registrales."
     active={quickFilter === "TODOS"}
     onClick={() => {
       setQuickFilter("TODOS");
