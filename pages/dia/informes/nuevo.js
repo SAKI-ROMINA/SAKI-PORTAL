@@ -21,6 +21,16 @@ export default function NuevoInformePreview() {
 const [error, setError] = useState("");
 const [currentUserEmail, setCurrentUserEmail] = useState("");
 
+const [isAdmin, setIsAdmin] = useState(false);
+const [usarCargaHistorica, setUsarCargaHistorica] = useState(false);
+
+const [historicoForm, setHistoricoForm] = useState({
+  fecha_pedido_real: "",
+  status: "ENTREGADO",
+  result: "APROBADO",
+  fecha_entrega_real: "",
+});
+
 const [form, setForm] = useState({
   tienda: "",
   franquiciado: "",
@@ -36,7 +46,31 @@ const [form, setForm] = useState({
 useEffect(() => {
   async function loadCurrentUser() {
     const { data } = await supabase.auth.getUser();
-    setCurrentUserEmail(data?.user?.email || "");
+
+    const user = data?.user || null;
+
+    setCurrentUserEmail(user?.email || "");
+
+    if (!user?.id) {
+      setIsAdmin(false);
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("Error cargando perfil:", profileError);
+      setIsAdmin(false);
+      return;
+    }
+
+    const role = (profile?.role || "").toString().trim().toLowerCase();
+
+    setIsAdmin(role === "admin");
   }
 
   loadCurrentUser();
@@ -44,6 +78,13 @@ useEffect(() => {
 
 const handleChange = (field) => (e) => {
   setForm((prev) => ({
+    ...prev,
+    [field]: e.target.value,
+  }));
+};
+
+const handleHistoricoChange = (field) => (e) => {
+  setHistoricoForm((prev) => ({
     ...prev,
     [field]: e.target.value,
   }));
