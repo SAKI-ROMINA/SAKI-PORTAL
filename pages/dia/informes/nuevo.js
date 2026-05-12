@@ -187,6 +187,43 @@ const handleGuardarSolicitud = async () => {
 
     const requesterEmail = userData?.user?.email || "";
     const userId = userData?.user?.id || null;
+const esCargaHistoricaAdmin = isAdmin && usarCargaHistorica;
+
+if (esCargaHistoricaAdmin && !historicoForm.fecha_pedido_real) {
+  setError("Completá la fecha real del pedido para la carga histórica.");
+  setSaving(false);
+  return;
+}
+
+if (
+  esCargaHistoricaAdmin &&
+  historicoForm.status === "ENTREGADO" &&
+  !historicoForm.fecha_entrega_real
+) {
+  setError("Completá la fecha real de entrega para el informe entregado.");
+  setSaving(false);
+  return;
+}
+
+const statusInicial = esCargaHistoricaAdmin
+  ? historicoForm.status
+  : "SOLICITADO";
+
+const resultInicial = esCargaHistoricaAdmin
+  ? historicoForm.result === "PENDIENTE"
+    ? null
+    : historicoForm.result
+  : null;
+
+const fechaPedidoReal = esCargaHistoricaAdmin
+  ? historicoForm.fecha_pedido_real || null
+  : null;
+
+const fechaEntregaReal =
+  esCargaHistoricaAdmin && historicoForm.status === "ENTREGADO"
+    ? historicoForm.fecha_entrega_real || null
+    : null;
+
 
     const payload = {
       tienda: (form.tienda || "").trim(),
@@ -194,8 +231,20 @@ const handleGuardarSolicitud = async () => {
       dominio: (form.dominio || "").trim().toUpperCase() || null,
       requester_email: requesterEmail,
       type: tipoInforme,
-      status: "SOLICITADO",
-      result: null,
+status: statusInicial,
+result: resultInicial,
+fecha_pedido_real: fechaPedidoReal,
+fecha_entrega_real: fechaEntregaReal,
+carga_historica: esCargaHistoricaAdmin,
+datos_legajo_actualizado_en: fechaEntregaReal || null,
+observed_date:
+  esCargaHistoricaAdmin && resultInicial === "OBSERVADO"
+    ? fechaEntregaReal
+    : null,
+observed_status:
+  esCargaHistoricaAdmin && resultInicial === "OBSERVADO"
+    ? "OBSERVADO"
+    : null,
       notes: (form.notes || "").trim() || null,
       cc_email: (form.cc_email || "").trim() || null,
       identificacion_tipo_sujeto: form.identificacion_tipo_sujeto,

@@ -2071,12 +2071,12 @@ useEffect(() => {
 const estadoFechaInfo = (() => {
   const resultKey = (row?.result || "").toString().trim().toUpperCase();
 
-  if (estadoActualKey === "SOLICITADO") {
-    return {
-      label: "Pedido",
-      value: formatDate(row?.created_at),
-    };
-  }
+if (estadoActualKey === "SOLICITADO") {
+  return {
+    label: "Pedido",
+    value: formatDate(row?.fecha_pedido_real || row?.created_at),
+  };
+}
 
   if (estadoActualKey === "EN CURSO") {
     return {
@@ -2085,19 +2085,28 @@ const estadoFechaInfo = (() => {
     };
   }
 
-  if (estadoActualKey === "ENTREGADO") {
-    if (resultKey === "OBSERVADO") {
-      return {
-        label: "Observado",
-        value: formatDate(row?.observed_date || row?.datos_legajo_actualizado_en),
-      };
-    }
-
+if (estadoActualKey === "ENTREGADO") {
+  if (resultKey === "OBSERVADO") {
     return {
-      label: "Entregado",
-      value: formatDate(row?.datos_legajo_actualizado_en || row?.updated_at || row?.created_at),
+      label: "Observado",
+      value: formatDate(
+        row?.fecha_entrega_real ||
+          row?.observed_date ||
+          row?.datos_legajo_actualizado_en
+      ),
     };
   }
+
+  return {
+    label: "Entregado",
+    value: formatDate(
+      row?.fecha_entrega_real ||
+        row?.datos_legajo_actualizado_en ||
+        row?.updated_at ||
+        row?.created_at
+    ),
+  };
+}
 
   if (estadoActualKey === "ANULADO") {
     return {
@@ -2314,6 +2323,19 @@ const headerDatoPrincipalLabel = headerEsPersona
 const headerDatoPrincipalValue = headerEsPersona
   ? personaConsultadaHeader || "—"
   : row?.dominio || "—";
+
+  const fechaPedidoVisible =
+  row?.fecha_pedido_real || row?.created_at;
+
+const fechaEntregaVisible =
+  row?.fecha_entrega_real ||
+  row?.datos_legajo_actualizado_en ||
+  row?.updated_at;
+
+const fechaEstadoVisible =
+  estadoActualKey === "ENTREGADO"
+    ? fechaEntregaVisible
+    : fechaPedidoVisible;
 
   return (
     <div style={pageStyle}>
