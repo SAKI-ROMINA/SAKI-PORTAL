@@ -2526,18 +2526,18 @@ value={
 }
 />
 
-  <ContextItem
-    icon={<Car size={32} />}
-    label="DOMINIO"
-    value={row?.dominio || "—"}
-  />
+<ContextItem
+  icon={esInformePersonal ? <UserRound size={32} /> : <Car size={32} />}
+  label={headerDatoPrincipalLabel}
+  value={headerDatoPrincipalValue}
+/>
 </section>
 
 <section style={caseOverviewStyle}>
   <div style={caseOverviewTopStyle}>
     <div>
-      <div style={caseLabelStyle}>DOMINIO</div>
-<div style={caseDomainStyle}>{row?.dominio || "—"}</div>
+      <div style={caseLabelStyle}>{headerDatoPrincipalLabel}</div>
+<div style={caseDomainStyle}>{headerDatoPrincipalValue}</div>
 
       <div style={caseMoneyPillStyle}>
   <span style={caseMoneyIconStyle}>
@@ -7879,9 +7879,23 @@ function FichaImpresion({
   const esInformeNominal =
     informeTipoKey === "informe_nominal" ||
     informeTipoKey === "indice_titularidad";
+    
+const esInformePersonal =
+  informeTipoKey === "anotaciones_personales" || esInformeNominal;
 
-  const esInformePersonal =
-    informeTipoKey === "anotaciones_personales" || esInformeNominal;
+const personaConsultadaHeader =
+  row?.titular_dominio ||
+  row?.identificacion_nombre ||
+  row?.titular_razon_social ||
+  `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim();
+
+const headerDatoPrincipalLabel = esInformePersonal
+  ? "PERSONA CONSULTADA"
+  : "DOMINIO";
+
+const headerDatoPrincipalValue = esInformePersonal
+  ? personaConsultadaHeader || "—"
+  : row?.dominio || "—";
 
   const personaConsultada =
     row?.titular_dominio ||
