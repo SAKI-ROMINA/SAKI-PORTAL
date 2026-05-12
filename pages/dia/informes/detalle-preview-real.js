@@ -2857,155 +2857,19 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
   <div className="print-only print-resumen-legajo">
     <div className="print-header">
       <div className="print-brand">SAKI</div>
+
       <h1>Resumen del informe</h1>
+
       <p>
-  {headerDatoPrincipalLabel}:{" "}
-  <strong>{headerDatoPrincipalValue}</strong>
-</p>
+        {headerDatoPrincipalLabel}:{" "}
+        <strong>{headerDatoPrincipalValue}</strong>
+      </p>
+
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
     <section className="print-section">
       <h2>Datos principales</h2>
-      <div className="print-grid">
-        <div>
-          <span>Tienda</span>
-          <strong>{row?.tienda || "—"}</strong>
-        </div>
-        <div>
-          <span>Franquiciado</span>
-          <strong>{row?.frq_razon_social || row?.frq || "—"}</strong>
-        </div>
-        <div>
-          <span>CUIT franquiciado</span>
-          <strong>{row?.frq_cuit || "—"}</strong>
-        </div>
-        <div>
-          <span>Estado actual</span>
-          <strong>{row?.estado || "—"}</strong>
-        </div>
-      </div>
-    </section>
-    
-    <section className="print-section">
-      <h2>Dominio / Automotor</h2>
-      <div className="print-grid">
-        <div>
-          <span>Dominio</span>
-          <strong>{row?.dominio || "—"}</strong>
-        </div>
-        <div>
-          <span>Marca</span>
-          <strong>{row?.marca || "—"}</strong>
-        </div>
-        <div>
-          <span>Modelo</span>
-          <strong>{row?.modelo || "—"}</strong>
-        </div>
-        <div>
-          <span>Tipo</span>
-          <strong>{row?.tipo || "—"}</strong>
-        </div>
-        <div>
-          <span>Motor</span>
-          <strong>{row?.numero_motor || "—"}</strong>
-        </div>
-        <div>
-          <span>Chasis</span>
-          <strong>{row?.numero_chasis || "—"}</strong>
-        </div>
-        <div>
-          <span>Radicación</span>
-          <strong>{row?.radicacion || "—"}</strong>
-        </div>
-        <div>
-          <span>Registro interviniente</span>
-          <strong>{row?.registro_interviniente || "—"}</strong>
-        </div>
-      </div>
-    </section>
-
-<section className="print-section">
-  <h2>Informe</h2>
-  <div className="print-grid">
-    <div>
-      <span>Tipo de informe</span>
-      <strong>{getInformeTipoLabel(row?.type)}</strong>
-    </div>
-
-    <div>
-      <span>Estado</span>
-      <strong>{row?.status || row?.estado || "—"}</strong>
-    </div>
-
-    <div>
-      <span>Resultado</span>
-      <strong>{row?.result || "Pendiente"}</strong>
-    </div>
-
-    <div>
-      <span>Fecha del pedido</span>
-      <strong>{formatDate(row?.created_at) || "—"}</strong>
-    </div>
-
-    <div>
-      <span>Estado observado</span>
-      <strong>{row?.observed_status || "—"}</strong>
-    </div>
-
-    <div>
-      <span>Detalle / otros</span>
-      <strong>{row?.observed_other || "—"}</strong>
-    </div>
-  </div>
-</section>
-
-    <section className="print-section">
-      <h2>Garante / Titular</h2>
-      <div className="print-grid">
-        <div>
-          <span>Nombre / Razón social</span>
-          <strong>
-            {row?.titular_tipo_persona === "JURIDICA"
-              ? row?.titular_razon_social || "—"
-              : `${row?.titular_apellido || ""} ${
-                  row?.titular_nombres || ""
-                }`.trim() || "—"}
-          </strong>
-        </div>
-        <div>
-          <span>CUIT / CUIL</span>
-          <strong>{row?.titular_cuil_cuit || row?.titular_cuit || "—"}</strong>
-        </div>
-        <div>
-          <span>Estado civil</span>
-          <strong>{row?.titular_estado_civil || "—"}</strong>
-        </div>
-        <div>
-          <span>Titularidad</span>
-          <strong>
-            {row?.porcentaje_titular ? `${row.porcentaje_titular}%` : "—"}
-          </strong>
-        </div>
-      </div>
-    </section>
-  </div>
-)}
-
-{printMode === "informe" && (
-  <div className="print-only print-resumen-legajo">
-    <div className="print-header">
-      <div className="print-brand">SAKI</div>
-      <h1>Ficha Informe</h1>
-      <p>
-  {headerDatoPrincipalLabel}:{" "}
-  <strong>{headerDatoPrincipalValue}</strong>
-</p>
-      <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
-    </div>
-
-    <section className="print-section">
-      <h2>Datos del informe</h2>
 
       <div className="print-grid">
         <div>
@@ -3014,26 +2878,22 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
         </div>
 
         <div>
-          <span>Estado</span>
-          <strong>{row?.status || row?.estado || "—"}</strong>
+          <span>{headerDatoPrincipalLabel}</span>
+          <strong>{headerDatoPrincipalValue}</strong>
         </div>
 
         <div>
-          <span>Resultado</span>
-          <strong>{row?.result || "Pendiente"}</strong>
+          <span>CUIT / DNI</span>
+          <strong>
+            {row?.titular_cuit ||
+              row?.titular_cuil_cuit ||
+              row?.identificacion_cuit ||
+              row?.identificacion_dni ||
+              row?.titular_dni ||
+              "—"}
+          </strong>
         </div>
 
-        <div>
-          <span>Fecha del pedido</span>
-          <strong>{formatDate(row?.created_at) || "—"}</strong>
-        </div>
-      </div>
-    </section>
-
-    <section className="print-section">
-      <h2>Datos principales del legajo</h2>
-
-      <div className="print-grid">
         <div>
           <span>Tienda</span>
           <strong>{row?.tienda || "—"}</strong>
@@ -3051,20 +2911,188 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
 
         <div>
           <span>CUIT franquiciado</span>
-          <strong>{row?.frq_cuit || row?.identificacion_cuit || "—"}</strong>
+          <strong>{row?.frq_cuit || "—"}</strong>
         </div>
 
         <div>
-          <span>Dominio</span>
-          <strong>{row?.dominio || "—"}</strong>
+          <span>Estado operativo</span>
+          <strong>{row?.status || row?.estado || "—"}</strong>
+        </div>
+
+        <div>
+          <span>Resultado</span>
+          <strong>{row?.result || "Pendiente"}</strong>
+        </div>
+
+        <div>
+          <span>Fecha del pedido</span>
+          <strong>{formatDate(row?.created_at) || "—"}</strong>
         </div>
       </div>
     </section>
+
+    {!dominioNoAplica && !esInformeNominal && (
+      <section className="print-section">
+        <h2>Dominio / Automotor</h2>
+
+        <div className="print-grid">
+          <div>
+            <span>Dominio</span>
+            <strong>{row?.dominio || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Marca</span>
+            <strong>{row?.marca || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Modelo</span>
+            <strong>{row?.modelo || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Tipo</span>
+            <strong>{row?.tipo || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Modelo año</span>
+            <strong>{row?.modelo_anio || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Motor</span>
+            <strong>{row?.numero_motor || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Chasis</span>
+            <strong>{row?.numero_chasis || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Radicación</span>
+            <strong>{row?.radicacion || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Registro interviniente</span>
+            <strong>{row?.registro_interviniente || "—"}</strong>
+          </div>
+        </div>
+      </section>
+    )}
+
+    {esInformeNominal && (
+      <section className="print-section">
+        <h2>Vehículos informados</h2>
+
+        {Array.isArray(vehiculosNominal) && vehiculosNominal.length > 0 ? (
+          vehiculosNominal.map((vehiculo, index) => (
+            <div
+              key={vehiculo.id || index}
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+                padding: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: "13px",
+                  margin: "0 0 10px",
+                }}
+              >
+                Vehículo {index + 1} ·{" "}
+                {vehiculo?.condicion_titular === "titular_historico"
+                  ? "Titular histórico"
+                  : "Titular actual"}
+              </h2>
+
+              <div className="print-grid">
+                <div>
+                  <span>Dominio</span>
+                  <strong>{vehiculo?.dominio || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>Marca</span>
+                  <strong>{vehiculo?.marca || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>Modelo</span>
+                  <strong>{vehiculo?.modelo || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>Tipo</span>
+                  <strong>{vehiculo?.tipo || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>Año modelo</span>
+                  <strong>{vehiculo?.modelo_anio || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>Registro seccional</span>
+                  <strong>{vehiculo?.registro_seccional || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>Titular</span>
+                  <strong>{vehiculo?.titular || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>CUIT / DNI titular</span>
+                  <strong>{vehiculo?.documento_titular || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>% titular</span>
+                  <strong>{vehiculo?.porcentaje_titular || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>Fecha titular</span>
+                  <strong>{vehiculo?.fecha_titular || "—"}</strong>
+                </div>
+
+                {vehiculo?.observacion && (
+                  <div>
+                    <span>Observación</span>
+                    <strong>{vehiculo.observacion}</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#374151",
+            }}
+          >
+            No hay vehículos informados cargados para este informe.
+          </div>
+        )}
+      </section>
+    )}
 
     <section className="print-section">
       <h2>Resultado / Observación</h2>
 
       <div className="print-grid">
+        <div>
+          <span>Resultado</span>
+          <strong>{row?.result || "Pendiente"}</strong>
+        </div>
+
         <div>
           <span>Estado observado</span>
           <strong>{row?.observed_status || "—"}</strong>
@@ -3076,16 +3104,201 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
         </div>
 
         <div>
-          <span>Monto observado</span>
-          <strong>{row?.observed_amount || "—"}</strong>
-        </div>
-
-        <div>
-          <span>Otros</span>
+          <span>Detalle / otros</span>
           <strong>{row?.observed_other || "—"}</strong>
         </div>
       </div>
+
+      {Array.isArray(observacionesInforme) &&
+        observacionesInforme.length > 0 && (
+          <div style={{ marginTop: "12px" }}>
+            {observacionesInforme.map((obs, index) => (
+              <div
+                key={obs.id || index}
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  padding: "10px",
+                  marginBottom: "10px",
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: "13px",
+                    margin: "0 0 10px",
+                  }}
+                >
+                  Observación {index + 1}
+                </h2>
+
+                <div className="print-grid">
+                  <div>
+                    <span>Tipo</span>
+                    <strong>{obs?.tipo_observacion || "—"}</strong>
+                  </div>
+
+                  <div>
+                    <span>Tipo de medida</span>
+                    <strong>{obs?.tipo_medida || "—"}</strong>
+                  </div>
+
+                  <div>
+                    <span>Acreedor</span>
+                    <strong>{obs?.acreedor || "—"}</strong>
+                  </div>
+
+                  <div>
+                    <span>Juzgado</span>
+                    <strong>{obs?.juzgado || "—"}</strong>
+                  </div>
+
+                  <div>
+                    <span>Actor</span>
+                    <strong>{obs?.actor || "—"}</strong>
+                  </div>
+
+                  <div>
+                    <span>Expediente</span>
+                    <strong>{obs?.expediente || "—"}</strong>
+                  </div>
+
+                  <div>
+                    <span>Fecha inscripción</span>
+                    <strong>{obs?.fecha_inscripcion || "—"}</strong>
+                  </div>
+
+                  <div>
+                    <span>Monto</span>
+                    <strong>{obs?.monto || "—"}</strong>
+                  </div>
+
+                  <div>
+                    <span>Estado</span>
+                    <strong>{obs?.estado || "—"}</strong>
+                  </div>
+
+                  {obs?.observacion && (
+                    <div>
+                      <span>Observación</span>
+                      <strong>{obs.observacion}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
     </section>
+  </div>
+)}
+
+{printMode === "informe" && (
+  <div className="print-only print-resumen-legajo">
+    <div className="print-header">
+      <div className="print-brand">SAKI</div>
+
+      <h1>Ficha Informe</h1>
+
+      <p>
+        {headerDatoPrincipalLabel}:{" "}
+        <strong>{headerDatoPrincipalValue}</strong>
+      </p>
+
+      <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
+    </div>
+
+    <section className="print-section">
+      <h2>Carátula administrativa</h2>
+
+      <div className="print-grid">
+        <div>
+          <span>Tipo de informe</span>
+          <strong>{getInformeTipoLabel(row?.type)}</strong>
+        </div>
+
+        <div>
+          <span>Estado operativo</span>
+          <strong>{row?.status || row?.estado || "—"}</strong>
+        </div>
+
+        <div>
+          <span>Resultado</span>
+          <strong>{row?.result || "Pendiente"}</strong>
+        </div>
+
+        <div>
+          <span>Fecha del pedido</span>
+          <strong>{formatDate(row?.created_at) || "—"}</strong>
+        </div>
+
+        <div>
+          <span>{headerDatoPrincipalLabel}</span>
+          <strong>{headerDatoPrincipalValue}</strong>
+        </div>
+
+        <div>
+          <span>CUIT / DNI</span>
+          <strong>
+            {row?.titular_cuit ||
+              row?.titular_cuil_cuit ||
+              row?.identificacion_cuit ||
+              row?.identificacion_dni ||
+              row?.titular_dni ||
+              "—"}
+          </strong>
+        </div>
+
+        <div>
+          <span>Tienda</span>
+          <strong>{row?.tienda || "—"}</strong>
+        </div>
+
+        <div>
+          <span>Franquiciado</span>
+          <strong>
+            {row?.franquiciado ||
+              row?.frq_razon_social ||
+              row?.frq ||
+              "—"}
+          </strong>
+        </div>
+
+        <div>
+          <span>CUIT franquiciado</span>
+          <strong>{row?.frq_cuit || "—"}</strong>
+        </div>
+
+        {!dominioNoAplica && !esInformeNominal && (
+          <div>
+            <span>Dominio</span>
+            <strong>{row?.dominio || "—"}</strong>
+          </div>
+        )}
+      </div>
+    </section>
+
+    {(row?.result || "").toString().toUpperCase() === "OBSERVADO" && (
+      <section className="print-section">
+        <h2>Resultado observado</h2>
+
+        <div className="print-grid">
+          <div>
+            <span>Estado observado</span>
+            <strong>{row?.observed_status || "OBSERVADO"}</strong>
+          </div>
+
+          <div>
+            <span>Fecha observación</span>
+            <strong>{formatDate(row?.observed_date) || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Detalle / otros</span>
+            <strong>{row?.observed_other || "—"}</strong>
+          </div>
+        </div>
+      </section>
+    )}
   </div>
 )}
 
@@ -3093,74 +3306,196 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
   <div className="print-only print-resumen-legajo">
     <div className="print-header">
       <div className="print-brand">SAKI</div>
-      <h1>Ficha Dominio / Automotor</h1>
+
+      <h1>
+        {esInformeNominal
+          ? "Vehículos informados"
+          : "Ficha Dominio / Automotor"}
+      </h1>
+
       <p>
-  {headerDatoPrincipalLabel}:{" "}
-  <strong>{headerDatoPrincipalValue}</strong>
-</p>
+        {headerDatoPrincipalLabel}:{" "}
+        <strong>{headerDatoPrincipalValue}</strong>
+      </p>
+
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
-    <section className="print-section">
-      <h2>Datos identificatorios del automotor</h2>
+    {esInformeNominal ? (
+      <section className="print-section">
+        <h2>Vehículos informados por el informe nominal</h2>
 
-      <div className="print-grid">
-        <div>
-          <span>Dominio</span>
-          <strong>{row?.dominio || "—"}</strong>
-        </div>
+        {Array.isArray(vehiculosNominal) && vehiculosNominal.length > 0 ? (
+          vehiculosNominal.map((vehiculo, index) => (
+            <div
+              key={vehiculo.id || index}
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+                padding: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: "13px",
+                  margin: "0 0 10px",
+                }}
+              >
+                Vehículo {index + 1} ·{" "}
+                {vehiculo?.condicion_titular === "titular_historico"
+                  ? "Titular histórico"
+                  : "Titular actual"}
+              </h2>
 
-        <div>
-          <span>Marca</span>
-          <strong>{row?.marca || "—"}</strong>
-        </div>
+              <div className="print-grid">
+                <div>
+                  <span>Dominio</span>
+                  <strong>{vehiculo?.dominio || "—"}</strong>
+                </div>
 
-        <div>
-          <span>Modelo</span>
-          <strong>{row?.modelo || "—"}</strong>
-        </div>
+                <div>
+                  <span>Marca</span>
+                  <strong>{vehiculo?.marca || "—"}</strong>
+                </div>
 
-        <div>
-          <span>Tipo</span>
-          <strong>{row?.tipo || "—"}</strong>
-        </div>
+                <div>
+                  <span>Modelo</span>
+                  <strong>{vehiculo?.modelo || "—"}</strong>
+                </div>
 
-        <div>
-          <span>Modelo año</span>
-          <strong>{row?.modelo_anio || "—"}</strong>
-        </div>
+                <div>
+                  <span>Tipo</span>
+                  <strong>{vehiculo?.tipo || "—"}</strong>
+                </div>
 
-        <div>
-          <span>Marca motor</span>
-          <strong>{row?.marca_motor || "—"}</strong>
-        </div>
+                <div>
+                  <span>Año modelo</span>
+                  <strong>{vehiculo?.modelo_anio || "—"}</strong>
+                </div>
 
-        <div>
-          <span>N° motor</span>
-          <strong>{row?.numero_motor || "—"}</strong>
-        </div>
+                <div>
+                  <span>Registro seccional</span>
+                  <strong>{vehiculo?.registro_seccional || "—"}</strong>
+                </div>
 
-        <div>
-          <span>Marca chasis</span>
-          <strong>{row?.marca_chasis || "—"}</strong>
-        </div>
+                <div>
+                  <span>Domicilio registro</span>
+                  <strong>{vehiculo?.registro_domicilio || "—"}</strong>
+                </div>
 
-        <div>
-          <span>N° chasis</span>
-          <strong>{row?.numero_chasis || "—"}</strong>
-        </div>
+                <div>
+                  <span>Localidad</span>
+                  <strong>{vehiculo?.registro_localidad || "—"}</strong>
+                </div>
 
-        <div>
-          <span>Radicación</span>
-          <strong>{row?.radicacion || "—"}</strong>
-        </div>
+                <div>
+                  <span>Provincia</span>
+                  <strong>{vehiculo?.registro_provincia || "—"}</strong>
+                </div>
 
-        <div>
-          <span>Registro interviniente</span>
-          <strong>{row?.registro_interviniente || "—"}</strong>
+                <div>
+                  <span>Titular</span>
+                  <strong>{vehiculo?.titular || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>CUIT / DNI titular</span>
+                  <strong>{vehiculo?.documento_titular || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>% titular</span>
+                  <strong>{vehiculo?.porcentaje_titular || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>Fecha titular</span>
+                  <strong>{vehiculo?.fecha_titular || "—"}</strong>
+                </div>
+
+                {vehiculo?.observacion && (
+                  <div>
+                    <span>Observación</span>
+                    <strong>{vehiculo.observacion}</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#374151",
+            }}
+          >
+            No hay vehículos informados cargados para este informe.
+          </div>
+        )}
+      </section>
+    ) : (
+      <section className="print-section">
+        <h2>Datos identificatorios del automotor</h2>
+
+        <div className="print-grid">
+          <div>
+            <span>Dominio</span>
+            <strong>{row?.dominio || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Marca</span>
+            <strong>{row?.marca || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Modelo</span>
+            <strong>{row?.modelo || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Tipo</span>
+            <strong>{row?.tipo || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Modelo año</span>
+            <strong>{row?.modelo_anio || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Marca motor</span>
+            <strong>{row?.marca_motor || "—"}</strong>
+          </div>
+
+          <div>
+            <span>N° motor</span>
+            <strong>{row?.numero_motor || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Marca chasis</span>
+            <strong>{row?.marca_chasis || "—"}</strong>
+          </div>
+
+          <div>
+            <span>N° chasis</span>
+            <strong>{row?.numero_chasis || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Radicación</span>
+            <strong>{row?.radicacion || "—"}</strong>
+          </div>
+
+          <div>
+            <span>Registro interviniente</span>
+            <strong>{row?.registro_interviniente || "—"}</strong>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    )}
   </div>
 )}
 
@@ -3168,11 +3503,14 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
   <div className="print-only print-resumen-legajo">
     <div className="print-header">
       <div className="print-brand">SAKI</div>
+
       <h1>Ficha Franquiciado</h1>
+
       <p>
-  {headerDatoPrincipalLabel}:{" "}
-  <strong>{headerDatoPrincipalValue}</strong>
-</p>
+        {headerDatoPrincipalLabel}:{" "}
+        <strong>{headerDatoPrincipalValue}</strong>
+      </p>
+
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
@@ -3186,33 +3524,27 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
         </div>
 
         <div>
-          <span>Tipo de persona</span>
-          <strong>
-            {row?.frq_tipo_persona === "HUMANA"
-              ? "Persona humana"
-              : "Persona jurídica"}
-          </strong>
-        </div>
-
-        <div>
           <span>Franquiciado / Razón social</span>
           <strong>
-            {row?.frq_tipo_persona === "HUMANA"
-              ? `${row?.frq_apellido || ""} ${row?.frq_nombres || ""}`.trim() ||
-                row?.frq ||
-                "—"
-              : row?.frq_razon_social || row?.frq || "—"}
+            {row?.frq_razon_social ||
+              row?.franquiciado ||
+              row?.frq ||
+              "—"}
           </strong>
         </div>
 
         <div>
-          <span>CUIT / CUIL</span>
-          <strong>{row?.frq_cuit || "—"}</strong>
+          <span>CUIT</span>
+          <strong>
+            {formatCuit(row?.frq_cuit) ||
+              row?.frq_cuit ||
+              "—"}
+          </strong>
         </div>
 
         <div>
           <span>Email</span>
-          <strong>{row?.frq_email || "—"}</strong>
+          <strong>{row?.frq_email || row?.frq_mail || "—"}</strong>
         </div>
 
         <div>
@@ -3224,6 +3556,21 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
           <span>Domicilio</span>
           <strong>{row?.frq_domicilio || "—"}</strong>
         </div>
+
+        <div>
+          <span>Tipo de informe</span>
+          <strong>{getInformeTipoLabel(row?.type)}</strong>
+        </div>
+
+        <div>
+          <span>Estado operativo</span>
+          <strong>{row?.status || row?.estado || "—"}</strong>
+        </div>
+
+        <div>
+          <span>Resultado</span>
+          <strong>{row?.result || "Pendiente"}</strong>
+        </div>
       </div>
     </section>
   </div>
@@ -3233,206 +3580,127 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
   <div className="print-only print-resumen-legajo">
     <div className="print-header">
       <div className="print-brand">SAKI</div>
-      <h1>Ficha Garante / Titular</h1>
+
+      <h1>
+        {headerDatoPrincipalLabel === "PERSONA CONSULTADA"
+          ? "Persona consultada"
+          : "Titular del dominio"}
+      </h1>
+
       <p>
-  {headerDatoPrincipalLabel}:{" "}
-  <strong>{headerDatoPrincipalValue}</strong>
-</p>
+        {headerDatoPrincipalLabel}:{" "}
+        <strong>{headerDatoPrincipalValue}</strong>
+      </p>
+
       <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
     </div>
 
-    <section className="print-section">
-      <h2>Titular / Garante</h2>
-
-      <div className="print-grid">
-        <div>
-          <span>Tipo de persona</span>
-          <strong>
-            {row?.titular_tipo_persona === "JURIDICA"
-              ? "Persona jurídica"
-              : "Persona humana"}
-          </strong>
-        </div>
-
-        <div>
-          <span>Nombre / Razón social</span>
-          <strong>
-            {row?.titular_tipo_persona === "JURIDICA"
-              ? row?.titular_razon_social || "—"
-              : `${row?.titular_apellido || ""} ${
-                  row?.titular_nombres || ""
-                }`.trim() || "—"}
-          </strong>
-        </div>
-
-        <div>
-          <span>DNI</span>
-          <strong>{row?.titular_dni || "—"}</strong>
-        </div>
-
-        <div>
-          <span>CUIL / CUIT</span>
-          <strong>{row?.titular_cuil_cuit || row?.titular_cuit || "—"}</strong>
-        </div>
-
-        <div>
-          <span>Estado civil</span>
-          <strong>{row?.titular_estado_civil || "—"}</strong>
-        </div>
-
-        <div>
-          <span>Titular desde</span>
-          <strong>
-            {row?.titular_desde ? formatDate(row.titular_desde) : "—"}
-          </strong>
-        </div>
-
-        <div>
-          <span>Porcentaje de titularidad</span>
-          <strong>
-            {row?.porcentaje_titular ? `${row.porcentaje_titular}%` : "—"}
-          </strong>
-        </div>
-
-        <div>
-          <span>Domicilio</span>
-          <strong>{row?.titular_domicilio || "—"}</strong>
-        </div>
-      </div>
-    </section>
-
-    {row?.titular_estado_civil === "CASADO/A" && (
+    {headerDatoPrincipalLabel === "PERSONA CONSULTADA" ? (
       <section className="print-section">
-        <h2>Cónyuge del titular</h2>
+        <h2>Datos de la persona consultada</h2>
 
         <div className="print-grid">
           <div>
-            <span>Apellido</span>
-            <strong>{row?.titular_conyuge_apellido || "—"}</strong>
+            <span>Nombre / Razón social</span>
+            <strong>
+              {row?.titular_dominio ||
+                row?.identificacion_nombre ||
+                row?.titular_razon_social ||
+                `${row?.titular_apellido || ""} ${
+                  row?.titular_nombres || ""
+                }`.trim() ||
+                "—"}
+            </strong>
           </div>
 
           <div>
-            <span>Nombres</span>
-            <strong>{row?.titular_conyuge_nombres || "—"}</strong>
+            <span>CUIT / DNI</span>
+            <strong>
+              {row?.titular_cuit ||
+                row?.titular_cuil_cuit ||
+                row?.identificacion_cuit ||
+                row?.identificacion_dni ||
+                row?.titular_dni ||
+                "—"}
+            </strong>
+          </div>
+
+          <div>
+            <span>Tipo de informe</span>
+            <strong>{getInformeTipoLabel(row?.type)}</strong>
+          </div>
+
+          <div>
+            <span>Fecha del pedido</span>
+            <strong>{formatDate(row?.created_at) || "—"}</strong>
+          </div>
+        </div>
+      </section>
+    ) : (
+      <section className="print-section">
+        <h2>Datos del titular del dominio</h2>
+
+        <div className="print-grid">
+          <div>
+            <span>Nombre / Razón social</span>
+            <strong>
+              {row?.titular_tipo_persona === "JURIDICA"
+                ? row?.titular_razon_social ||
+                  row?.titular_dominio ||
+                  row?.identificacion_nombre ||
+                  "—"
+                : `${row?.titular_apellido || ""} ${
+                    row?.titular_nombres || ""
+                  }`.trim() ||
+                  row?.titular_dominio ||
+                  row?.identificacion_nombre ||
+                  "—"}
+            </strong>
           </div>
 
           <div>
             <span>DNI</span>
-            <strong>{row?.titular_conyuge_dni || "—"}</strong>
+            <strong>{row?.titular_dni || row?.identificacion_dni || "—"}</strong>
           </div>
 
           <div>
             <span>CUIL / CUIT</span>
-            <strong>{row?.titular_conyuge_cuil_cuit || "—"}</strong>
+            <strong>
+              {row?.titular_cuil_cuit ||
+                row?.titular_cuit ||
+                row?.identificacion_cuit ||
+                "—"}
+            </strong>
+          </div>
+
+          <div>
+            <span>Tipo de persona</span>
+            <strong>
+              {row?.titular_tipo_persona === "JURIDICA"
+                ? "Persona jurídica"
+                : "Persona humana"}
+            </strong>
+          </div>
+
+          <div>
+            <span>Titular desde</span>
+            <strong>
+              {row?.titular_desde ? formatDate(row.titular_desde) : "—"}
+            </strong>
+          </div>
+
+          <div>
+            <span>Porcentaje de titularidad</span>
+            <strong>
+              {row?.porcentaje_titular ? `${row.porcentaje_titular}%` : "—"}
+            </strong>
+          </div>
+
+          <div>
+            <span>Domicilio</span>
+            <strong>{row?.titular_domicilio || "—"}</strong>
           </div>
         </div>
-      </section>
-    )}
-
-    {Array.isArray(row?.condominos) && row.condominos.length > 0 && (
-      <section className="print-section">
-        <h2>Condóminos</h2>
-
-        {row.condominos.map((condomino, index) => (
-          <div
-            key={index}
-            style={{
-              marginBottom: "14px",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: "13px",
-                margin: "0 0 10px",
-              }}
-            >
-              Condómino {index + 1}
-            </h2>
-
-            <div className="print-grid">
-              <div>
-                <span>Apellido</span>
-                <strong>{condomino?.apellido || "—"}</strong>
-              </div>
-
-              <div>
-                <span>Nombres</span>
-                <strong>{condomino?.nombres || "—"}</strong>
-              </div>
-
-              <div>
-                <span>DNI</span>
-                <strong>{condomino?.dni || "—"}</strong>
-              </div>
-
-              <div>
-                <span>CUIL / CUIT</span>
-                <strong>{condomino?.cuil_cuit || "—"}</strong>
-              </div>
-
-              <div>
-                <span>Estado civil</span>
-                <strong>{condomino?.estado_civil || "—"}</strong>
-              </div>
-
-              <div>
-                <span>Titular desde</span>
-                <strong>
-                  {condomino?.titular_desde
-                    ? formatDate(condomino.titular_desde)
-                    : "—"}
-                </strong>
-              </div>
-
-              <div>
-                <span>Porcentaje</span>
-                <strong>
-                  {condomino?.porcentaje ? `${condomino.porcentaje}%` : "—"}
-                </strong>
-              </div>
-
-              <div>
-                <span>Domicilio</span>
-                <strong>{condomino?.domicilio || "—"}</strong>
-              </div>
-            </div>
-
-            {condomino?.estado_civil === "CASADO/A" && (
-              <div style={{ marginTop: "12px" }}>
-                <h2
-                  style={{
-                    fontSize: "13px",
-                    margin: "0 0 10px",
-                  }}
-                >
-                  Cónyuge del condómino {index + 1}
-                </h2>
-
-                <div className="print-grid">
-                  <div>
-                    <span>Apellido</span>
-                    <strong>{condomino?.conyuge_apellido || "—"}</strong>
-                  </div>
-
-                  <div>
-                    <span>Nombres</span>
-                    <strong>{condomino?.conyuge_nombres || "—"}</strong>
-                  </div>
-
-                  <div>
-                    <span>DNI</span>
-                    <strong>{condomino?.conyuge_dni || "—"}</strong>
-                  </div>
-
-                  <div>
-                    <span>CUIL / CUIT</span>
-                    <strong>{condomino?.conyuge_cuil_cuit || "—"}</strong>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
       </section>
     )}
   </div>
@@ -3473,7 +3741,7 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
               }}
             >
               {formatDate(item.created_at)} ·{" "}
-              {item.titulo || item.title || "Movimiento del legajo"}
+              {item.titulo || item.title || "Movimiento del informe"}
             </div>
 
             <div
@@ -3519,7 +3787,7 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
             color: "#374151",
           }}
         >
-          No hay movimientos registrados para este legajo.
+          No hay movimientos registrados para este informe.
         </div>
       )}
     </section>
@@ -3558,9 +3826,9 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
         </div>
 
         <div>
-          <span>Dominio</span>
-          <strong>{row?.dominio || "—"}</strong>
-        </div>
+  <span>{headerDatoPrincipalLabel}</span>
+  <strong>{headerDatoPrincipalValue}</strong>
+</div>
 
         <div>
           <span>Franquiciado</span>
@@ -3596,10 +3864,12 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
           titulo: "Resultado del informe",
           fecha: row?.observed_date || row?.datos_legajo_actualizado_en || row?.updated_at,
           detalle:
-            (row?.result || "").toString().toUpperCase() === "OBSERVADO"
-              ? `Informe entregado con observación. ${
-                  row?.observed_status || row?.observed_other || ""
-                }`
+  (row?.result || "").toString().toUpperCase() === "OBSERVADO"
+    ? `Informe entregado con observación. ${
+        row?.observed_other ||
+        row?.observed_status ||
+        "Resultado observado."
+      }`
               : row?.status === "ENTREGADO"
               ? "Informe entregado y disponible para consulta."
               : "Resultado pendiente de carga.",
