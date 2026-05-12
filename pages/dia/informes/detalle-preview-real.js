@@ -967,7 +967,7 @@ const trazabilidadTexto = [
 Fecha de generación: ${new Date().toLocaleDateString("es-AR")}
 
 1. Datos principales
-- Dominio: ${row?.dominio || "—"}
+- ${headerDatoPrincipalLabel}: ${headerDatoPrincipalValue || "—"}
 - Estado actual: ${row?.estado || "—"}
 - Próxima acción: ${proximaAccionInfo?.titulo || "—"}
 - Tienda: ${row?.tienda || "—"}
@@ -979,7 +979,7 @@ Fecha de generación: ${new Date().toLocaleDateString("es-AR")}
 - Tipo de informe: ${getInformeTipoLabel(row?.type)}
 - Estado: ${row?.status || row?.estado || "—"}
 - Resultado: ${row?.result || "Pendiente"}
-- Fecha del pedido: ${row?.created_at ? formatDate(row.created_at) : "—"}
+- Fecha del pedido: ${fechaPedidoVisible ? formatDate(fechaPedidoVisible) : "—"}
 - Estado observado: ${row?.observed_status || "—"}
 - Fecha de observación: ${
     row?.observed_date ? formatDate(row.observed_date) : "—"
@@ -2079,11 +2079,16 @@ if (estadoActualKey === "SOLICITADO") {
 }
 
   if (estadoActualKey === "EN CURSO") {
-    return {
-      label: "Desde",
-      value: formatDate(row?.datos_legajo_actualizado_en || row?.updated_at || row?.created_at),
-    };
-  }
+  return {
+    label: "Desde",
+    value: formatDate(
+      row?.fecha_pedido_real ||
+        row?.datos_legajo_actualizado_en ||
+        row?.updated_at ||
+        row?.created_at
+    ),
+  };
+}
 
 if (estadoActualKey === "ENTREGADO") {
   if (resultKey === "OBSERVADO") {
@@ -2092,7 +2097,8 @@ if (estadoActualKey === "ENTREGADO") {
       value: formatDate(
         row?.fecha_entrega_real ||
           row?.observed_date ||
-          row?.datos_legajo_actualizado_en
+          row?.datos_legajo_actualizado_en ||
+          row?.updated_at
       ),
     };
   }
@@ -2115,10 +2121,10 @@ if (estadoActualKey === "ENTREGADO") {
     };
   }
 
-  return {
-    label: "Fecha",
-    value: formatDate(row?.created_at),
-  };
+return {
+  label: "Fecha",
+  value: formatDate(row?.fecha_pedido_real || row?.created_at),
+};
 })();
 
 const estadoPillColors = (() => {
@@ -2227,7 +2233,7 @@ const resumenLegajoTexto = [
   "SAKI · Informes M&T",
   "",
   `Tipo de informe: ${getInformeTipoLabel(row?.type)}`,
-  `Dominio: ${row?.dominio || "Por completar"}`,
+  `${headerDatoPrincipalLabel}: ${headerDatoPrincipalValue || "Por completar"}`,
   `Tienda: ${row?.tienda || "Por completar"}`,
   `Franquiciado: ${
     row?.franquiciado ||
@@ -2247,7 +2253,7 @@ const resumenLegajoTexto = [
   `Resultado: ${row?.result || "Pendiente"}`,
   `Próxima acción: ${proximaAccionInfo?.titulo || "Por completar"}`,
   "",
-  `Titular / Garante: ${
+  `${titularInformeLabel}: ${
     row?.titular_tipo_persona === "JURIDICA"
       ? row?.titular_razon_social || "Por completar"
       : `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim() ||
@@ -2684,7 +2690,7 @@ value={
       ["Tipo", getInformeTipoLabel(row?.type)],
       ["Estado", row?.status || row?.estado || "Por completar"],
       ["Resultado", row?.result || "Pendiente"],
-      ["Pedido", formatDate(row?.created_at) || "Por completar"],
+      ["Pedido", formatDate(fechaPedidoVisible) || "Por completar"],
     ]}
     action="Ver ficha →"
     onClick={() => setActiveFicha("informe")}
