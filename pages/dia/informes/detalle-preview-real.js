@@ -124,6 +124,26 @@ function createEmptyInformeObservacion() {
   };
 }
 
+function createEmptyVehiculoNominal() {
+  return {
+    condicion_titular: "titular_actual",
+    dominio: "",
+    marca: "",
+    modelo: "",
+    tipo: "",
+    modelo_anio: "",
+    registro_seccional: "",
+    registro_domicilio: "",
+    registro_localidad: "",
+    registro_provincia: "",
+    titular: "",
+    documento_titular: "",
+    porcentaje_titular: "",
+    fecha_titular: "",
+    observacion: "",
+  };
+}
+
 function createEmptyPrendaCondomino() {
   return {
     apellido: "",
@@ -258,6 +278,11 @@ const [observacionInformeMsg, setObservacionInformeMsg] = useState("");
 const [vehiculosNominal, setVehiculosNominal] = useState([]);
 const [loadingVehiculosNominal, setLoadingVehiculosNominal] = useState(false);
 const [vehiculosNominalMsg, setVehiculosNominalMsg] = useState("");
+
+const [savingVehiculosNominal, setSavingVehiculosNominal] = useState(false);
+const [vehiculosNominalForm, setVehiculosNominalForm] = useState([
+  createEmptyVehiculoNominal(),
+]);
 
 const [showObservacionInformeModal, setShowObservacionInformeModal] = useState(false);
 const [savingObservacionInforme, setSavingObservacionInforme] = useState(false);
@@ -1653,6 +1678,220 @@ function handleRemovePrendaCondomino(index) {
       ? prev.condominos.filter((_, itemIndex) => itemIndex !== index)
       : [],
   }));
+}
+
+function handleVehiculoNominalChange(index, field, value) {
+  setVehiculosNominalForm((prev) => {
+    const next = Array.isArray(prev) ? [...prev] : [];
+
+    next[index] = {
+      ...(next[index] || createEmptyVehiculoNominal()),
+      [field]: value,
+    };
+
+    return next;
+  });
+}
+
+function handleAddVehiculoNominal() {
+  setVehiculosNominalForm((prev) => [
+    ...(Array.isArray(prev) ? prev : []),
+    createEmptyVehiculoNominal(),
+  ]);
+}
+
+function handleRemoveVehiculoNominal(index) {
+  setVehiculosNominalForm((prev) => {
+    const next = Array.isArray(prev)
+      ? prev.filter((_, itemIndex) => itemIndex !== index)
+      : [];
+
+    return next.length > 0 ? next : [createEmptyVehiculoNominal()];
+  });
+}
+
+async function handleGuardarVehiculosNominal() {
+  if (!id || !isAdmin || savingVehiculosNominal) return;
+
+  const vehiculosLimpios = (Array.isArray(vehiculosNominalForm)
+    ? vehiculosNominalForm
+    : []
+  )
+    .map((vehiculo) => ({
+      condicion_titular: (
+        vehiculo?.condicion_titular || "titular_actual"
+      ).toString().trim(),
+      dominio: (vehiculo?.dominio || "").toString().trim().toUpperCase(),
+      marca: (vehiculo?.marca || "").toString().trim().toUpperCase(),
+      modelo: (vehiculo?.modelo || "").toString().trim().toUpperCase(),
+      tipo: (vehiculo?.tipo || "").toString().trim().toUpperCase(),
+      modelo_anio: (vehiculo?.modelo_anio || "").toString().trim(),
+      registro_seccional: (vehiculo?.registro_seccional || "")
+        .toString()
+        .trim()
+        .toUpperCase(),
+      registro_domicilio: (vehiculo?.registro_domicilio || "")
+        .toString()
+        .trim()
+        .toUpperCase(),
+      registro_localidad: (vehiculo?.registro_localidad || "")
+        .toString()
+        .trim()
+        .toUpperCase(),
+      registro_provincia: (vehiculo?.registro_provincia || "")
+        .toString()
+        .trim()
+        .toUpperCase(),
+      titular: (vehiculo?.titular || "").toString().trim().toUpperCase(),
+      documento_titular: (vehiculo?.documento_titular || "").toString().trim(),
+      porcentaje_titular: (vehiculo?.porcentaje_titular || "")
+        .toString()
+        .trim(),
+      fecha_titular: (vehiculo?.fecha_titular || "").toString().trim(),
+      observacion: (vehiculo?.observacion || "").toString().trim(),
+    }))
+    .filter((vehiculo) => {
+      return (
+        vehiculo.dominio ||
+        vehiculo.marca ||
+        vehiculo.modelo ||
+        vehiculo.tipo ||
+        vehiculo.modelo_anio ||
+        vehiculo.registro_seccional ||
+        vehiculo.titular ||
+        vehiculo.documento_titular ||
+        vehiculo.porcentaje_titular ||
+        vehiculo.fecha_titular ||
+        vehiculo.observacion
+      );
+    });
+
+  if (vehiculosLimpios.length === 0) {
+    setVehiculosNominalMsg(
+      "Cargá al menos un vehículo informado antes de guardar."
+    );
+    return;
+  }
+
+  try {
+    setSavingVehiculosNominal(true);
+    setVehiculosNominalMsg("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const authorName =
+      currentProfile?.full_name ||
+      currentProfile?.name ||
+      user?.user_metadata?.full_name ||
+      user?.email ||
+      "Usuario";
+
+    const authorEmail = currentProfile?.email || user?.email || null;
+
+    const now = new Date().toISOString();
+
+    const payload = vehiculosLimpios.map((vehiculo) => ({
+      request_id: id,
+      condicion_titular: vehiculo.condicion_titular,
+      dominio: vehiculo.dominio || null,
+      marca: vehiculo.marca || null,
+      modelo: vehiculo.modelo || null,
+      tipo: vehiculo.tipo || null,
+      modelo_anio: vehiculo.modelo_anio || null,
+      registro_seccional: vehiculo.registro_seccional || null,
+      registro_domicilio: vehiculo.registro_domicilio || null,
+      registro_localidad: vehiculo.registro_localidad || null,
+      registro_provincia: vehiculo.registro_provincia || null,
+      titular: vehiculo.titular || null,
+      documento_titular: vehiculo.documento_titular || null,
+      porcentaje_titular: vehiculo.porcentaje_titular || null,
+      fecha_titular: vehiculo.fecha_titular || null,
+      observacion: vehiculo.observacion || null,
+      created_by: user?.id || null,
+      created_by_email: authorEmail,
+      created_at: now,
+    }));
+
+    const { data: createdVehiculos, error: vehiculosError } = await supabase
+      .from("dia_request_informe_nominal_vehiculos")
+      .insert(payload)
+      .select("*");
+
+    if (vehiculosError) throw vehiculosError;
+
+    const resumenVehiculos = vehiculosLimpios
+      .map((vehiculo, index) => {
+        const condicion =
+          vehiculo.condicion_titular === "titular_historico"
+            ? "Titular histórico"
+            : "Titular actual";
+
+        return `${index + 1}. ${condicion} · Dominio: ${
+          vehiculo.dominio || "—"
+        } · ${vehiculo.marca || "—"} ${vehiculo.modelo || ""} · Titular: ${
+          vehiculo.titular || "—"
+        }`;
+      })
+      .join(" | ");
+
+    const { data: createdHistory, error: historyError } = await supabase
+      .from("dia_requests_history")
+      .insert({
+        request_id: id,
+        tipo_evento: "vehiculos_nominal_cargados",
+        titulo: "Vehículos informados cargados",
+        detalle: {
+          cantidad_vehiculos: vehiculosLimpios.length,
+          vehiculos: vehiculosLimpios,
+        },
+        detalle_texto: `SAKI cargó vehículos informados del informe nominal. ${resumenVehiculos}`,
+        created_by_name: authorName,
+        created_by_email: authorEmail,
+        created_at: now,
+      })
+      .select("*")
+      .single();
+
+    if (historyError) throw historyError;
+
+    const { data: updatedInforme, error: updateError } = await supabase
+      .from("dia_requests")
+      .update({
+        datos_legajo_actualizado_en: now,
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (updateError) throw updateError;
+
+    setRow(updatedInforme);
+
+    if (Array.isArray(createdVehiculos)) {
+      setVehiculosNominal((prev) => [
+        ...(Array.isArray(prev) ? prev : []),
+        ...createdVehiculos,
+      ]);
+    }
+
+    if (createdHistory) {
+      setHistoryRows((prev) => [createdHistory, ...(prev || [])]);
+    }
+
+    setVehiculosNominalForm([createEmptyVehiculoNominal()]);
+    setVehiculosNominalMsg("Vehículos informados guardados correctamente.");
+
+    await fetchVehiculosNominal();
+  } catch (error) {
+    console.error("Error guardando vehículos del informe nominal:", error);
+    setVehiculosNominalMsg(
+      error?.message || "No se pudieron guardar los vehículos informados."
+    );
+  } finally {
+    setSavingVehiculosNominal(false);
+  }
 }
 
 async function handleSaveDatosLegajo() {
@@ -4819,6 +5058,412 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
     </div>
   </div>
 </div>
+{esInformeNominal && (
+  <div
+    style={{
+      borderRadius: "20px",
+      border: "1px solid rgba(96,165,250,0.18)",
+      background:
+        "linear-gradient(180deg, rgba(7,31,58,0.72), rgba(3,18,34,0.58))",
+      padding: "18px",
+    }}
+  >
+    <div style={{ marginBottom: "14px" }}>
+      <div
+        style={{
+          fontSize: "11px",
+          fontWeight: 900,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: "#60a5fa",
+          marginBottom: "6px",
+        }}
+      >
+        Vehículos informados
+      </div>
+
+      <div
+        style={{
+          color: "rgba(214,228,245,0.78)",
+          fontSize: "13px",
+          lineHeight: 1.5,
+        }}
+      >
+        Carga de dominios informados por el Informe Nominal. Se puede indicar si
+        la persona consultada figura como titular actual o titular histórico.
+      </div>
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "14px",
+      }}
+    >
+      {vehiculosNominalForm.map((vehiculo, index) => (
+        <div
+          key={index}
+          style={{
+            borderRadius: "18px",
+            border: "1px solid rgba(96,165,250,0.22)",
+            background:
+              "linear-gradient(180deg, rgba(15,50,92,0.68), rgba(3,18,34,0.52))",
+            padding: "14px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: "12px",
+              alignItems: "center",
+              marginBottom: "14px",
+            }}
+          >
+            <div
+              style={{
+                color: "#93c5fd",
+                fontSize: "12px",
+                fontWeight: 900,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+              }}
+            >
+              Vehículo {index + 1}
+            </div>
+
+            {vehiculosNominalForm.length > 1 && (
+              <button
+                type="button"
+                onClick={() => handleRemoveVehiculoNominal(index)}
+                style={{
+                  border: "1px solid rgba(248,113,113,0.28)",
+                  background: "rgba(127,29,29,0.22)",
+                  color: "#fecaca",
+                  borderRadius: "999px",
+                  padding: "7px 10px",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                Quitar
+              </button>
+            )}
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gap: "12px",
+            }}
+          >
+            <div>
+              <label style={modalFieldLabelStyle}>Condición</label>
+              <select
+                style={modalInputStyle}
+                value={vehiculo.condicion_titular}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "condicion_titular",
+                    e.target.value
+                  )
+                }
+              >
+                <option value="titular_actual">Titular actual</option>
+                <option value="titular_historico">Titular histórico</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>Dominio</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.dominio}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "dominio",
+                    e.target.value.toUpperCase()
+                  )
+                }
+                placeholder="Ej. AE387DN"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>Marca</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.marca}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "marca",
+                    e.target.value.toUpperCase()
+                  )
+                }
+                placeholder="Ej. FORD"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>Modelo</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.modelo}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "modelo",
+                    e.target.value.toUpperCase()
+                  )
+                }
+                placeholder="Ej. KA SEDAN S"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>Tipo</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.tipo}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "tipo",
+                    e.target.value.toUpperCase()
+                  )
+                }
+                placeholder="Ej. SEDAN 4 PUERTAS"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>Año modelo</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.modelo_anio}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "modelo_anio",
+                    e.target.value
+                  )
+                }
+                placeholder="Ej. 2020"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>Registro seccional</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.registro_seccional}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "registro_seccional",
+                    e.target.value.toUpperCase()
+                  )
+                }
+                placeholder="Ej. 01158 - TRES DE FEBRERO N° 3"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>Domicilio registro</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.registro_domicilio}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "registro_domicilio",
+                    e.target.value.toUpperCase()
+                  )
+                }
+                placeholder="Domicilio del registro"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>Localidad / Provincia</label>
+              <input
+                style={modalInputStyle}
+                value={`${vehiculo.registro_localidad || ""}${
+                  vehiculo.registro_provincia
+                    ? ` / ${vehiculo.registro_provincia}`
+                    : ""
+                }`}
+                onChange={(e) => {
+                  const [localidad, provincia] = e.target.value.split("/");
+                  handleVehiculoNominalChange(
+                    index,
+                    "registro_localidad",
+                    (localidad || "").toUpperCase().trim()
+                  );
+                  handleVehiculoNominalChange(
+                    index,
+                    "registro_provincia",
+                    (provincia || "").toUpperCase().trim()
+                  );
+                }}
+                placeholder="Ej. CABA / BUENOS AIRES"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>Titular</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.titular}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "titular",
+                    e.target.value.toUpperCase()
+                  )
+                }
+                placeholder="Titular informado"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>CUIT / DNI titular</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.documento_titular}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "documento_titular",
+                    e.target.value
+                  )
+                }
+                placeholder="CUIT / DNI"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>% titular</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.porcentaje_titular}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "porcentaje_titular",
+                    e.target.value
+                  )
+                }
+                placeholder="Ej. 100"
+              />
+            </div>
+
+            <div>
+              <label style={modalFieldLabelStyle}>Fecha titular</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.fecha_titular}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "fecha_titular",
+                    e.target.value
+                  )
+                }
+                placeholder="Ej. 25/03/2022"
+              />
+            </div>
+
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={modalFieldLabelStyle}>Observación</label>
+              <input
+                style={modalInputStyle}
+                value={vehiculo.observacion}
+                onChange={(e) =>
+                  handleVehiculoNominalChange(
+                    index,
+                    "observacion",
+                    e.target.value
+                  )
+                }
+                placeholder="Detalle adicional"
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleAddVehiculoNominal}
+          style={{
+            border: "1px solid rgba(96, 165, 250, 0.34)",
+            background: "rgba(37, 99, 235, 0.14)",
+            color: "#bfdbfe",
+            borderRadius: "999px",
+            padding: "9px 14px",
+            fontSize: "13px",
+            fontWeight: 850,
+            cursor: "pointer",
+          }}
+        >
+          + Agregar otro vehículo
+        </button>
+
+        <button
+          type="button"
+          onClick={handleGuardarVehiculosNominal}
+          disabled={savingVehiculosNominal}
+          style={{
+            border: "none",
+            background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
+            color: "#ffffff",
+            borderRadius: "999px",
+            padding: "10px 15px",
+            fontSize: "13px",
+            fontWeight: 850,
+            opacity: savingVehiculosNominal ? 0.65 : 1,
+            cursor: savingVehiculosNominal ? "not-allowed" : "pointer",
+          }}
+        >
+          {savingVehiculosNominal
+            ? "Guardando..."
+            : "Guardar vehículos informados"}
+        </button>
+      </div>
+
+      {vehiculosNominalMsg && (
+        <div
+          style={{
+            borderRadius: "14px",
+            border: "1px solid rgba(56,189,248,0.22)",
+            background: "rgba(14,165,233,0.10)",
+            color: "#bae6fd",
+            padding: "11px 12px",
+            fontSize: "13px",
+            lineHeight: 1.45,
+          }}
+        >
+          {vehiculosNominalMsg}
+        </div>
+      )}
+    </div>
+  </div>
+)}
 <div
   style={{
     borderRadius: "20px",
