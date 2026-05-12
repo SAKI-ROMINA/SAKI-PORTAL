@@ -2195,7 +2195,14 @@ value={
               ×
             </button>
 
-            {activeFicha === "informe" && <FichaInforme row={row} />}
+            {activeFicha === "informe" && (
+  <FichaInforme
+    row={row}
+    observacionesInforme={observacionesInforme}
+    loadingObservacionesInforme={loadingObservacionesInforme}
+  />
+)}
+
 {activeFicha === "dominio" && <FichaDominio row={row} />}
 {activeFicha === "frq" && <FichaFrq row={row} />}
 {activeFicha === "garante" && (
@@ -5679,7 +5686,11 @@ dominio, franquiciado y titularidad.
   );
 }
 
-function FichaInforme({ row }) {
+function FichaInforme({
+  row,
+  observacionesInforme = [],
+  loadingObservacionesInforme = false,
+}) {
   const estado = row?.status || row?.estado || "Por completar";
   const resultado = row?.result || "Pendiente";
 
@@ -5708,6 +5719,27 @@ function FichaInforme({ row }) {
     row?.titular_dni ||
     "Por completar";
 
+  const resultadoKey = (resultado || "").toString().trim().toUpperCase();
+
+  const tieneObservacion =
+    resultadoKey === "OBSERVADO" ||
+    row?.observed_status ||
+    row?.observed_other ||
+    row?.observed_amount ||
+    (Array.isArray(observacionesInforme) && observacionesInforme.length > 0);
+
+  const getTipoObservacionLabel = (value) => {
+    const key = (value || "").toString().trim();
+
+    if (key === "prenda") return "Prenda";
+    if (key === "embargo") return "Embargo";
+    if (key === "inhibicion") return "Inhibición";
+    if (key === "medida_cautelar") return "Medida cautelar";
+    if (key === "otro") return "Otro";
+
+    return key || "Observación";
+  };
+
   return (
     <div style={credentialStyle}>
       <div style={credentialTopStyle}>
@@ -5731,7 +5763,7 @@ function FichaInforme({ row }) {
         />
 
         <FichaDato
-          label="Estado"
+          label="Estado operativo"
           value={estado}
         />
 
@@ -5744,8 +5776,7 @@ function FichaInforme({ row }) {
           label="Fecha del pedido"
           value={formatDate(row?.created_at) || "Por completar"}
         />
-
-        <FichaDato
+<FichaDato
   label={personaInformeLabel}
   value={personaInformeNombre}
 />
@@ -5756,9 +5787,21 @@ function FichaInforme({ row }) {
 />
 
         <FichaDato
-          label="Dominio"
-          value={row?.dominio || "Por completar"}
+          label={personaInformeLabel}
+          value={personaInformeNombre}
         />
+
+        <FichaDato
+          label="CUIT / DNI"
+          value={personaInformeDocumento}
+        />
+
+        {esInformeSobreDominio && (
+          <FichaDato
+            label="Dominio"
+            value={row?.dominio || "Por completar"}
+          />
+        )}
 
         <FichaDato
           label="Tienda"
@@ -5784,26 +5827,179 @@ function FichaInforme({ row }) {
           }
         />
 
-        <FichaDato
-          label="Estado observado"
-          value={row?.observed_status || "Sin observación cargada"}
-        />
+        {tieneObservacion && (
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              marginTop: "10px",
+              paddingTop: "18px",
+              borderTop: "1px solid rgba(148,163,184,0.14)",
+            }}
+          >
+            <div
+              style={{
+                color: "#93c5fd",
+                fontSize: "12px",
+                fontWeight: 900,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                marginBottom: "14px",
+              }}
+            >
+              Detalle de observación
+            </div>
 
-        <FichaDato
-          label="Fecha observación"
-          value={formatDate(row?.observed_date) || "Por completar"}
-        />
+            {loadingObservacionesInforme ? (
+              <div style={historyPlaceholderStyle}>
+                Cargando observaciones del informe...
+              </div>
+            ) : Array.isArray(observacionesInforme) &&
+              observacionesInforme.length > 0 ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                {observacionesInforme.map((obs, index) => (
+                  <div
+                    key={obs.id || index}
+                    style={{
+                      borderRadius: "18px",
+                      border: "1px solid rgba(248,113,113,0.22)",
+                      background:
+                        "linear-gradient(180deg, rgba(127,29,29,0.18), rgba(3,18,34,0.46))",
+                      padding: "14px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "#fecaca",
+                        fontSize: "12px",
+                        fontWeight: 900,
+                        letterSpacing: "0.10em",
+                        textTransform: "uppercase",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      Observación {index + 1} ·{" "}
+                      {getTipoObservacionLabel(obs?.tipo_observacion)}
+                    </div>
 
-        <FichaDato
-          label="Monto observado"
-          value={row?.observed_amount || "Por completar"}
-        />
+                    <div style={credentialInfoGridStyle}>
+                      <FichaDato
+                        label="Tipo"
+                        value={getTipoObservacionLabel(obs?.tipo_observacion)}
+                      />
 
-        <FichaDato
-          label="Detalle / otros"
-          value={row?.observed_other || "Sin detalle cargado"}
-          wide
-        />
+                      {obs?.tipo_medida && (
+                        <FichaDato
+                          label="Tipo de medida"
+                          value={obs.tipo_medida}
+                        />
+                      )}
+
+                      {obs?.acreedor && (
+                        <FichaDato
+                          label="Acreedor"
+                          value={obs.acreedor}
+                        />
+                      )}
+
+                      {obs?.grado && (
+                        <FichaDato
+                          label="Grado"
+                          value={obs.grado}
+                        />
+                      )}
+
+                      {obs?.juzgado && (
+                        <FichaDato
+                          label="Juzgado"
+                          value={obs.juzgado}
+                        />
+                      )}
+
+                      {obs?.actor && (
+                        <FichaDato
+                          label="Actor"
+                          value={obs.actor}
+                        />
+                      )}
+
+                      {obs?.expediente && (
+                        <FichaDato
+                          label="Expediente"
+                          value={obs.expediente}
+                        />
+                      )}
+
+                      {obs?.fecha_contrato && (
+                        <FichaDato
+                          label="Fecha contrato"
+                          value={formatDate(obs.fecha_contrato)}
+                        />
+                      )}
+
+                      {obs?.fecha_inscripcion && (
+                        <FichaDato
+                          label="Fecha inscripción"
+                          value={formatDate(obs.fecha_inscripcion)}
+                        />
+                      )}
+
+                      {obs?.monto && (
+                        <FichaDato
+                          label="Monto"
+                          value={obs.monto}
+                        />
+                      )}
+
+                      {obs?.estado && (
+                        <FichaDato
+                          label="Estado"
+                          value={obs.estado}
+                        />
+                      )}
+
+                      {obs?.observacion && (
+                        <FichaDato
+                          label="Observación"
+                          value={obs.observacion}
+                          wide
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={credentialInfoGridStyle}>
+                <FichaDato
+                  label="Estado observado"
+                  value={row?.observed_status || "Observado"}
+                />
+
+                <FichaDato
+                  label="Fecha observación"
+                  value={formatDate(row?.observed_date) || "Por completar"}
+                />
+
+                <FichaDato
+                  label="Monto observado"
+                  value={row?.observed_amount || "Por completar"}
+                />
+
+                <FichaDato
+                  label="Detalle / otros"
+                  value={row?.observed_other || "Sin detalle cargado"}
+                  wide
+                />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
