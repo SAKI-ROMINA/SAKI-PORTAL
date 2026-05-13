@@ -8537,15 +8537,15 @@ function FichaInforme({
   key={obs.id || index}
   style={{
     borderRadius: "18px",
-    border: "1px solid rgba(96, 165, 250, 0.18)",
+    border: "1px solid rgba(245, 158, 11, 0.34)",
     background:
-      "linear-gradient(180deg, rgba(7,31,58,0.72), rgba(3,18,34,0.58))",
+      "linear-gradient(180deg, rgba(120, 70, 18, 0.20), rgba(3,18,34,0.62))",
     padding: "14px",
   }}
 >
   <div
     style={{
-      color: "#93c5fd",
+      color: "#fcd34d",
       fontSize: "12px",
       fontWeight: 900,
       letterSpacing: "0.10em",
