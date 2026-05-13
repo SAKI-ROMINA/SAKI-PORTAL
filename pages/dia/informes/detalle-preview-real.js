@@ -2774,13 +2774,17 @@ value={
       "Nombre",
       row?.titular_dominio ||
         row?.identificacion_nombre ||
+        row?.titular_razon_social ||
+        `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim() ||
         "Por completar",
     ],
     [
       "CUIT / DNI",
       row?.titular_cuit ||
+        row?.titular_cuil_cuit ||
         row?.identificacion_cuit ||
         row?.identificacion_dni ||
+        row?.titular_dni ||
         "Por completar",
     ],
   ]}
