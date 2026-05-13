@@ -1953,9 +1953,24 @@ result:
     : datosLegajoForm.result || null,
 fecha_pedido_real: normalizeDateForDb(datosLegajoForm.fecha_pedido_real),
 fecha_entrega_real: normalizeDateForDb(datosLegajoForm.fecha_entrega_real),
-observed_status: datosLegajoForm.observed_status || null,
-observed_date: normalizeDateForDb(datosLegajoForm.observed_date),
-observed_other: datosLegajoForm.observed_other || null,
+observed_status:
+  datosLegajoForm.result === "OBSERVADO"
+    ? datosLegajoForm.observed_status || "OBSERVADO"
+    : null,
+
+observed_date:
+  datosLegajoForm.result === "OBSERVADO"
+    ? normalizeDateForDb(
+        datosLegajoForm.observed_date ||
+          datosLegajoForm.fecha_entrega_real ||
+          datosLegajoForm.fecha_pedido_real
+      )
+    : null,
+
+observed_other:
+  datosLegajoForm.result === "OBSERVADO"
+    ? datosLegajoForm.observed_other || null
+    : null,
       
       // Dominio / automotor
       dominio: datosLegajoForm.dominio || null,
