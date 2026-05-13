@@ -313,6 +313,7 @@ const [datosLegajoError, setDatosLegajoError] = useState("");
 const [datosLegajoForm, setDatosLegajoForm] = useState(
   buildDatosLegajoForm(null)
 );
+const [datosLegajoDirty, setDatosLegajoDirty] = useState(false);
 
 const [printMode, setPrintMode] = useState(null);
 
@@ -638,6 +639,7 @@ async function handleEliminarArchivoLegajo(file) {
 function handleOpenDatosLegajoEditor() {
   setDatosLegajoForm(buildDatosLegajoForm(row));
   setDatosLegajoError("");
+  setDatosLegajoDirty(false);
   setShowDatosLegajoEditor(true);
 }
 
@@ -1631,12 +1633,23 @@ async function handleAnularInforme() {
 }
 
 function handleCancelDatosLegajoEditor() {
+  if (datosLegajoDirty) {
+    const confirmarSalida = window.confirm(
+      "Tenés cambios sin guardar. Si salís ahora, vas a perder los datos cargados. ¿Querés salir igual?"
+    );
+
+    if (!confirmarSalida) return;
+  }
+
   setDatosLegajoForm(buildDatosLegajoForm(row));
   setDatosLegajoError("");
+  setDatosLegajoDirty(false);
   setShowDatosLegajoEditor(false);
 }
 
 function handleDatosLegajoChange(field, value) {
+  setDatosLegajoDirty(true);
+
   setDatosLegajoForm((prev) => ({
     ...prev,
     [field]: value,
@@ -2023,6 +2036,7 @@ titulo: "Datos del informe actualizados",
     setDatosLegajoForm(buildDatosLegajoForm(data));
     setShowDatosLegajoEditor(false);
     setDatosLegajoError("");
+    setDatosLegajoDirty(false);
   } catch (error) {
     console.error("Error guardando datos del legajo:", error);
     setDatosLegajoError(
@@ -2073,6 +2087,21 @@ useEffect(() => {
 
   fetchCurrentProfile();
 }, []);
+
+useEffect(() => {
+  if (!datosLegajoDirty) return;
+
+  const handleBeforeUnload = (event) => {
+    event.preventDefault();
+    event.returnValue = "";
+  };
+
+  window.addEventListener("beforeunload", handleBeforeUnload);
+
+  return () => {
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+  };
+}, [datosLegajoDirty]);
 
 const estadoFechaInfo = (() => {
   const resultKey = (row?.result || "").toString().trim().toUpperCase();
