@@ -164,9 +164,8 @@ const validateInformeForm = () => {
   }
 
   const requiereIdentificacion =
-    tipoInforme === "certificado_dominio" ||
-    tipoInforme === "anotaciones_personales" ||
-    tipoInforme === "indice_titularidad";
+  tipoInforme === "anotaciones_personales" ||
+  tipoInforme === "indice_titularidad";
 
   if (requiereIdentificacion) {
     if (!(form.identificacion_nombre || "").trim()) {
@@ -369,7 +368,9 @@ if ((form.notes || "").trim()) {
   }
 };
 
-  const muestraBloqueExtra = tipoInforme && tipoInforme !== "informe_dominio";
+  const muestraBloqueExtra =
+  tipoInforme === "anotaciones_personales" ||
+  tipoInforme === "indice_titularidad";
 
 const esCertificado = tipoInforme === "certificado_dominio";
 const esAnotaciones = tipoInforme === "anotaciones_personales";
