@@ -1901,15 +1901,20 @@ async function handleSaveDatosLegajo() {
   setDatosLegajoError("");
 
   const titularidadTotal =
-    Math.round(getPrendaTitularidadTotal(datosLegajoForm) * 100) / 100;
+  Math.round(getPrendaTitularidadTotal(datosLegajoForm) * 100) / 100;
 
-  if (titularidadTotal !== 100) {
-    setSavingDatosLegajo(false);
-    setDatosLegajoError(
-      `La titularidad debe sumar 100%. Actualmente suma ${titularidadTotal}%.`
-    );
-    return;
-  }
+const hayTitularidadCargada =
+  datosLegajoForm.porcentaje_titular !== "" ||
+  (Array.isArray(datosLegajoForm.condominos) &&
+    datosLegajoForm.condominos.length > 0);
+
+if (hayTitularidadCargada && titularidadTotal !== 100) {
+  setSavingDatosLegajo(false);
+  setDatosLegajoError(
+    `La titularidad debe sumar 100%. Actualmente suma ${titularidadTotal}%.`
+  );
+  return;
+}
 
   try {
     const {
