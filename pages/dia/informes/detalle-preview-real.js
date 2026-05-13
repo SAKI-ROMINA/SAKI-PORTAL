@@ -2074,11 +2074,14 @@ titulo: "Datos del informe actualizados",
     setDatosLegajoError("");
     setDatosLegajoDirty(false);
   } catch (error) {
-    console.error("Error guardando datos del legajo:", error);
-    setDatosLegajoError(
-      error?.message || "No se pudieron guardar los datos del legajo."
-    );
-  } finally {
+  console.error("Error guardando datos del legajo:", error);
+
+  const mensajeError =
+    error?.message || "No se pudieron guardar los datos del legajo.";
+
+  setDatosLegajoError(mensajeError);
+  alert(mensajeError);
+} finally {
     setSavingDatosLegajo(false);
   }
 }
