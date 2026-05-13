@@ -4035,7 +4035,7 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 10000,
+      zIndex: 10020,
       padding: "24px",
     }}
     onClick={handleCancelObservacionInformeModal}
@@ -4491,7 +4491,7 @@ background:
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 10000,
+      zIndex: 10020,
       padding: "24px",
     }}
     onClick={handleCancelObservacionInformeModal}
