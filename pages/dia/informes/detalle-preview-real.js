@@ -8534,25 +8534,25 @@ function FichaInforme({
               >
                 {observacionesInforme.map((obs, index) => (
                   <div
-                    key={obs.id || index}
-                    style={{
-                      borderRadius: "18px",
-                      border: "1px solid rgba(248,113,113,0.22)",
-                      background:
-                        "linear-gradient(180deg, rgba(127,29,29,0.18), rgba(3,18,34,0.46))",
-                      padding: "14px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: "#fecaca",
-                        fontSize: "12px",
-                        fontWeight: 900,
-                        letterSpacing: "0.10em",
-                        textTransform: "uppercase",
-                        marginBottom: "12px",
-                      }}
-                    >
+  key={obs.id || index}
+  style={{
+    borderRadius: "18px",
+    border: "1px solid rgba(96, 165, 250, 0.18)",
+    background:
+      "linear-gradient(180deg, rgba(7,31,58,0.72), rgba(3,18,34,0.58))",
+    padding: "14px",
+  }}
+>
+  <div
+    style={{
+      color: "#93c5fd",
+      fontSize: "12px",
+      fontWeight: 900,
+      letterSpacing: "0.10em",
+      textTransform: "uppercase",
+      marginBottom: "12px",
+    }}
+  >
                       Observación {index + 1} ·{" "}
                       {getTipoObservacionLabel(obs?.tipo_observacion)}
                     </div>
