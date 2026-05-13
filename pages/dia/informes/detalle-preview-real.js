@@ -4078,9 +4078,9 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
             key={index}
             style={{
               borderRadius: "20px",
-              border: "1px solid rgba(248,113,113,0.24)",
-              background:
-                "linear-gradient(180deg, rgba(127,29,29,0.18), rgba(3,18,34,0.48))",
+              border: "1px solid rgba(245, 158, 11, 0.24)",
+background:
+  "linear-gradient(180deg, rgba(15, 50, 92, 0.72), rgba(3,18,34,0.62))",
               padding: "18px",
             }}
           >
@@ -4095,7 +4095,7 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
             >
               <div
                 style={{
-                  color: "#fecaca",
+                  color: "#fde68a",
                   fontSize: "12px",
                   fontWeight: 900,
                   letterSpacing: "0.12em",
