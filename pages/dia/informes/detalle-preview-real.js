@@ -164,6 +164,15 @@ function createEmptyPrendaCondomino() {
 function buildDatosLegajoForm(source) {
   return {
 
+    // Datos administrativos del informe
+    status: source?.status || source?.estado || "SOLICITADO",
+    result: source?.result || "PENDIENTE",
+    fecha_pedido_real: source?.fecha_pedido_real || "",
+    fecha_entrega_real: source?.fecha_entrega_real || "",
+    observed_status: source?.observed_status || "",
+    observed_date: source?.observed_date || "",
+    observed_other: source?.observed_other || "",
+
     // Dominio / automotor
     dominio: source?.dominio || "",
     marca: source?.marca || "",
@@ -1935,6 +1944,19 @@ if (hayTitularidadCargada && titularidadTotal !== 100) {
     } = await supabase.auth.getUser();
 
     const payload = {
+
+        // Datos administrativos del informe
+status: datosLegajoForm.status || null,
+estado: datosLegajoForm.status || null,
+result:
+  datosLegajoForm.result === "PENDIENTE"
+    ? null
+    : datosLegajoForm.result || null,
+fecha_pedido_real: normalizeDateForDb(datosLegajoForm.fecha_pedido_real),
+fecha_entrega_real: normalizeDateForDb(datosLegajoForm.fecha_entrega_real),
+observed_status: datosLegajoForm.observed_status || null,
+observed_date: normalizeDateForDb(datosLegajoForm.observed_date),
+observed_other: datosLegajoForm.observed_other || null,
       
       // Dominio / automotor
       dominio: datosLegajoForm.dominio || null,
@@ -5016,7 +5038,136 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
     gap: "18px",
   }}
 >
-  
+  <div
+  style={{
+    borderRadius: "20px",
+    border: "1px solid rgba(96,165,250,0.22)",
+    background:
+      "linear-gradient(180deg, rgba(15, 50, 92, 0.82), rgba(3,18,34,0.62))",
+    padding: "18px",
+  }}
+>
+  <div style={{ marginBottom: "14px" }}>
+    <div
+      style={{
+        fontSize: "11px",
+        fontWeight: 900,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        color: "#60a5fa",
+        marginBottom: "6px",
+      }}
+    >
+      Datos administrativos del informe
+    </div>
+
+    <div
+      style={{
+        color: "rgba(214,228,245,0.78)",
+        fontSize: "13px",
+        lineHeight: 1.5,
+      }}
+    >
+      Corrección administrativa SAKI. Estos datos pueden actualizarse aunque el
+      informe ya se encuentre entregado.
+    </div>
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+      gap: "12px",
+    }}
+  >
+    <div>
+      <label style={modalFieldLabelStyle}>Estado operativo</label>
+      <select
+        value={datosLegajoForm.status}
+        onChange={(e) => handleDatosLegajoChange("status", e.target.value)}
+        style={modalInputStyle}
+      >
+        <option value="SOLICITADO">Solicitado</option>
+        <option value="EN CURSO">En curso</option>
+        <option value="ENTREGADO">Entregado</option>
+        <option value="ANULADO">Anulado</option>
+      </select>
+    </div>
+
+    <div>
+      <label style={modalFieldLabelStyle}>Resultado</label>
+      <select
+        value={datosLegajoForm.result}
+        onChange={(e) => handleDatosLegajoChange("result", e.target.value)}
+        style={modalInputStyle}
+      >
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="APROBADO">Aprobado</option>
+        <option value="OBSERVADO">Observado</option>
+      </select>
+    </div>
+
+    <div>
+      <label style={modalFieldLabelStyle}>Fecha real del pedido</label>
+      <input
+        style={modalInputStyle}
+        value={datosLegajoForm.fecha_pedido_real}
+        onChange={(e) =>
+          handleDatosLegajoChange("fecha_pedido_real", e.target.value)
+        }
+        placeholder="DD/MM/AAAA"
+      />
+    </div>
+
+    <div>
+      <label style={modalFieldLabelStyle}>Fecha real de entrega</label>
+      <input
+        style={modalInputStyle}
+        value={datosLegajoForm.fecha_entrega_real}
+        onChange={(e) =>
+          handleDatosLegajoChange("fecha_entrega_real", e.target.value)
+        }
+        placeholder="DD/MM/AAAA"
+      />
+    </div>
+
+    <div>
+      <label style={modalFieldLabelStyle}>Estado observado</label>
+      <input
+        style={modalInputStyle}
+        value={datosLegajoForm.observed_status}
+        onChange={(e) =>
+          handleDatosLegajoChange("observed_status", e.target.value.toUpperCase())
+        }
+        placeholder="Ej. OBSERVADO"
+      />
+    </div>
+
+    <div>
+      <label style={modalFieldLabelStyle}>Fecha de observación</label>
+      <input
+        style={modalInputStyle}
+        value={datosLegajoForm.observed_date}
+        onChange={(e) =>
+          handleDatosLegajoChange("observed_date", e.target.value)
+        }
+        placeholder="DD/MM/AAAA"
+      />
+    </div>
+
+    <div style={{ gridColumn: "1 / -1" }}>
+      <label style={modalFieldLabelStyle}>Detalle / observación administrativa</label>
+      <input
+        style={modalInputStyle}
+        value={datosLegajoForm.observed_other}
+        onChange={(e) =>
+          handleDatosLegajoChange("observed_other", e.target.value)
+        }
+        placeholder="Detalle administrativo del resultado, si corresponde"
+      />
+    </div>
+  </div>
+</div>
 <div
   style={{
     borderRadius: "20px",
