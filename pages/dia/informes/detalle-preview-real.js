@@ -1944,7 +1944,6 @@ if (hayTitularidadCargada && titularidadTotal !== 100) {
     } = await supabase.auth.getUser();
 
     const payload = {
-
         // Datos administrativos del informe
 status: datosLegajoForm.status || null,
 estado: datosLegajoForm.status || null,
@@ -5166,6 +5165,28 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
         placeholder="Detalle administrativo del resultado, si corresponde"
       />
     </div>
+    {datosLegajoForm.result === "OBSERVADO" && (
+  <div style={{ gridColumn: "1 / -1" }}>
+    <button
+      type="button"
+      onClick={handleOpenObservacionInformeModal}
+      style={{
+        height: "38px",
+        padding: "0 14px",
+        borderRadius: "12px",
+        border: "1px solid rgba(245, 158, 11, 0.34)",
+        background:
+          "linear-gradient(180deg, rgba(120, 70, 18, 0.32), rgba(3,18,34,0.62))",
+        color: "#fde68a",
+        fontSize: "13px",
+        fontWeight: 850,
+        cursor: "pointer",
+      }}
+    >
+      Cargar observación del informe
+    </button>
+  </div>
+)}
   </div>
 </div>
 <div
