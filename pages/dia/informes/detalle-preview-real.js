@@ -1943,6 +1943,7 @@ if (hayTitularidadCargada && titularidadTotal !== 100) {
       frq_apellido: datosLegajoForm.frq_apellido || null,
       frq_nombres: datosLegajoForm.frq_nombres || null,
       frq_razon_social: datosLegajoForm.frq_razon_social || null,
+      frq_cuit: datosLegajoForm.frq_cuit || null,
       frq_email: datosLegajoForm.frq_email || null,
       frq_telefono: datosLegajoForm.frq_telefono || null,
       frq_domicilio: datosLegajoForm.frq_domicilio || null,
