@@ -9797,6 +9797,29 @@ function FichaDominio({
         <FichaDato label="Dominio" value={row?.dominio || "Por completar"} />
 
         <FichaDato
+  label="Titular"
+  value={
+    row?.titular_dominio ||
+    row?.identificacion_nombre ||
+    row?.titular_razon_social ||
+    `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim() ||
+    "Por completar"
+  }
+/>
+
+<FichaDato
+  label="CUIT / DNI"
+  value={
+    row?.titular_cuit ||
+    row?.titular_cuil_cuit ||
+    row?.identificacion_cuit ||
+    row?.identificacion_dni ||
+    row?.titular_dni ||
+    "Por completar"
+  }
+/>
+
+        <FichaDato
           label="Marca"
           value={row?.marca || row?.vehiculo_marca || "Por completar"}
         />
