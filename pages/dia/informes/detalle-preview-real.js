@@ -9090,47 +9090,45 @@ function FichaInforme({
 />
 
 <FichaDato
-  label="Estado operativo"
-  value={estado}
-/>
-
-<FichaDato
-  label="Resultado"
-  value={resultado}
-/>
-
-<FichaDato
-  label="Fecha del pedido"
-  value={formatDate(row?.fecha_pedido_real || row?.created_at) || "Por completar"}
-/>
-
-<FichaDato
-  label={personaInformeLabel}
-  value={personaInformeNombre}
-/>
-
-<FichaDato
-  label="CUIT / DNI"
-  value={personaInformeDocumento}
-/>
-
-{esInformeSobreDominio && (
-  <FichaDato
-    label="Dominio"
-    value={row?.dominio || "Por completar"}
-  />
-)}
-
-<FichaDato
   label="Tienda"
   value={row?.tienda || "Por completar"}
 />
 
 <FichaDato
-  label="Franquiciado"
+  label="Dominio"
+  value={row?.dominio || "Por completar"}
+/>
+
+<FichaDato
+  label="Fecha del pedido"
+  value={
+    formatDate(row?.fecha_pedido_real || row?.created_at) ||
+    "Por completar"
+  }
+/>
+
+<FichaDato
+  label="Fecha de entrega"
+  value={
+    formatDate(
+      row?.fecha_entrega_real ||
+        row?.datos_legajo_actualizado_en ||
+        row?.updated_at
+    ) || "Por completar"
+  }
+/>
+
+<FichaDato
+  label="Estado operativo / Resultado"
+  value={`${estado || "Por completar"} / ${resultado || "Pendiente"}`}
+/>
+
+<FichaDato
+  label="FRQ"
   value={
     row?.franquiciado ||
     row?.frq_razon_social ||
+    `${row?.frq_apellido || ""} ${row?.frq_nombres || ""}`.trim() ||
     row?.frq ||
     "Por completar"
   }
@@ -9140,12 +9138,20 @@ function FichaInforme({
   label="CUIT FRQ"
   value={
     row?.frq_cuit ||
-    row?.identificacion_cuit ||
     "Por completar"
   }
 />
 
-        {tieneObservacion && (
+<FichaDato
+  label={personaInformeLabel}
+  value={personaInformeNombre}
+/>
+
+<FichaDato
+  label="CUIT titular"
+  value={personaInformeDocumento}
+/>
+          {tieneObservacion && (
           <div
             style={{
               gridColumn: "1 / -1",
