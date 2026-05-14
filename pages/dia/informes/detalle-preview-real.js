@@ -39,6 +39,26 @@ function formatDate(value) {
   return raw;
 }
 
+function normalizeDateForDb(value) {
+  const raw = (value || "").toString().trim();
+
+  if (!raw) return null;
+
+  // Si ya viene como AAAA-MM-DD, lo dejamos igual.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+
+  // Acepta DD/MM/AAAA o DD-MM-AAAA
+  const match = raw.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+
+  if (!match) return raw;
+
+  const [, day, month, year] = match;
+
+  return `${year}-${month}-${day}`;
+}
+
 function getInformeTipoLabel(type) {
   const value = (type || "").toString().trim();
 
