@@ -340,6 +340,7 @@ const [showDatosLegajoEditor, setShowDatosLegajoEditor] = useState(false);
 const [savingDatosLegajo, setSavingDatosLegajo] = useState(false);
 const [datosLegajoError, setDatosLegajoError] = useState("");
 const [editingFrqBlock, setEditingFrqBlock] = useState(false);
+const [editingDominioBlock, setEditingDominioBlock] = useState(false);
 const [datosLegajoForm, setDatosLegajoForm] = useState(
   buildDatosLegajoForm(null)
 );
@@ -671,6 +672,7 @@ function handleOpenDatosLegajoEditor() {
   setDatosLegajoError("");
   setDatosLegajoDirty(false);
   setEditingFrqBlock(false);
+  setEditingDominioBlock(false);
   setShowDatosLegajoEditor(true);
 }
 
@@ -2007,7 +2009,7 @@ async function handleSaveFrqBlock() {
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
-
+setDatosLegajoDirty(false);
     setEditingFrqBlock(false);
   } catch (error) {
     console.error("Error guardando datos del franquiciado:", error);
@@ -5544,7 +5546,16 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
     padding: "18px",
   }}
 >
-  <div style={{ marginBottom: "14px" }}>
+  <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "14px",
+    alignItems: "flex-start",
+    marginBottom: "14px",
+  }}
+>
+  <div>
     <div
       style={{
         fontSize: "11px",
@@ -5570,6 +5581,27 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
     </div>
   </div>
 
+  <button
+    type="button"
+    onClick={() => setEditingDominioBlock(true)}
+    style={{
+      height: "34px",
+      padding: "0 12px",
+      borderRadius: "999px",
+      border: "1px solid rgba(96,165,250,0.28)",
+      background:
+        "linear-gradient(180deg, rgba(37,99,235,0.22), rgba(3,18,34,0.58))",
+      color: "#dbeafe",
+      fontSize: "12px",
+      fontWeight: 850,
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {editingDominioBlock ? "Editando" : "Editar"}
+  </button>
+</div>
+
   <div
     style={{
       display: "grid",
@@ -5580,13 +5612,14 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
     <div>
       <label style={modalFieldLabelStyle}>Dominio</label>
       <input
-        style={modalInputStyle}
-        value={datosLegajoForm.dominio}
-        onChange={(e) =>
-          handleDatosLegajoChange("dominio", e.target.value.toUpperCase())
-        }
-        placeholder="Ej. AC384MD"
-      />
+  style={modalInputStyle}
+  value={datosLegajoForm.dominio}
+  onChange={(e) =>
+    handleDatosLegajoChange("dominio", e.target.value.toUpperCase())
+  }
+  placeholder="Ej. AC384MD"
+  disabled={!editingDominioBlock}
+/>
     </div>
 
     <div>
