@@ -2019,6 +2019,90 @@ setDatosLegajoDirty(false);
   }
 }
 
+async function handleSaveDominioBlock() {
+  if (!id || !isAdmin) return;
+
+  try {
+    setSavingDatosLegajo(true);
+    setDatosLegajoError("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const payload = {
+      dominio: datosLegajoForm.dominio || null,
+      marca: datosLegajoForm.marca || null,
+      modelo: datosLegajoForm.modelo || null,
+      tipo: datosLegajoForm.tipo || null,
+      modelo_anio: datosLegajoForm.modelo_anio || null,
+      marca_motor: datosLegajoForm.marca_motor || null,
+      numero_motor: datosLegajoForm.numero_motor || null,
+      marca_chasis: datosLegajoForm.marca_chasis || null,
+      numero_chasis: datosLegajoForm.numero_chasis || null,
+      radicacion: datosLegajoForm.radicacion || null,
+      registro_interviniente: datosLegajoForm.registro_interviniente || null,
+      datos_legajo_actualizado_en: new Date().toISOString(),
+      datos_legajo_actualizado_por: user?.id || null,
+    };
+
+    const { data, error } = await supabase
+      .from("dia_requests")
+      .update(payload)
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    const { data: createdHistory, error: historyError } = await supabase
+      .from("dia_requests_history")
+      .insert({
+        request_id: id,
+        tipo_evento: "datos_informe_actualizados",
+        titulo: "Datos administrativos del informe actualizados por SAKI",
+        detalle: {
+          seccion: "Dominio / Automotor",
+          campos: [
+            "dominio",
+            "marca",
+            "modelo",
+            "tipo",
+            "modelo_anio",
+            "marca_motor",
+            "numero_motor",
+            "marca_chasis",
+            "numero_chasis",
+            "radicacion",
+            "registro_interviniente",
+          ],
+        },
+        created_by_name: user?.user_metadata?.full_name || null,
+        created_by_email: user?.email || null,
+        created_at: new Date().toISOString(),
+      })
+      .select("*")
+      .single();
+
+    if (historyError) throw historyError;
+
+    setRow(data);
+    setDatosLegajoForm(buildDatosLegajoForm(data));
+
+    if (createdHistory) {
+      setHistoryRows((prev) => [createdHistory, ...prev]);
+    }
+
+    setDatosLegajoDirty(false);
+    setEditingDominioBlock(false);
+  } catch (error) {
+    console.error("Error guardando datos del dominio:", error);
+    alert(error?.message || "No se pudieron guardar los datos del dominio.");
+  } finally {
+    setSavingDatosLegajo(false);
+  }
+}
+
 async function handleSaveDatosLegajo() {
   if (!id || !isAdmin) return;
 
@@ -5745,6 +5829,58 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
       />
     </div>
   </div>
+  {editingDominioBlock && (
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "flex-end",
+      gap: "10px",
+      marginTop: "16px",
+    }}
+  >
+    <button
+      type="button"
+      onClick={() => {
+        setDatosLegajoForm(buildDatosLegajoForm(row));
+        setEditingDominioBlock(false);
+        setDatosLegajoDirty(false);
+      }}
+      style={{
+        height: "38px",
+        padding: "0 14px",
+        borderRadius: "12px",
+        border: "1px solid rgba(148,163,184,0.18)",
+        background: "rgba(255,255,255,0.03)",
+        color: "#dbeafe",
+        fontSize: "13px",
+        fontWeight: 750,
+        cursor: "pointer",
+      }}
+    >
+      Cancelar
+    </button>
+
+    <button
+      type="button"
+      onClick={handleSaveDominioBlock}
+      disabled={savingDatosLegajo}
+      style={{
+        height: "38px",
+        padding: "0 15px",
+        borderRadius: "12px",
+        border: "none",
+        background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
+        color: "#ffffff",
+        fontSize: "13px",
+        fontWeight: 850,
+        opacity: savingDatosLegajo ? 0.65 : 1,
+        cursor: savingDatosLegajo ? "not-allowed" : "pointer",
+      }}
+    >
+      {savingDatosLegajo ? "Guardando..." : "Guardar cambios"}
+    </button>
+  </div>
+)}
 </div>
 {esInformeNominal && (
   <div
