@@ -5715,6 +5715,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("marca", e.target.value.toUpperCase())
         }
         placeholder="Marca"
+        disabled={!editingDominioBlock}
       />
     </div>
 
@@ -5727,6 +5728,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("modelo", e.target.value.toUpperCase())
         }
         placeholder="Modelo"
+        disabled={!editingDominioBlock}
       />
     </div>
 
@@ -5739,6 +5741,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("tipo", e.target.value.toUpperCase())
         }
         placeholder="Ej. Sedán / SUV / Pick-up"
+        disabled={!editingDominioBlock}
       />
     </div>
 
@@ -5751,6 +5754,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("modelo_anio", e.target.value)
         }
         placeholder="Ej. 2025"
+        disabled={!editingDominioBlock}
       />
     </div>
 
@@ -5763,6 +5767,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("marca_motor", e.target.value.toUpperCase())
         }
         placeholder="Marca motor"
+        disabled={!editingDominioBlock}
       />
     </div>
 
@@ -5775,6 +5780,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("numero_motor", e.target.value.toUpperCase())
         }
         placeholder="Número de motor"
+        disabled={!editingDominioBlock}
       />
     </div>
 
@@ -5787,6 +5793,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("marca_chasis", e.target.value.toUpperCase())
         }
         placeholder="Marca chasis"
+        disabled={!editingDominioBlock}
       />
     </div>
 
@@ -5799,6 +5806,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("numero_chasis", e.target.value.toUpperCase())
         }
         placeholder="Número de chasis"
+        disabled={!editingDominioBlock}
       />
     </div>
 
@@ -5811,6 +5819,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("radicacion", e.target.value.toUpperCase())
         }
         placeholder="Radicación"
+        disabled={!editingDominioBlock}
       />
     </div>
 
