@@ -2909,7 +2909,13 @@ value={
     loadingVehiculosNominal={loadingVehiculosNominal}
   />
 )}
-{activeFicha === "frq" && <FichaFrq row={row} />}
+{activeFicha === "frq" && (
+  <FichaFrq
+    row={row}
+    isAdmin={isAdmin}
+    onEdit={() => alert("Editar franquiciado")}
+  />
+)}
 {activeFicha === "garante" && (
   <FichaGarante row={row} titularInformeLabel={titularInformeLabel} />
 )}
@@ -10126,7 +10132,7 @@ function FichaDominio({
   );
 }
 
-function FichaFrq({ row }) {
+function FichaFrq({ row, isAdmin, onEdit }) {
   const nombreFranquiciado =
     row?.frq_razon_social ||
     row?.franquiciado ||
@@ -10147,13 +10153,35 @@ function FichaFrq({ row }) {
           <Store size={34} />
         </div>
 
-        <div>
-          <div style={credentialKickerStyle}>Franquiciado</div>
+        <div style={{ flex: 1 }}>
+  <div style={credentialKickerStyle}>Franquiciado</div>
 
-          <h2 style={credentialNameStyle}>
-            {nombreFranquiciado}
-          </h2>
-        </div>
+  <h2 style={credentialNameStyle}>
+    {nombreFranquiciado}
+  </h2>
+</div>
+
+{isAdmin && (
+  <button
+    type="button"
+    onClick={onEdit}
+    style={{
+      height: "38px",
+      padding: "0 14px",
+      borderRadius: "12px",
+      border: "1px solid rgba(96,165,250,0.24)",
+      background:
+        "linear-gradient(180deg, rgba(37,99,235,0.24), rgba(3,18,34,0.62))",
+      color: "#dbeafe",
+      fontSize: "13px",
+      fontWeight: 850,
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Editar
+  </button>
+)}
       </div>
 
       <div style={credentialInfoGridStyle}>
