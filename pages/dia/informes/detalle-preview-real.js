@@ -341,6 +341,7 @@ const [savingDatosLegajo, setSavingDatosLegajo] = useState(false);
 const [datosLegajoError, setDatosLegajoError] = useState("");
 const [editingFrqBlock, setEditingFrqBlock] = useState(false);
 const [editingDominioBlock, setEditingDominioBlock] = useState(false);
+const [editingTitularBlock, setEditingTitularBlock] = useState(false);
 const [datosLegajoForm, setDatosLegajoForm] = useState(
   buildDatosLegajoForm(null)
 );
@@ -673,6 +674,7 @@ function handleOpenDatosLegajoEditor() {
   setDatosLegajoDirty(false);
   setEditingFrqBlock(false);
   setEditingDominioBlock(false);
+  setEditingTitularBlock(false);
   setShowDatosLegajoEditor(true);
 }
 
@@ -6980,7 +6982,16 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
     padding: "18px",
   }}
 >
-  <div style={{ marginBottom: "14px" }}>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "14px",
+    alignItems: "flex-start",
+    marginBottom: "14px",
+  }}
+>
+  <div>
     <div
       style={{
         fontSize: "11px",
@@ -7005,6 +7016,27 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
       cónyuge y condóminos cuando corresponda.
     </div>
   </div>
+
+  <button
+    type="button"
+    onClick={() => setEditingTitularBlock(true)}
+    style={{
+      height: "34px",
+      padding: "0 12px",
+      borderRadius: "999px",
+      border: "1px solid rgba(96,165,250,0.28)",
+      background:
+        "linear-gradient(180deg, rgba(37,99,235,0.22), rgba(3,18,34,0.58))",
+      color: "#dbeafe",
+      fontSize: "12px",
+      fontWeight: 850,
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {editingTitularBlock ? "Editando" : "Editar"}
+  </button>
+</div>
 
   <div
     style={{
@@ -7041,6 +7073,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="Razón social"
+            disabled={!editingTitularBlock}
           />
         </div>
 
@@ -7056,6 +7089,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="CUIT"
+            disabled={!editingTitularBlock}
           />
         </div>
       </>
@@ -7073,6 +7107,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="Apellido"
+            disabled={!editingTitularBlock}
           />
         </div>
 
@@ -7088,6 +7123,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="Nombres"
+            disabled={!editingTitularBlock}
           />
         </div>
 
@@ -7103,6 +7139,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="DNI"
+            disabled={!editingTitularBlock}
           />
         </div>
 
@@ -7118,6 +7155,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="CUIL / CUIT"
+            disabled={!editingTitularBlock}
           />
         </div>
 
@@ -7164,6 +7202,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("porcentaje_titular", e.target.value)
         }
         placeholder="Ej. 100"
+        disabled={!editingTitularBlock}
       />
     </div>
 
@@ -7179,6 +7218,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           )
         }
         placeholder="Domicilio del titular / garante"
+        disabled={!editingTitularBlock}
       />
     </div>
 
@@ -7210,6 +7250,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="Apellido"
+            disabled={!editingTitularBlock}
           />
         </div>
 
@@ -7225,6 +7266,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="Nombres"
+            disabled={!editingTitularBlock}
           />
         </div>
 
@@ -7240,6 +7282,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="DNI"
+            disabled={!editingTitularBlock}
           />
         </div>
 
@@ -7255,6 +7298,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="CUIL / CUIT"
+            disabled={!editingTitularBlock}
           />
         </div>
       </>
@@ -7362,6 +7406,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
                     )
                   }
                   placeholder="Apellido"
+                  disabled={!editingTitularBlock}
                 />
               </div>
 
@@ -7378,6 +7423,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
                     )
                   }
                   placeholder="Nombres"
+                  disabled={!editingTitularBlock}
                 />
               </div>
 
@@ -7394,6 +7440,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
                     )
                   }
                   placeholder="DNI"
+                  disabled={!editingTitularBlock}
                 />
               </div>
 
@@ -7410,6 +7457,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
                     )
                   }
                   placeholder="CUIL / CUIT"
+                  disabled={!editingTitularBlock}
                 />
               </div>
 
@@ -7466,6 +7514,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
                     )
                   }
                   placeholder="Ej. 30"
+                  disabled={!editingTitularBlock}
                 />
               </div>
 
@@ -7482,6 +7531,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
                     )
                   }
                   placeholder="Domicilio"
+                  disabled={!editingTitularBlock}
                 />
               </div>
 
@@ -7515,6 +7565,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
                         )
                       }
                       placeholder="Apellido"
+                      disabled={!editingTitularBlock}
                     />
                   </div>
 
@@ -7533,6 +7584,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
                         )
                       }
                       placeholder="Nombres"
+                      disabled={!editingTitularBlock}
                     />
                   </div>
 
@@ -7549,6 +7601,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
                         )
                       }
                       placeholder="DNI"
+                      disabled={!editingTitularBlock}
                     />
                   </div>
 
@@ -7567,6 +7620,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
                         )
                       }
                       placeholder="CUIL / CUIT"
+                      disabled={!editingTitularBlock}
                     />
                   </div>
                 </>
