@@ -6460,7 +6460,16 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
     padding: "18px",
   }}
 >
-  <div style={{ marginBottom: "14px" }}>
+  <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "14px",
+    alignItems: "flex-start",
+    marginBottom: "14px",
+  }}
+>
+  <div>
     <div
       style={{
         fontSize: "11px",
@@ -6484,6 +6493,27 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
       Datos del franquiciado vinculado al informe.
     </div>
   </div>
+
+  <button
+    type="button"
+    onClick={() => alert("Editar bloque Franquiciado")}
+    style={{
+      height: "34px",
+      padding: "0 12px",
+      borderRadius: "999px",
+      border: "1px solid rgba(96,165,250,0.28)",
+      background:
+        "linear-gradient(180deg, rgba(37,99,235,0.22), rgba(3,18,34,0.58))",
+      color: "#dbeafe",
+      fontSize: "12px",
+      fontWeight: 850,
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Editar
+  </button>
+</div>
 
   <div
     style={{
