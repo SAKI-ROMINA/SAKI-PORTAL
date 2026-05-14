@@ -5826,6 +5826,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           )
         }
         placeholder="Registro interviniente"
+        disabled={!editingDominioBlock}
       />
     </div>
   </div>
