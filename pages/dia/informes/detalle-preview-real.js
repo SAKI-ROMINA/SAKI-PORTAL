@@ -1966,7 +1966,6 @@ if (hayTitularidadCargada && titularidadTotal !== 100) {
     const payload = {
         // Datos administrativos del informe
 status: datosLegajoForm.status || null,
-estado: datosLegajoForm.status || null,
 result:
   datosLegajoForm.result === "PENDIENTE"
     ? null
