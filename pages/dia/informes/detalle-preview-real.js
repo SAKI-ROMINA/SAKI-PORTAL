@@ -1938,6 +1938,85 @@ async function handleGuardarVehiculosNominal() {
   }
 }
 
+async function handleSaveFrqBlock() {
+  if (!id || !isAdmin) return;
+
+  try {
+    setSavingDatosLegajo(true);
+    setDatosLegajoError("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const payload = {
+      tienda: datosLegajoForm.tienda || null,
+      frq_tipo_persona: datosLegajoForm.frq_tipo_persona || null,
+      frq_apellido: datosLegajoForm.frq_apellido || null,
+      frq_nombres: datosLegajoForm.frq_nombres || null,
+      frq_razon_social: datosLegajoForm.frq_razon_social || null,
+      frq_cuit: datosLegajoForm.frq_cuit || null,
+      frq_email: datosLegajoForm.frq_email || null,
+      frq_telefono: datosLegajoForm.frq_telefono || null,
+      frq_domicilio: datosLegajoForm.frq_domicilio || null,
+      datos_legajo_actualizado_en: new Date().toISOString(),
+      datos_legajo_actualizado_por: user?.id || null,
+    };
+
+    const { data, error } = await supabase
+      .from("dia_requests")
+      .update(payload)
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    const { data: createdHistory, error: historyError } = await supabase
+      .from("dia_requests_history")
+      .insert({
+        request_id: id,
+        tipo_evento: "datos_informe_actualizados",
+        titulo: "Datos administrativos del informe actualizados por SAKI",
+        detalle: {
+          seccion: "Franquiciado",
+          campos: [
+            "tienda",
+            "frq_tipo_persona",
+            "frq_apellido",
+            "frq_nombres",
+            "frq_razon_social",
+            "frq_cuit",
+            "frq_email",
+            "frq_telefono",
+            "frq_domicilio",
+          ],
+        },
+        created_by_name: user?.user_metadata?.full_name || null,
+        created_by_email: user?.email || null,
+        created_at: new Date().toISOString(),
+      })
+      .select("*")
+      .single();
+
+    if (historyError) throw historyError;
+
+    setRow(data);
+    setDatosLegajoForm(buildDatosLegajoForm(data));
+
+    if (createdHistory) {
+      setHistoryRows((prev) => [createdHistory, ...prev]);
+    }
+
+    setEditingFrqBlock(false);
+  } catch (error) {
+    console.error("Error guardando datos del franquiciado:", error);
+    alert(error?.message || "No se pudieron guardar los datos del franquiciado.");
+  } finally {
+    setSavingDatosLegajo(false);
+  }
+}
+
 async function handleSaveDatosLegajo() {
   if (!id || !isAdmin) return;
 
@@ -6660,6 +6739,57 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
         disabled={!editingFrqBlock}
       />
     </div>
+    {editingFrqBlock && (
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "flex-end",
+      gap: "10px",
+      marginTop: "16px",
+    }}
+  >
+    <button
+      type="button"
+      onClick={() => {
+        setDatosLegajoForm(buildDatosLegajoForm(row));
+        setEditingFrqBlock(false);
+      }}
+      style={{
+        height: "38px",
+        padding: "0 14px",
+        borderRadius: "12px",
+        border: "1px solid rgba(148,163,184,0.18)",
+        background: "rgba(255,255,255,0.03)",
+        color: "#dbeafe",
+        fontSize: "13px",
+        fontWeight: 750,
+        cursor: "pointer",
+      }}
+    >
+      Cancelar
+    </button>
+
+    <button
+      type="button"
+      onClick={handleSaveFrqBlock}
+      disabled={savingDatosLegajo}
+      style={{
+        height: "38px",
+        padding: "0 15px",
+        borderRadius: "12px",
+        border: "none",
+        background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
+        color: "#ffffff",
+        fontSize: "13px",
+        fontWeight: 850,
+        opacity: savingDatosLegajo ? 0.65 : 1,
+        cursor: savingDatosLegajo ? "not-allowed" : "pointer",
+      }}
+    >
+      {savingDatosLegajo ? "Guardando..." : "Guardar cambios"}
+    </button>
+  </div>
+)}
   </div>
 </div>
 <div
