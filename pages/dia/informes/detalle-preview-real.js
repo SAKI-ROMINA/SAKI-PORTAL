@@ -339,6 +339,7 @@ const [showDatosLegajoEditor, setShowDatosLegajoEditor] = useState(false);
 
 const [savingDatosLegajo, setSavingDatosLegajo] = useState(false);
 const [datosLegajoError, setDatosLegajoError] = useState("");
+const [editingFrqBlock, setEditingFrqBlock] = useState(false);
 const [datosLegajoForm, setDatosLegajoForm] = useState(
   buildDatosLegajoForm(null)
 );
@@ -669,6 +670,7 @@ function handleOpenDatosLegajoEditor() {
   setDatosLegajoForm(buildDatosLegajoForm(row));
   setDatosLegajoError("");
   setDatosLegajoDirty(false);
+  setEditingFrqBlock(false);
   setShowDatosLegajoEditor(true);
 }
 
@@ -6496,7 +6498,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
 
   <button
     type="button"
-    onClick={() => alert("Editar bloque Franquiciado")}
+    onClick={() => setEditingFrqBlock(true)}
     style={{
       height: "34px",
       padding: "0 12px",
@@ -6511,7 +6513,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
       whiteSpace: "nowrap",
     }}
   >
-    Editar
+    {editingFrqBlock ? "Editando" : "Editar"}
   </button>
 </div>
 
