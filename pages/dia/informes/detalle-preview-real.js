@@ -6533,6 +6533,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("tienda", e.target.value.toUpperCase())
         }
         placeholder="Ej. 8888"
+        disabled={!editingFrqBlock}
       />
     </div>
 
@@ -6544,6 +6545,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("frq_tipo_persona", e.target.value)
         }
         style={modalInputStyle}
+        disabled={!editingFrqBlock}
       >
         <option value="JURIDICA">Persona jurídica</option>
         <option value="HUMANA">Persona humana</option>
@@ -6564,6 +6566,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="Franquiciado cargado por Día"
+            disabled={!editingFrqBlock}
           />
         </div>
       </>
@@ -6581,6 +6584,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="Apellido"
+            disabled={!editingFrqBlock}
           />
         </div>
 
@@ -6596,6 +6600,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               )
             }
             placeholder="Nombres"
+            disabled={!editingFrqBlock}
           />
         </div>
       </>
@@ -6610,6 +6615,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("frq_cuit", formatDocumentoInput(e.target.value))
         }
         placeholder="CUIT / CUIL"
+        disabled={!editingFrqBlock}
       />
     </div>
 
@@ -6622,6 +6628,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("frq_email", e.target.value)
         }
         placeholder="Email"
+        disabled={!editingFrqBlock}
       />
     </div>
 
@@ -6634,6 +6641,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           handleDatosLegajoChange("frq_telefono", e.target.value)
         }
         placeholder="Teléfono"
+        disabled={!editingFrqBlock}
       />
     </div>
 
@@ -6649,6 +6657,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
           )
         }
         placeholder="Domicilio del franquiciado"
+        disabled={!editingFrqBlock}
       />
     </div>
   </div>
