@@ -9124,7 +9124,7 @@ function FichaInforme({
 />
 
 <FichaDato
-  label="FRQ"
+  label="Franquiciado"
   value={
     row?.franquiciado ||
     row?.frq_razon_social ||
@@ -9141,6 +9141,8 @@ function FichaInforme({
     "Por completar"
   }
 />
+
+<div />
 
 <FichaDato
   label={personaInformeLabel}
