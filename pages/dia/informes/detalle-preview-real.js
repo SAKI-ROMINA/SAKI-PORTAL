@@ -2458,8 +2458,6 @@ observed_other:
       frq_email: datosLegajoForm.frq_email || null,
       frq_telefono: datosLegajoForm.frq_telefono || null,
       frq_domicilio: datosLegajoForm.frq_domicilio || null,
-      // Campos espejo de la carga inicial
-...buildCargaInicialMirror(datosLegajoForm, row),
 
       // Titular / garante
       titular_tipo_persona: datosLegajoForm.titular_tipo_persona || null,
@@ -2845,7 +2843,11 @@ const titularInformeLabel =
     ? "Titular del dominio"
     : "Persona consultada";
 
-    const personaConsultadaHeader = getPersonaConsultadaNombre(row);
+    const personaConsultadaHeader =
+  row?.titular_dominio ||
+  row?.identificacion_nombre ||
+  row?.titular_razon_social ||
+  `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim();
 
 const headerEsPersona =
   informeTipoKey === "anotaciones_personales" || esInformeNominal;
@@ -10633,9 +10635,20 @@ const esInformeSobreDominio =
     informeTipoKey === "certificado_dominio"
   );
 
-  const nombrePersonaConsultada = getPersonaConsultadaNombre(row);
+  const nombrePersonaConsultada =
+    row?.titular_dominio ||
+    row?.identificacion_nombre ||
+    row?.titular_razon_social ||
+    `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim() ||
+    "Por completar";
 
-  const documentoPersonaConsultada = getPersonaConsultadaDocumento(row);
+  const documentoPersonaConsultada =
+    row?.titular_cuit ||
+    row?.titular_cuil_cuit ||
+    row?.identificacion_cuit ||
+    row?.identificacion_dni ||
+    row?.titular_dni ||
+    "Por completar";
 
   if (!esInformeSobreDominio) {
     return (
