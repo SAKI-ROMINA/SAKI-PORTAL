@@ -7200,7 +7200,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
       </>
     )}
 
-    <div>
+    <div style={{ display: esInformePersonal ? "none" : "block" }}>
       <label style={modalFieldLabelStyle}>Titular desde</label>
       <input
         type="date"
@@ -7215,7 +7215,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
       />
     </div>
 
-    <div>
+    <div style={{ display: esInformePersonal ? "none" : "block" }}>
       <label style={modalFieldLabelStyle}>Porcentaje de titularidad</label>
       <input
         style={modalInputStyle}
