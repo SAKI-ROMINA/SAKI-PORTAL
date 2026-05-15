@@ -340,47 +340,6 @@ function getPersonaConsultadaDocumento(row) {
   );
 }
 
-function buildCargaInicialMirror(form, source = null) {
-  const frqNombre =
-    form?.frq_tipo_persona === "HUMANA"
-      ? `${form?.frq_apellido || ""} ${form?.frq_nombres || ""}`.trim()
-      : form?.frq_razon_social || "";
-
-  const personaNombreFromForm =
-    form?.titular_tipo_persona === "JURIDICA"
-      ? form?.titular_razon_social || ""
-      : `${form?.titular_apellido || ""} ${form?.titular_nombres || ""}`.trim();
-
-  const personaNombre =
-    personaNombreFromForm ||
-    source?.titular_dominio ||
-    source?.identificacion_nombre ||
-    source?.titular_razon_social ||
-    `${source?.titular_apellido || ""} ${source?.titular_nombres || ""}`.trim();
-
-  const personaCuit =
-    form?.titular_cuil_cuit ||
-    source?.titular_cuil_cuit ||
-    source?.titular_cuit ||
-    source?.identificacion_cuit ||
-    "";
-
-  const personaDni =
-    form?.titular_dni ||
-    source?.identificacion_dni ||
-    source?.titular_dni ||
-    "";
-
-  return {
-    franquiciado: frqNombre || source?.franquiciado || null,
-
-    identificacion_nombre: personaNombre || null,
-    titular_dominio: personaNombre || null,
-    identificacion_cuit: personaCuit || null,
-    identificacion_dni: personaDni || null,
-  };
-}
-
 export default function PreviewPrenda() {
   const [activeFicha, setActiveFicha] = useState(null);
   const [toolsOpen, setToolsOpen] = useState(false);
