@@ -3187,6 +3187,27 @@ const fechaEstadoVisible =
     >
       Cargar / editar informe
     </button>
+        <button
+      type="button"
+      onClick={handleEliminarLegajoCompleto}
+      style={{
+        height: "38px",
+        padding: "0 14px",
+        borderRadius: "999px",
+        border: "1px solid rgba(248, 113, 113, 0.34)",
+        background:
+          "linear-gradient(135deg, rgba(127, 29, 29, 0.32), rgba(69, 10, 10, 0.22))",
+        color: "#fecaca",
+        fontSize: "12px",
+        fontWeight: 850,
+        letterSpacing: "0.02em",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        boxShadow: "0 12px 28px rgba(15, 23, 42, 0.20)",
+      }}
+    >
+      Eliminar legajo
+    </button>
   </>
 )}
 
