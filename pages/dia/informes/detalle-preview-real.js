@@ -285,22 +285,39 @@ function getPrendaTitularidadTotal(form) {
   return titularPorcentaje + condominosTotal;
 }
 
-function buildCargaInicialMirror(form) {
+function buildCargaInicialMirror(form, source = null) {
   const frqNombre =
     form?.frq_tipo_persona === "HUMANA"
       ? `${form?.frq_apellido || ""} ${form?.frq_nombres || ""}`.trim()
       : form?.frq_razon_social || "";
 
-  const personaNombre =
+  const personaNombreFromForm =
     form?.titular_tipo_persona === "JURIDICA"
       ? form?.titular_razon_social || ""
       : `${form?.titular_apellido || ""} ${form?.titular_nombres || ""}`.trim();
 
-  const personaCuit = form?.titular_cuil_cuit || "";
-  const personaDni = form?.titular_dni || "";
+  const personaNombre =
+    personaNombreFromForm ||
+    source?.titular_dominio ||
+    source?.identificacion_nombre ||
+    source?.titular_razon_social ||
+    `${source?.titular_apellido || ""} ${source?.titular_nombres || ""}`.trim();
+
+  const personaCuit =
+    form?.titular_cuil_cuit ||
+    source?.titular_cuil_cuit ||
+    source?.titular_cuit ||
+    source?.identificacion_cuit ||
+    "";
+
+  const personaDni =
+    form?.titular_dni ||
+    source?.identificacion_dni ||
+    source?.titular_dni ||
+    "";
 
   return {
-    franquiciado: frqNombre || null,
+    franquiciado: frqNombre || source?.franquiciado || null,
 
     identificacion_nombre: personaNombre || null,
     titular_dominio: personaNombre || null,
@@ -2083,9 +2100,13 @@ async function handleSaveFrqBlock() {
       frq_email: datosLegajoForm.frq_email || null,
       frq_telefono: datosLegajoForm.frq_telefono || null,
       frq_domicilio: datosLegajoForm.frq_domicilio || null,
-      // Campos espejo de la carga inicial
-...buildCargaInicialMirror(datosLegajoForm),
-      datos_legajo_actualizado_en: new Date().toISOString(),
+
+franquiciado:
+  datosLegajoForm.frq_tipo_persona === "HUMANA"
+    ? `${datosLegajoForm.frq_apellido || ""} ${datosLegajoForm.frq_nombres || ""}`.trim() || null
+    : datosLegajoForm.frq_razon_social || null,
+
+datos_legajo_actualizado_en: new Date().toISOString(),
       datos_legajo_actualizado_por: user?.id || null,
     };
 
@@ -2307,7 +2328,7 @@ observed_other:
       frq_telefono: datosLegajoForm.frq_telefono || null,
       frq_domicilio: datosLegajoForm.frq_domicilio || null,
       // Campos espejo de la carga inicial
-...buildCargaInicialMirror(datosLegajoForm),
+...buildCargaInicialMirror(datosLegajoForm, row),
 
       // Titular / garante
       titular_tipo_persona: datosLegajoForm.titular_tipo_persona || null,
@@ -6055,6 +6076,112 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
       </div>
     </div>
 
+{Array.isArray(vehiculosNominal) && vehiculosNominal.length > 0 && (
+  <div
+    style={{
+      borderRadius: "18px",
+      border: "1px solid rgba(96,165,250,0.22)",
+      background:
+        "linear-gradient(180deg, rgba(15,50,92,0.54), rgba(3,18,34,0.46))",
+      padding: "14px",
+      marginBottom: "14px",
+    }}
+  >
+    <div
+      style={{
+        fontSize: "11px",
+        fontWeight: 900,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        color: "#93c5fd",
+        marginBottom: "10px",
+      }}
+    >
+      Vehículos ya cargados
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+      }}
+    >
+      {vehiculosNominal.map((vehiculo, index) => {
+        const estaEditando = vehiculoNominalEditandoId === vehiculo.id;
+
+        return (
+          <div
+            key={vehiculo.id || index}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: "12px",
+              alignItems: "center",
+              borderRadius: "14px",
+              border: estaEditando
+                ? "1px solid rgba(34,197,94,0.42)"
+                : "1px solid rgba(148,163,184,0.16)",
+              background: estaEditando
+                ? "rgba(22,163,74,0.14)"
+                : "rgba(255,255,255,0.035)",
+              padding: "12px",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  color: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: 850,
+                }}
+              >
+                Vehículo {index + 1} · {vehiculo?.dominio || "Sin dominio"}
+              </div>
+
+              <div
+                style={{
+                  color: "rgba(214,228,245,0.72)",
+                  fontSize: "12px",
+                  marginTop: "4px",
+                  lineHeight: 1.4,
+                }}
+              >
+                {vehiculo?.marca || "—"} {vehiculo?.modelo || ""} ·{" "}
+                {vehiculo?.titular || "Titular sin cargar"}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleEditarVehiculoNominal(vehiculo)}
+              disabled={savingVehiculosNominal}
+              style={{
+                height: "34px",
+                padding: "0 12px",
+                borderRadius: "999px",
+                border: estaEditando
+                  ? "1px solid rgba(34,197,94,0.42)"
+                  : "1px solid rgba(96,165,250,0.28)",
+                background: estaEditando
+                  ? "rgba(22,163,74,0.22)"
+                  : "linear-gradient(180deg, rgba(37,99,235,0.22), rgba(3,18,34,0.58))",
+                color: estaEditando ? "#bbf7d0" : "#dbeafe",
+                fontSize: "12px",
+                fontWeight: 850,
+                cursor: savingVehiculosNominal ? "not-allowed" : "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {estaEditando ? "Editando" : "Editar"}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
+
     <div
       style={{
         display: "flex",
@@ -6361,51 +6488,75 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
       ))}
 
       <div
-        style={{
-          display: "flex",
-          gap: "10px",
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
-        <button
-          type="button"
-          onClick={handleAddVehiculoNominal}
-          style={{
-            border: "1px solid rgba(96, 165, 250, 0.34)",
-            background: "rgba(37, 99, 235, 0.14)",
-            color: "#bfdbfe",
-            borderRadius: "999px",
-            padding: "9px 14px",
-            fontSize: "13px",
-            fontWeight: 850,
-            cursor: "pointer",
-          }}
-        >
-          + Agregar otro vehículo
-        </button>
+  style={{
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+    alignItems: "center",
+  }}
+>
+  {!vehiculoNominalEditandoId && (
+    <button
+      type="button"
+      onClick={handleAddVehiculoNominal}
+      style={{
+        border: "1px solid rgba(96, 165, 250, 0.34)",
+        background: "rgba(37, 99, 235, 0.14)",
+        color: "#bfdbfe",
+        borderRadius: "999px",
+        padding: "9px 14px",
+        fontSize: "13px",
+        fontWeight: 850,
+        cursor: "pointer",
+      }}
+    >
+      + Agregar otro vehículo
+    </button>
+  )}
 
-        <button
-          type="button"
-          onClick={handleGuardarVehiculosNominal}
-          disabled={savingVehiculosNominal}
-          style={{
-            border: "none",
-            background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
-            color: "#ffffff",
-            borderRadius: "999px",
-            padding: "10px 15px",
-            fontSize: "13px",
-            fontWeight: 850,
-            opacity: savingVehiculosNominal ? 0.65 : 1,
-            cursor: savingVehiculosNominal ? "not-allowed" : "pointer",
-          }}
-        >
-          {savingVehiculosNominal
-            ? "Guardando..."
-            : "Guardar vehículos informados"}
-        </button>
-      </div>
+  {vehiculoNominalEditandoId && (
+    <button
+      type="button"
+      onClick={handleCancelarEdicionVehiculoNominal}
+      disabled={savingVehiculosNominal}
+      style={{
+        border: "1px solid rgba(148,163,184,0.22)",
+        background: "rgba(255,255,255,0.04)",
+        color: "#dbeafe",
+        borderRadius: "999px",
+        padding: "9px 14px",
+        fontSize: "13px",
+        fontWeight: 850,
+        cursor: savingVehiculosNominal ? "not-allowed" : "pointer",
+      }}
+    >
+      Cancelar edición
+    </button>
+  )}
+
+  <button
+    type="button"
+    onClick={handleGuardarVehiculosNominal}
+    disabled={savingVehiculosNominal}
+    style={{
+      border: "none",
+      background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
+      color: "#ffffff",
+      borderRadius: "999px",
+      padding: "10px 15px",
+      fontSize: "13px",
+      fontWeight: 850,
+      opacity: savingVehiculosNominal ? 0.65 : 1,
+      cursor: savingVehiculosNominal ? "not-allowed" : "pointer",
+    }}
+  >
+    {savingVehiculosNominal
+      ? "Guardando..."
+      : vehiculoNominalEditandoId
+      ? "Guardar cambios del vehículo"
+      : "Guardar vehículos informados"}
+  </button>
+</div>
 
       {vehiculosNominalMsg && (
         <div
