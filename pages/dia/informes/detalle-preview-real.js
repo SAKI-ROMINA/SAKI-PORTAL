@@ -285,6 +285,33 @@ function getPrendaTitularidadTotal(form) {
   return titularPorcentaje + condominosTotal;
 }
 
+function getPersonaConsultadaNombre(row) {
+  return (
+    row?.titular_dominio ||
+    row?.identificacion_nombre ||
+    row?.informe_titular_razon_social ||
+    row?.titular_razon_social ||
+    `${row?.informe_titular_apellido || ""} ${
+      row?.informe_titular_nombres || row?.informe_titular_nombre || ""
+    }`.trim() ||
+    `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim() ||
+    "—"
+  );
+}
+
+function getPersonaConsultadaDocumento(row) {
+  return (
+    row?.informe_titular_cuil_cuit ||
+    row?.informe_titular_dni ||
+    row?.titular_cuit ||
+    row?.titular_cuil_cuit ||
+    row?.identificacion_cuit ||
+    row?.identificacion_dni ||
+    row?.titular_dni ||
+    "—"
+  );
+}
+
 function buildCargaInicialMirror(form, source = null) {
   const frqNombre =
     form?.frq_tipo_persona === "HUMANA"
@@ -2818,11 +2845,7 @@ const titularInformeLabel =
     ? "Titular del dominio"
     : "Persona consultada";
 
-    const personaConsultadaHeader =
-  row?.titular_dominio ||
-  row?.identificacion_nombre ||
-  row?.titular_razon_social ||
-  `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim();
+    const personaConsultadaHeader = getPersonaConsultadaNombre(row);
 
 const headerEsPersona =
   informeTipoKey === "anotaciones_personales" || esInformeNominal;
@@ -10610,20 +10633,9 @@ const esInformeSobreDominio =
     informeTipoKey === "certificado_dominio"
   );
 
-  const nombrePersonaConsultada =
-    row?.titular_dominio ||
-    row?.identificacion_nombre ||
-    row?.titular_razon_social ||
-    `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim() ||
-    "Por completar";
+  const nombrePersonaConsultada = getPersonaConsultadaNombre(row);
 
-  const documentoPersonaConsultada =
-    row?.titular_cuit ||
-    row?.titular_cuil_cuit ||
-    row?.identificacion_cuit ||
-    row?.identificacion_dni ||
-    row?.titular_dni ||
-    "Por completar";
+  const documentoPersonaConsultada = getPersonaConsultadaDocumento(row);
 
   if (!esInformeSobreDominio) {
     return (
