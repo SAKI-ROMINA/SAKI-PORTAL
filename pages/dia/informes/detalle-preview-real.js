@@ -285,6 +285,31 @@ function getPrendaTitularidadTotal(form) {
   return titularPorcentaje + condominosTotal;
 }
 
+function buildCargaInicialMirror(form) {
+  const frqNombre =
+    form?.frq_tipo_persona === "HUMANA"
+      ? `${form?.frq_apellido || ""} ${form?.frq_nombres || ""}`.trim()
+      : form?.frq_razon_social || "";
+
+  const personaNombre =
+    form?.titular_tipo_persona === "JURIDICA"
+      ? form?.titular_razon_social || ""
+      : `${form?.titular_apellido || ""} ${form?.titular_nombres || ""}`.trim();
+
+  const personaCuit = form?.titular_cuil_cuit || "";
+  const personaDni = form?.titular_dni || "";
+
+  return {
+    franquiciado: frqNombre || null,
+    frq: frqNombre || null,
+
+    identificacion_nombre: personaNombre || null,
+    titular_dominio: personaNombre || null,
+    identificacion_cuit: personaCuit || null,
+    identificacion_dni: personaDni || null,
+  };
+}
+
 export default function PreviewPrenda() {
   const [activeFicha, setActiveFicha] = useState(null);
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -1963,6 +1988,8 @@ async function handleSaveFrqBlock() {
       frq_email: datosLegajoForm.frq_email || null,
       frq_telefono: datosLegajoForm.frq_telefono || null,
       frq_domicilio: datosLegajoForm.frq_domicilio || null,
+      // Campos espejo de la carga inicial
+...buildCargaInicialMirror(datosLegajoForm),
       datos_legajo_actualizado_en: new Date().toISOString(),
       datos_legajo_actualizado_por: user?.id || null,
     };
@@ -2184,6 +2211,8 @@ observed_other:
       frq_email: datosLegajoForm.frq_email || null,
       frq_telefono: datosLegajoForm.frq_telefono || null,
       frq_domicilio: datosLegajoForm.frq_domicilio || null,
+      // Campos espejo de la carga inicial
+...buildCargaInicialMirror(datosLegajoForm),
 
       // Titular / garante
       titular_tipo_persona: datosLegajoForm.titular_tipo_persona || null,
