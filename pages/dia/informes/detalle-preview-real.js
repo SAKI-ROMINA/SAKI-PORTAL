@@ -239,13 +239,41 @@ frq_email: source?.frq_email || "",
 frq_telefono: source?.frq_telefono || "",
 frq_domicilio: source?.frq_domicilio || "",
 
-    // Titular / garante
-    titular_tipo_persona: source?.titular_tipo_persona || "HUMANA",
-    titular_apellido: source?.titular_apellido || "",
-    titular_nombres: source?.titular_nombres || "",
-    titular_razon_social: source?.titular_razon_social || "",
-    titular_dni: source?.titular_dni || "",
-    titular_cuil_cuit: source?.titular_cuil_cuit || source?.titular_cuit || "",
+ // Titular / garante / persona consultada
+titular_tipo_persona: source?.titular_tipo_persona || "HUMANA",
+
+titular_apellido:
+  source?.titular_apellido ||
+  String(source?.titular_dominio || source?.identificacion_nombre || "")
+    .trim()
+    .split(" ")[0] ||
+  "",
+
+titular_nombres:
+  source?.titular_nombres ||
+  String(source?.titular_dominio || source?.identificacion_nombre || "")
+    .trim()
+    .split(" ")
+    .slice(1)
+    .join(" ") ||
+  "",
+
+titular_razon_social:
+  source?.titular_razon_social ||
+  source?.titular_dominio ||
+  source?.identificacion_nombre ||
+  "",
+
+titular_dni:
+  source?.titular_dni ||
+  source?.identificacion_dni ||
+  "",
+
+titular_cuil_cuit:
+  source?.titular_cuil_cuit ||
+  source?.titular_cuit ||
+  source?.identificacion_cuit ||
+  "",
     titular_estado_civil: source?.titular_estado_civil || "",
     titular_desde: source?.titular_desde || "",
     porcentaje_titular:
@@ -2460,6 +2488,19 @@ observed_other:
       frq_domicilio: datosLegajoForm.frq_domicilio || null,
 
       // Titular / garante
+      // Espejo de persona consultada / titular para visualización general
+identificacion_nombre:
+  datosLegajoForm.titular_tipo_persona === "JURIDICA"
+    ? datosLegajoForm.titular_razon_social || null
+    : `${datosLegajoForm.titular_apellido || ""} ${datosLegajoForm.titular_nombres || ""}`.trim() || null,
+
+titular_dominio:
+  datosLegajoForm.titular_tipo_persona === "JURIDICA"
+    ? datosLegajoForm.titular_razon_social || null
+    : `${datosLegajoForm.titular_apellido || ""} ${datosLegajoForm.titular_nombres || ""}`.trim() || null,
+
+identificacion_cuit: datosLegajoForm.titular_cuil_cuit || null,
+identificacion_dni: datosLegajoForm.titular_dni || null,
       titular_tipo_persona: datosLegajoForm.titular_tipo_persona || null,
       titular_apellido: datosLegajoForm.titular_apellido || null,
       titular_nombres: datosLegajoForm.titular_nombres || null,
