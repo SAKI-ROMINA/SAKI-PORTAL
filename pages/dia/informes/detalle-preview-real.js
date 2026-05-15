@@ -333,6 +333,7 @@ const [loadingVehiculosNominal, setLoadingVehiculosNominal] = useState(false);
 const [vehiculosNominalMsg, setVehiculosNominalMsg] = useState("");
 
 const [savingVehiculosNominal, setSavingVehiculosNominal] = useState(false);
+const [vehiculoNominalEditandoId, setVehiculoNominalEditandoId] = useState(null);
 const [vehiculosNominalForm, setVehiculosNominalForm] = useState([
   createEmptyVehiculoNominal(),
 ]);
@@ -1782,6 +1783,42 @@ function handleRemoveVehiculoNominal(index) {
   });
 }
 
+function handleEditarVehiculoNominal(vehiculo) {
+  if (!vehiculo) return;
+
+  setVehiculoNominalEditandoId(vehiculo.id);
+
+  setVehiculosNominalForm([
+    {
+      condicion_titular: vehiculo?.condicion_titular || "titular_actual",
+      dominio: vehiculo?.dominio || "",
+      marca: vehiculo?.marca || "",
+      modelo: vehiculo?.modelo || "",
+      tipo: vehiculo?.tipo || "",
+      modelo_anio: vehiculo?.modelo_anio || "",
+      registro_seccional: vehiculo?.registro_seccional || "",
+      registro_domicilio: vehiculo?.registro_domicilio || "",
+      registro_localidad: vehiculo?.registro_localidad || "",
+      registro_provincia: vehiculo?.registro_provincia || "",
+      titular: vehiculo?.titular || "",
+      documento_titular: vehiculo?.documento_titular || "",
+      porcentaje_titular: vehiculo?.porcentaje_titular || "",
+      fecha_titular: vehiculo?.fecha_titular || "",
+      observacion: vehiculo?.observacion || "",
+    },
+  ]);
+
+  setVehiculosNominalMsg(
+    "Editando vehículo informado. Modificá los datos y guardá los cambios."
+  );
+}
+
+function handleCancelarEdicionVehiculoNominal() {
+  setVehiculoNominalEditandoId(null);
+  setVehiculosNominalForm([createEmptyVehiculoNominal()]);
+  setVehiculosNominalMsg("");
+}
+
 async function handleGuardarVehiculosNominal() {
   if (!id || !isAdmin || savingVehiculosNominal) return;
 
@@ -1864,34 +1901,72 @@ async function handleGuardarVehiculosNominal() {
 
     const now = new Date().toISOString();
 
-    const payload = vehiculosLimpios.map((vehiculo) => ({
-      request_id: id,
-      condicion_titular: vehiculo.condicion_titular,
-      dominio: vehiculo.dominio || null,
-      marca: vehiculo.marca || null,
-      modelo: vehiculo.modelo || null,
-      tipo: vehiculo.tipo || null,
-      modelo_anio: vehiculo.modelo_anio || null,
-      registro_seccional: vehiculo.registro_seccional || null,
-      registro_domicilio: vehiculo.registro_domicilio || null,
-      registro_localidad: vehiculo.registro_localidad || null,
-      registro_provincia: vehiculo.registro_provincia || null,
-      titular: vehiculo.titular || null,
-      documento_titular: vehiculo.documento_titular || null,
-      porcentaje_titular: vehiculo.porcentaje_titular || null,
-      fecha_titular: vehiculo.fecha_titular || null,
-      observacion: vehiculo.observacion || null,
-      created_by: user?.id || null,
-      created_by_email: authorEmail,
-      created_at: now,
-    }));
+    const esEdicionVehiculo = Boolean(vehiculoNominalEditandoId);
 
-    const { data: createdVehiculos, error: vehiculosError } = await supabase
-      .from("dia_request_informe_nominal_vehiculos")
-      .insert(payload)
-      .select("*");
+const payload = vehiculosLimpios.map((vehiculo) => ({
+  request_id: id,
+  condicion_titular: vehiculo.condicion_titular,
+  dominio: vehiculo.dominio || null,
+  marca: vehiculo.marca || null,
+  modelo: vehiculo.modelo || null,
+  tipo: vehiculo.tipo || null,
+  modelo_anio: vehiculo.modelo_anio || null,
+  registro_seccional: vehiculo.registro_seccional || null,
+  registro_domicilio: vehiculo.registro_domicilio || null,
+  registro_localidad: vehiculo.registro_localidad || null,
+  registro_provincia: vehiculo.registro_provincia || null,
+  titular: vehiculo.titular || null,
+  documento_titular: vehiculo.documento_titular || null,
+  porcentaje_titular: vehiculo.porcentaje_titular || null,
+  fecha_titular: vehiculo.fecha_titular || null,
+  observacion: vehiculo.observacion || null,
+  created_by: user?.id || null,
+  created_by_email: authorEmail,
+  created_at: now,
+}));
 
-    if (vehiculosError) throw vehiculosError;
+let vehiculosGuardados = [];
+
+if (esEdicionVehiculo) {
+  const vehiculoEditado = payload[0];
+
+  const { data: updatedVehiculo, error: vehiculosError } = await supabase
+    .from("dia_request_informe_nominal_vehiculos")
+    .update({
+      condicion_titular: vehiculoEditado.condicion_titular,
+      dominio: vehiculoEditado.dominio,
+      marca: vehiculoEditado.marca,
+      modelo: vehiculoEditado.modelo,
+      tipo: vehiculoEditado.tipo,
+      modelo_anio: vehiculoEditado.modelo_anio,
+      registro_seccional: vehiculoEditado.registro_seccional,
+      registro_domicilio: vehiculoEditado.registro_domicilio,
+      registro_localidad: vehiculoEditado.registro_localidad,
+      registro_provincia: vehiculoEditado.registro_provincia,
+      titular: vehiculoEditado.titular,
+      documento_titular: vehiculoEditado.documento_titular,
+      porcentaje_titular: vehiculoEditado.porcentaje_titular,
+      fecha_titular: vehiculoEditado.fecha_titular,
+      observacion: vehiculoEditado.observacion,
+    })
+    .eq("id", vehiculoNominalEditandoId)
+    .eq("request_id", id)
+    .select("*")
+    .single();
+
+  if (vehiculosError) throw vehiculosError;
+
+  vehiculosGuardados = updatedVehiculo ? [updatedVehiculo] : [];
+} else {
+  const { data: createdVehiculos, error: vehiculosError } = await supabase
+    .from("dia_request_informe_nominal_vehiculos")
+    .insert(payload)
+    .select("*");
+
+  if (vehiculosError) throw vehiculosError;
+
+  vehiculosGuardados = createdVehiculos || [];
+}
 
     const resumenVehiculos = vehiculosLimpios
       .map((vehiculo, index) => {
@@ -1912,13 +1987,19 @@ async function handleGuardarVehiculosNominal() {
       .from("dia_requests_history")
       .insert({
         request_id: id,
-        tipo_evento: "vehiculos_nominal_cargados",
-        titulo: "Vehículos informados cargados",
+        tipo_evento: esEdicionVehiculo
+  ? "vehiculo_nominal_actualizado"
+  : "vehiculos_nominal_cargados",
+titulo: esEdicionVehiculo
+  ? "Vehículo informado actualizado"
+  : "Vehículos informados cargados",
         detalle: {
           cantidad_vehiculos: vehiculosLimpios.length,
           vehiculos: vehiculosLimpios,
         },
-        detalle_texto: `SAKI cargó vehículos informados del informe nominal. ${resumenVehiculos}`,
+        detalle_texto: esEdicionVehiculo
+  ? `SAKI actualizó un vehículo informado del informe nominal. ${resumenVehiculos}`
+  : `SAKI cargó vehículos informados del informe nominal. ${resumenVehiculos}`,
         created_by_name: authorName,
         created_by_email: authorEmail,
         created_at: now,
@@ -1941,19 +2022,34 @@ async function handleGuardarVehiculosNominal() {
 
     setRow(updatedInforme);
 
-    if (Array.isArray(createdVehiculos)) {
-      setVehiculosNominal((prev) => [
-        ...(Array.isArray(prev) ? prev : []),
-        ...createdVehiculos,
-      ]);
-    }
+if (esEdicionVehiculo) {
+  setVehiculosNominal((prev) =>
+    Array.isArray(prev)
+      ? prev.map((item) =>
+          item.id === vehiculoNominalEditandoId
+            ? vehiculosGuardados[0] || item
+            : item
+        )
+      : []
+  );
+} else if (Array.isArray(vehiculosGuardados)) {
+  setVehiculosNominal((prev) => [
+    ...(Array.isArray(prev) ? prev : []),
+    ...vehiculosGuardados,
+  ]);
+}
 
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...(prev || [])]);
     }
 
-    setVehiculosNominalForm([createEmptyVehiculoNominal()]);
-    setVehiculosNominalMsg("Vehículos informados guardados correctamente.");
+    setVehiculoNominalEditandoId(null);
+setVehiculosNominalForm([createEmptyVehiculoNominal()]);
+setVehiculosNominalMsg(
+  esEdicionVehiculo
+    ? "Vehículo informado actualizado correctamente."
+    : "Vehículos informados guardados correctamente."
+);
 
     await fetchVehiculosNominal();
   } catch (error) {
