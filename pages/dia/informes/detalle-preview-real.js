@@ -7023,7 +7023,7 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
         marginBottom: "6px",
       }}
     >
-      Garante / Titular
+      {esInformePersonal ? "Persona consultada" : "Garante / Titular"}
     </div>
 
     <div
@@ -7033,8 +7033,9 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
         lineHeight: 1.5,
       }}
     >
-      Carga administrativa SAKI del titular/garante, estado civil, titularidad,
-      cónyuge y condóminos cuando corresponda.
+      {esInformePersonal
+  ? "Carga administrativa SAKI de la persona consultada en el informe."
+  : "Carga administrativa SAKI del titular/garante, estado civil, titularidad, cónyuge y condóminos cuando corresponda."}
     </div>
   </div>
 
