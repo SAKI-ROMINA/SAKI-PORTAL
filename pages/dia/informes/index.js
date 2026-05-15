@@ -215,7 +215,8 @@ useEffect(() => {
     const { data, error } = await supabase
       .from("dia_requests")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("fecha_pedido_real", { ascending: false, nullsFirst: false })
+.order("created_at", { ascending: false });
 
     if (error) {
       setError(error.message || "No se pudieron cargar los informes.");
