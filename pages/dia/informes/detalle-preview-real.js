@@ -403,6 +403,10 @@ const [datosLegajoForm, setDatosLegajoForm] = useState(
 );
 const [datosLegajoDirty, setDatosLegajoDirty] = useState(false);
 
+const [dominioTecnicoPrevio, setDominioTecnicoPrevio] = useState(null);
+const [buscandoDominioTecnicoPrevio, setBuscandoDominioTecnicoPrevio] = useState(false);
+const [dominioTecnicoPrevioMsg, setDominioTecnicoPrevioMsg] = useState("");
+
 const [printMode, setPrintMode] = useState(null);
 
 const [currentProfile, setCurrentProfile] = useState(null);
@@ -819,6 +823,105 @@ async function handleEliminarLegajoCompleto() {
   }
 }
 
+async function buscarDominioTecnicoPrevio() {
+  const dominioLimpio = (row?.dominio || datosLegajoForm?.dominio || "")
+    .toString()
+    .trim()
+    .toUpperCase();
+
+  const tipoInformeActual = (row?.type || "").toString().trim();
+
+  const permiteBuscar =
+    isAdmin &&
+    estadoActualKey === "EN CURSO" &&
+    dominioLimpio &&
+    (tipoInformeActual === "informe_dominio" ||
+      tipoInformeActual === "certificado_dominio");
+
+  if (!permiteBuscar) {
+    setDominioTecnicoPrevio(null);
+    setDominioTecnicoPrevioMsg("");
+    return;
+  }
+
+  try {
+    setBuscandoDominioTecnicoPrevio(true);
+    setDominioTecnicoPrevioMsg("");
+
+    const { data, error } = await supabase
+      .from("dia_requests")
+      .select(
+        `
+        id,
+        dominio,
+        marca,
+        modelo,
+        tipo,
+        modelo_anio,
+        marca_motor,
+        numero_motor,
+        marca_chasis,
+        numero_chasis,
+        radicacion,
+        registro_interviniente,
+        created_at
+        `
+      )
+      .eq("dominio", dominioLimpio)
+      .neq("id", id)
+      .neq("status", "ANULADO")
+      .not("marca", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (data) {
+      setDominioTecnicoPrevio(data);
+      setDominioTecnicoPrevioMsg(
+        "Encontramos datos técnicos previos para este dominio. Podés reutilizarlos en este legajo y editarlos antes de guardar."
+      );
+    } else {
+      setDominioTecnicoPrevio(null);
+      setDominioTecnicoPrevioMsg("");
+    }
+  } catch (error) {
+    console.error("Error buscando datos técnicos previos:", error);
+    setDominioTecnicoPrevio(null);
+    setDominioTecnicoPrevioMsg(
+      "No se pudieron consultar antecedentes técnicos del dominio."
+    );
+  } finally {
+    setBuscandoDominioTecnicoPrevio(false);
+  }
+}
+
+function handleUsarDominioTecnicoPrevio() {
+  if (!dominioTecnicoPrevio || !isAdmin) return;
+
+  setDatosLegajoForm((prev) => ({
+    ...prev,
+    marca: dominioTecnicoPrevio.marca || "",
+    modelo: dominioTecnicoPrevio.modelo || "",
+    tipo: dominioTecnicoPrevio.tipo || "",
+    modelo_anio: dominioTecnicoPrevio.modelo_anio || "",
+    marca_motor: dominioTecnicoPrevio.marca_motor || "",
+    numero_motor: dominioTecnicoPrevio.numero_motor || "",
+    marca_chasis: dominioTecnicoPrevio.marca_chasis || "",
+    numero_chasis: dominioTecnicoPrevio.numero_chasis || "",
+    radicacion: dominioTecnicoPrevio.radicacion || "",
+    registro_interviniente: dominioTecnicoPrevio.registro_interviniente || "",
+  }));
+
+  setEditingDominioBlock(true);
+  setDatosLegajoDirty(true);
+
+  setDominioTecnicoPrevioMsg(
+    "Datos técnicos anteriores aplicados. Revisalos y guardá los cambios del bloque Dominio / Automotor."
+  );
+}
+
 function handleOpenDatosLegajoEditor() {
   setDatosLegajoForm(buildDatosLegajoForm(row));
   setDatosLegajoError("");
@@ -826,7 +929,15 @@ function handleOpenDatosLegajoEditor() {
   setEditingFrqBlock(false);
   setEditingDominioBlock(false);
   setEditingTitularBlock(false);
+
+  setDominioTecnicoPrevio(null);
+  setDominioTecnicoPrevioMsg("");
+
   setShowDatosLegajoEditor(true);
+
+  setTimeout(() => {
+    buscarDominioTecnicoPrevio();
+  }, 150);
 }
 
 function handleOpenCorregirCargaInicial() {
@@ -6110,6 +6221,91 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
     {editingDominioBlock ? "Editando" : "Editar"}
   </button>
 </div>
+
+{isAdmin &&
+  estadoActualKey === "EN CURSO" &&
+  !esInformeNominal &&
+  !dominioNoAplica &&
+  (buscandoDominioTecnicoPrevio || dominioTecnicoPrevioMsg) && (
+    <div
+      style={{
+        marginBottom: "14px",
+        borderRadius: "16px",
+        border: dominioTecnicoPrevio
+          ? "1px solid rgba(34,197,94,0.28)"
+          : "1px solid rgba(96,165,250,0.20)",
+        background: dominioTecnicoPrevio
+          ? "linear-gradient(180deg, rgba(22,101,52,0.18), rgba(3,18,34,0.52))"
+          : "rgba(37,99,235,0.10)",
+        padding: "14px 16px",
+        color: "#dbeafe",
+        fontSize: "13px",
+        lineHeight: 1.45,
+      }}
+    >
+      <div
+        style={{
+          fontWeight: 850,
+          color: dominioTecnicoPrevio ? "#bbf7d0" : "#bfdbfe",
+          marginBottom: "6px",
+        }}
+      >
+        {buscandoDominioTecnicoPrevio
+          ? "Buscando antecedentes técnicos..."
+          : dominioTecnicoPrevio
+          ? "Datos técnicos previos encontrados"
+          : "Antecedentes técnicos"}
+      </div>
+
+      <div>
+        {buscandoDominioTecnicoPrevio
+          ? "Estamos verificando si este dominio ya tiene datos técnicos cargados en otro legajo."
+          : dominioTecnicoPrevioMsg}
+      </div>
+
+      {dominioTecnicoPrevio && (
+        <div
+          style={{
+            marginTop: "12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div
+            style={{
+              color: "rgba(226,237,249,0.84)",
+              fontSize: "12px",
+            }}
+          >
+            {dominioTecnicoPrevio.marca || "Marca sin cargar"} ·{" "}
+            {dominioTecnicoPrevio.modelo || "Modelo sin cargar"} ·{" "}
+            {dominioTecnicoPrevio.modelo_anio || "Año sin cargar"}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleUsarDominioTecnicoPrevio}
+            style={{
+              height: "34px",
+              padding: "0 13px",
+              borderRadius: "999px",
+              border: "1px solid rgba(34,197,94,0.30)",
+              background: "rgba(22,163,74,0.20)",
+              color: "#bbf7d0",
+              fontSize: "12px",
+              fontWeight: 850,
+              cursor: "pointer",
+            }}
+          >
+            Usar datos técnicos anteriores
+          </button>
+        </div>
+      )}
+    </div>
+  )}
 
   <div
     style={{
