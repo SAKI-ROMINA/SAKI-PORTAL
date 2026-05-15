@@ -1836,6 +1836,110 @@ function handleCancelarEdicionVehiculoNominal() {
   setVehiculosNominalMsg("");
 }
 
+async function handleEliminarVehiculoNominal(vehiculo) {
+  if (!id || !isAdmin || !vehiculo?.id || savingVehiculosNominal) return;
+
+  const confirmar = window.confirm(
+    `¿Eliminar el vehículo informado "${vehiculo?.dominio || "sin dominio"}"? Esta acción no se puede deshacer.`
+  );
+
+  if (!confirmar) return;
+
+  try {
+    setSavingVehiculosNominal(true);
+    setVehiculosNominalMsg("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const authorName =
+      currentProfile?.full_name ||
+      currentProfile?.name ||
+      user?.user_metadata?.full_name ||
+      user?.email ||
+      "Usuario";
+
+    const authorEmail = currentProfile?.email || user?.email || null;
+
+    const now = new Date().toISOString();
+
+    const { error: deleteError } = await supabase
+      .from("dia_request_informe_nominal_vehiculos")
+      .delete()
+      .eq("id", vehiculo.id)
+      .eq("request_id", id);
+
+    if (deleteError) throw deleteError;
+
+    const { data: createdHistory, error: historyError } = await supabase
+      .from("dia_requests_history")
+      .insert({
+        request_id: id,
+        tipo_evento: "vehiculo_nominal_eliminado",
+        titulo: "Vehículo informado eliminado",
+        detalle: {
+          vehiculo_id: vehiculo.id,
+          dominio: vehiculo?.dominio || null,
+          marca: vehiculo?.marca || null,
+          modelo: vehiculo?.modelo || null,
+          titular: vehiculo?.titular || null,
+        },
+        detalle_texto: `SAKI eliminó un vehículo informado del informe nominal. Dominio: ${
+          vehiculo?.dominio || "—"
+        }. ${vehiculo?.marca || "—"} ${vehiculo?.modelo || ""}. Titular: ${
+          vehiculo?.titular || "—"
+        }.`,
+        created_by_name: authorName,
+        created_by_email: authorEmail,
+        created_at: now,
+      })
+      .select("*")
+      .single();
+
+    if (historyError) throw historyError;
+
+    const { data: updatedInforme, error: updateError } = await supabase
+      .from("dia_requests")
+      .update({
+        datos_legajo_actualizado_en: now,
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (updateError) throw updateError;
+
+    setRow(updatedInforme);
+
+    setVehiculosNominal((prev) =>
+      Array.isArray(prev)
+        ? prev.filter((item) => item.id !== vehiculo.id)
+        : []
+    );
+
+    if (vehiculoNominalEditandoId === vehiculo.id) {
+      setVehiculoNominalEditandoId(null);
+      setVehiculosNominalForm([createEmptyVehiculoNominal()]);
+    }
+
+    if (createdHistory) {
+      setHistoryRows((prev) => [createdHistory, ...(prev || [])]);
+    }
+
+    setVehiculosNominalMsg("Vehículo informado eliminado correctamente.");
+
+    await fetchVehiculosNominal();
+  } catch (error) {
+    console.error("Error eliminando vehículo informado:", error);
+    setVehiculosNominalMsg(
+      error?.message || "No se pudo eliminar el vehículo informado."
+    );
+  } finally {
+    setSavingVehiculosNominal(false);
+  }
+}
+
 async function handleGuardarVehiculosNominal() {
   if (!id || !isAdmin || savingVehiculosNominal) return;
 
@@ -6152,29 +6256,58 @@ dominio, franquiciado, titularidad, cónyuge y condóminos del legajo.
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleEditarVehiculoNominal(vehiculo)}
-              disabled={savingVehiculosNominal}
-              style={{
-                height: "34px",
-                padding: "0 12px",
-                borderRadius: "999px",
-                border: estaEditando
-                  ? "1px solid rgba(34,197,94,0.42)"
-                  : "1px solid rgba(96,165,250,0.28)",
-                background: estaEditando
-                  ? "rgba(22,163,74,0.22)"
-                  : "linear-gradient(180deg, rgba(37,99,235,0.22), rgba(3,18,34,0.58))",
-                color: estaEditando ? "#bbf7d0" : "#dbeafe",
-                fontSize: "12px",
-                fontWeight: 850,
-                cursor: savingVehiculosNominal ? "not-allowed" : "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {estaEditando ? "Editando" : "Editar"}
-            </button>
+            <div
+  style={{
+    display: "flex",
+    gap: "8px",
+    alignItems: "center",
+    flexShrink: 0,
+  }}
+>
+  <button
+    type="button"
+    onClick={() => handleEditarVehiculoNominal(vehiculo)}
+    disabled={savingVehiculosNominal}
+    style={{
+      height: "34px",
+      padding: "0 12px",
+      borderRadius: "999px",
+      border: estaEditando
+        ? "1px solid rgba(34,197,94,0.42)"
+        : "1px solid rgba(96,165,250,0.28)",
+      background: estaEditando
+        ? "rgba(22,163,74,0.22)"
+        : "linear-gradient(180deg, rgba(37,99,235,0.22), rgba(3,18,34,0.58))",
+      color: estaEditando ? "#bbf7d0" : "#dbeafe",
+      fontSize: "12px",
+      fontWeight: 850,
+      cursor: savingVehiculosNominal ? "not-allowed" : "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {estaEditando ? "Editando" : "Editar"}
+  </button>
+
+  <button
+    type="button"
+    onClick={() => handleEliminarVehiculoNominal(vehiculo)}
+    disabled={savingVehiculosNominal}
+    style={{
+      height: "34px",
+      padding: "0 12px",
+      borderRadius: "999px",
+      border: "1px solid rgba(248,113,113,0.34)",
+      background: "rgba(127,29,29,0.26)",
+      color: "#fecaca",
+      fontSize: "12px",
+      fontWeight: 850,
+      cursor: savingVehiculosNominal ? "not-allowed" : "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Eliminar
+  </button>
+</div>
           </div>
         );
       })}
