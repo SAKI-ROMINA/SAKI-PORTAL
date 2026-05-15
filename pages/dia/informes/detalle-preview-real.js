@@ -3425,23 +3425,9 @@ value={
         ]
       : [
     ["Dominio", row?.dominio || "Por completar"],
-    [
-      "Titular",
-      row?.titular_dominio ||
-        row?.identificacion_nombre ||
-        row?.titular_razon_social ||
-        `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim() ||
-        "Por completar",
-    ],
-    [
-      "CUIT / DNI",
-      row?.titular_cuit ||
-        row?.titular_cuil_cuit ||
-        row?.identificacion_cuit ||
-        row?.identificacion_dni ||
-        row?.titular_dni ||
-        "Por completar",
-    ],
+["Marca", row?.marca || row?.vehiculo_marca || "Por completar"],
+["Modelo", row?.modelo || row?.vehiculo_modelo || "Por completar"],
+["Modelo año", row?.modelo_anio || row?.anio_modelo || "Por completar"],
   ]
   }
   onClick={() => {
