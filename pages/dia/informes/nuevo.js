@@ -24,6 +24,12 @@ const [currentUserEmail, setCurrentUserEmail] = useState("");
 const [isAdmin, setIsAdmin] = useState(false);
 const [usarCargaHistorica, setUsarCargaHistorica] = useState(false);
 
+const [dominioPrevio, setDominioPrevio] = useState(null);
+const [buscandoDominioPrevio, setBuscandoDominioPrevio] = useState(false);
+const [dominioPrevioMsg, setDominioPrevioMsg] = useState("");
+
+const [datosDominioAplicados, setDatosDominioAplicados] = useState(null);
+
 const [historicoForm, setHistoricoForm] = useState({
   fecha_pedido_real: "",
   status: "ENTREGADO",
@@ -83,11 +89,135 @@ const handleChange = (field) => (e) => {
   }));
 };
 
+const handleDominioChange = (e) => {
+  const value = e.target.value.toUpperCase();
+
+  setForm((prev) => ({
+    ...prev,
+    dominio: value,
+  }));
+
+  setDominioPrevio(null);
+  setDominioPrevioMsg("");
+  setDatosDominioAplicados(null);
+
+  const dominioLimpio = value.trim();
+
+  if (!dominioLimpio || dominioLimpio.length < 5) {
+    return;
+  }
+
+  window.clearTimeout(window.__sakiDominioPrevioTimer);
+
+  window.__sakiDominioPrevioTimer = window.setTimeout(() => {
+    buscarDominioPrevio(dominioLimpio);
+  }, 450);
+};
+
 const handleHistoricoChange = (field) => (e) => {
   setHistoricoForm((prev) => ({
     ...prev,
     [field]: e.target.value,
   }));
+};
+
+const buscarDominioPrevio = async (dominioValue) => {
+  const dominioLimpio = (dominioValue || "").trim().toUpperCase();
+
+  const permiteBuscar =
+    isAdmin &&
+    (tipoInforme === "informe_dominio" ||
+      tipoInforme === "certificado_dominio");
+
+  if (!permiteBuscar || dominioLimpio.length < 5) {
+    setDominioPrevio(null);
+    setDominioPrevioMsg("");
+    return;
+  }
+
+  try {
+    setBuscandoDominioPrevio(true);
+    setDominioPrevioMsg("");
+
+    const { data, error } = await supabase
+      .from("dia_requests")
+      .select(
+        `
+        id,
+        dominio,
+        marca,
+        modelo,
+        tipo,
+        modelo_anio,
+        marca_motor,
+        numero_motor,
+        marca_chasis,
+        numero_chasis,
+        radicacion,
+        registro_interviniente,
+        titular_dominio,
+        titular_tipo_persona,
+        titular_apellido,
+        titular_nombres,
+        titular_razon_social,
+        titular_dni,
+        titular_cuil_cuit,
+        titular_cuit,
+        titular_estado_civil,
+        titular_desde,
+        porcentaje_titular,
+        titular_domicilio,
+        identificacion_nombre,
+        identificacion_dni,
+        identificacion_cuit,
+        created_at
+        `
+      )
+      .eq("dominio", dominioLimpio)
+      .neq("status", "ANULADO")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (data) {
+      setDominioPrevio(data);
+      setDominioPrevioMsg(
+        "Encontramos datos previos para este dominio. Podés reutilizarlos y editarlos antes de guardar."
+      );
+    } else {
+      setDominioPrevio(null);
+      setDominioPrevioMsg("");
+    }
+  } catch (error) {
+    console.error("Error buscando dominio previo:", error);
+    setDominioPrevio(null);
+    setDominioPrevioMsg("No se pudieron consultar datos previos del dominio.");
+  } finally {
+    setBuscandoDominioPrevio(false);
+  }
+};
+
+const handleUsarDatosDominioPrevio = () => {
+  if (!dominioPrevio || !isAdmin) return;
+
+  setDatosDominioAplicados({
+    marca: dominioPrevio.marca || null,
+    modelo: dominioPrevio.modelo || null,
+    tipo: dominioPrevio.tipo || null,
+    modelo_anio: dominioPrevio.modelo_anio || null,
+    marca_motor: dominioPrevio.marca_motor || null,
+    numero_motor: dominioPrevio.numero_motor || null,
+    marca_chasis: dominioPrevio.marca_chasis || null,
+    numero_chasis: dominioPrevio.numero_chasis || null,
+    radicacion: dominioPrevio.radicacion || null,
+    registro_interviniente: dominioPrevio.registro_interviniente || null,
+  });
+
+  setDominioPrevioMsg(
+    "Datos anteriores aplicados. Al guardar la solicitud, el legajo se creará con los datos técnicos precargados."
+  );
 };
 
 const formatDni = (value) => {
@@ -278,6 +408,8 @@ observed_status:
         (form.identificacion_nombre || "").trim().toUpperCase() || null,
       identificacion_dni: form.identificacion_dni || null,
       identificacion_cuit: form.identificacion_cuit || null,
+      
+      ...(datosDominioAplicados || {}),
     };
 
     const { data: requestData, error: insertError } = await supabase
@@ -498,9 +630,93 @@ const dominioPlaceholder = esAnotaciones
   placeholder={dominioPlaceholder}
   icon={<Car size={18} />}
   value={form.dominio}
-  onChange={handleChange("dominio")}
+  onChange={handleDominioChange}
 />
       </div>
+      {isAdmin &&
+  (tipoInforme === "informe_dominio" ||
+    tipoInforme === "certificado_dominio") &&
+  form.dominio &&
+  (buscandoDominioPrevio || dominioPrevioMsg) && (
+    <div
+      style={{
+        marginTop: "14px",
+        borderRadius: "16px",
+        border: dominioPrevio
+          ? "1px solid rgba(34,197,94,0.24)"
+          : "1px solid rgba(96,165,250,0.18)",
+        background: dominioPrevio
+          ? "linear-gradient(180deg, rgba(22,101,52,0.16), rgba(7,30,55,0.42))"
+          : "rgba(37,99,235,0.10)",
+        padding: "14px 16px",
+        color: "#dbeafe",
+        fontSize: "13px",
+        lineHeight: 1.45,
+      }}
+    >
+      <div
+        style={{
+          fontWeight: 850,
+          color: dominioPrevio ? "#bbf7d0" : "#bfdbfe",
+          marginBottom: "6px",
+        }}
+      >
+        {buscandoDominioPrevio
+          ? "Buscando antecedentes del dominio..."
+          : dominioPrevio
+          ? "Datos previos encontrados"
+          : "Consulta de antecedentes"}
+      </div>
+
+      <div>
+        {buscandoDominioPrevio
+          ? "Estamos verificando si este dominio ya tiene datos cargados en otro legajo."
+          : dominioPrevioMsg}
+      </div>
+
+      {dominioPrevio && (
+        <div
+          style={{
+            marginTop: "12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div
+            style={{
+              color: "rgba(226,237,249,0.84)",
+              fontSize: "12px",
+            }}
+          >
+            {dominioPrevio.marca || "Marca sin cargar"} ·{" "}
+            {dominioPrevio.modelo || "Modelo sin cargar"} ·{" "}
+            {dominioPrevio.modelo_anio || "Año sin cargar"}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleUsarDatosDominioPrevio}
+            style={{
+              height: "34px",
+              padding: "0 13px",
+              borderRadius: "999px",
+              border: "1px solid rgba(34,197,94,0.28)",
+              background: "rgba(22,163,74,0.18)",
+              color: "#bbf7d0",
+              fontSize: "12px",
+              fontWeight: 850,
+              cursor: "pointer",
+            }}
+          >
+            Usar datos anteriores
+          </button>
+        </div>
+      )}
+    </div>
+  )}
       {isAdmin && (
   <>
     <div style={sectionDividerStyle} />
