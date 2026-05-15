@@ -288,7 +288,9 @@ const printTitle =
     ? "Listado de informes anulados"
     : "Listado general de informes";
 
-const totalInformes = informes.length;
+const totalInformes = informes.filter(
+  (row) => row.status !== "ANULADO"
+).length;
 
 const totalEnCurso = informes.filter(
   (row) => row.status === "EN CURSO"
@@ -304,7 +306,7 @@ const totalAvisosInformes =
   totalObservados;
 
 const totalEntregados = informes.filter(
-  (row) => row.status === "ENTREGADO"
+  (row) => row.status === "ENTREGADO" && row.result === "APROBADO"
 ).length;
 
 const printDate = new Date().toLocaleDateString("es-AR");
@@ -568,7 +570,7 @@ const printDate = new Date().toLocaleDateString("es-AR");
     icon={<AlertCircle size={25} />}
     label="Observados"
     value={totalObservados}
-    text="Entregados con resultado observado."
+    text="Entregados con resultado Observado."
     active={quickFilter === "OBSERVADOS"}
     onClick={() => {
       setQuickFilter("OBSERVADOS");
@@ -582,7 +584,7 @@ const printDate = new Date().toLocaleDateString("es-AR");
     icon={<Bell size={25} />}
     label="Entregados"
     value={totalEntregados}
-    text="Finalizados y disponibles."
+    text="Entregados con resultado Aprobado."
     active={quickFilter === "ENTREGADOS"}
     onClick={() => {
       setQuickFilter("ENTREGADOS");
