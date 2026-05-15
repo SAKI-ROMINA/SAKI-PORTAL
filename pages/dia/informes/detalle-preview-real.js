@@ -301,7 +301,6 @@ function buildCargaInicialMirror(form) {
 
   return {
     franquiciado: frqNombre || null,
-    frq: frqNombre || null,
 
     identificacion_nombre: personaNombre || null,
     titular_dominio: personaNombre || null,
