@@ -2860,6 +2860,15 @@ const headerDatoPrincipalValue = headerEsPersona
   ? personaConsultadaHeader || "—"
   : row?.dominio || "—";
 
+  const legajoDisplayTitle =
+  row?.dominio ||
+  row?.titular_dominio ||
+  row?.identificacion_nombre ||
+  row?.titular_razon_social ||
+  `${row?.titular_apellido || ""} ${row?.titular_nombres || ""}`.trim() ||
+  getInformeTipoLabel(row?.type) ||
+  "Legajo";
+
   const fechaPedidoVisible =
   row?.fecha_pedido_real || row?.created_at;
 
@@ -3387,6 +3396,7 @@ setArchivoInputKey={setArchivoInputKey}
     onAbrirArchivo={handleAbrirArchivoLegajo}
     isAdmin={isAdmin}
 onEliminarArchivo={handleEliminarArchivoLegajo}
+legajoDisplayTitle={legajoDisplayTitle}
   />
 )}
 
@@ -3409,10 +3419,11 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
   <FichaHistorial row={row} historyRows={historyRows} />
 )}
 {activeFicha === "trazabilidad" && (
-  <FichaTrazabilidad
-    row={row}
-    observacionesInforme={observacionesInforme}
-  />
+<FichaTrazabilidad
+  row={row}
+  observacionesInforme={observacionesInforme}
+  legajoDisplayTitle={legajoDisplayTitle}
+/>
 )}
 {activeFicha === "avisos" && <FichaAvisos />}
 {activeFicha === "reporte" && <FichaReporte />}
@@ -8452,6 +8463,7 @@ function FichaArchivos({
   onAbrirArchivo,
   isAdmin,
 onEliminarArchivo,
+legajoDisplayTitle,
 }) {
   const formatFileSize = (bytes) => {
     if (!bytes) return "Tamaño no informado";
@@ -8475,7 +8487,7 @@ onEliminarArchivo,
         <div>
           <div style={credentialKickerStyle}>Archivos del legajo</div>
           <h2 style={credentialNameStyle}>
-            {row?.dominio || "Legajo por completar"}
+            {legajoDisplayTitle}
           </h2>
         </div>
       </div>
@@ -9711,7 +9723,11 @@ if (item?.tipo_evento === "informe_observado") {
   );
 }
 
-function FichaTrazabilidad({ row, observacionesInforme = [] }) {
+function FichaTrazabilidad({
+  row,
+  observacionesInforme = [],
+  legajoDisplayTitle,
+}) {
   const fecha = (value) => {
     if (!value) return null;
     return formatDate(value);
@@ -10016,7 +10032,7 @@ function FichaTrazabilidad({ row, observacionesInforme = [] }) {
       <div style={credentialKickerStyle}>Trazabilidad operativa</div>
 
       <h2 style={credentialNameStyle}>
-        {row?.dominio || "Legajo por completar"}
+        {legajoDisplayTitle}
       </h2>
     </div>
   </div>
