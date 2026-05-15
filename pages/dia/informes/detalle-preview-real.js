@@ -724,6 +724,101 @@ async function handleEliminarArchivoLegajo(file) {
   }
 }
 
+async function handleEliminarLegajoCompleto() {
+  if (!id || !isAdmin) return;
+
+  const confirmar = window.confirm(
+    "¿Seguro que querés eliminar este legajo completo? Se borrarán el pedido, vehículos, observaciones, notas, historial y archivos asociados."
+  );
+
+  if (!confirmar) return;
+
+  const confirmacionTexto = window.prompt(
+    'Para confirmar la eliminación definitiva, escribí: ELIMINAR'
+  );
+
+  if (confirmacionTexto !== "ELIMINAR") {
+    alert("Eliminación cancelada. No se borró el legajo.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setErrorMsg("");
+
+    const { data: filesData, error: filesFetchError } = await supabase
+      .from("dia_request_files")
+      .select("id, storage_path, path")
+      .eq("request_id", id);
+
+    if (filesFetchError) throw filesFetchError;
+
+    const storagePaths = (filesData || [])
+      .map((file) => file.storage_path || file.path)
+      .filter(Boolean);
+
+    if (storagePaths.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from("dia-informes-files")
+        .remove(storagePaths);
+
+      if (storageError) throw storageError;
+    }
+
+    const { error: vehiculosError } = await supabase
+      .from("dia_request_informe_nominal_vehiculos")
+      .delete()
+      .eq("request_id", id);
+
+    if (vehiculosError) throw vehiculosError;
+
+    const { error: observacionesError } = await supabase
+      .from("dia_request_informe_observaciones")
+      .delete()
+      .eq("request_id", id);
+
+    if (observacionesError) throw observacionesError;
+
+    const { error: notasError } = await supabase
+      .from("dia_notes")
+      .delete()
+      .eq("request_id", id);
+
+    if (notasError) throw notasError;
+
+    const { error: archivosError } = await supabase
+      .from("dia_request_files")
+      .delete()
+      .eq("request_id", id);
+
+    if (archivosError) throw archivosError;
+
+    const { error: historialError } = await supabase
+      .from("dia_requests_history")
+      .delete()
+      .eq("request_id", id);
+
+    if (historialError) throw historialError;
+
+    const { error: requestError } = await supabase
+      .from("dia_requests")
+      .delete()
+      .eq("id", id);
+
+    if (requestError) throw requestError;
+
+    alert("Legajo eliminado correctamente.");
+
+    router.push("/dia/informes");
+  } catch (error) {
+    console.error("Error eliminando legajo completo:", error);
+    setErrorMsg(error?.message || "No se pudo eliminar el legajo completo.");
+    alert(error?.message || "No se pudo eliminar el legajo completo.");
+  } finally {
+    setLoading(false);
+  }
+}
+
 function handleOpenDatosLegajoEditor() {
   setDatosLegajoForm(buildDatosLegajoForm(row));
   setDatosLegajoError("");
