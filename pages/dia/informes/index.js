@@ -582,7 +582,7 @@ const printDate = new Date().toLocaleDateString("es-AR");
 
   <SummaryCard
     icon={<Bell size={25} />}
-    label="Entregados"
+    label="Aprobados"
     value={totalEntregados}
     text="Entregados con resultado Aprobado."
     active={quickFilter === "ENTREGADOS"}
