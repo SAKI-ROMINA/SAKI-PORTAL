@@ -598,24 +598,23 @@ const printDate = new Date().toLocaleDateString("es-AR");
       type="button"
       onClick={() => setFechaFiltroOpen((prev) => !prev)}
       style={{
-        height: "74px",
-        padding: "0 20px",
-        borderRadius: "24px",
-        border:
-          fechaDesde || fechaHasta
-            ? "1px solid rgba(96, 165, 250, 0.55)"
-            : "1px solid rgba(96, 165, 250, 0.22)",
-        background:
-          fechaDesde || fechaHasta
-            ? "linear-gradient(180deg, rgba(37,99,235,0.28), rgba(7,31,58,0.72))"
-            : "linear-gradient(180deg, rgba(7,31,58,0.72), rgba(3,18,34,0.58))",
-        color: "#dbeafe",
-        fontSize: "14px",
-        fontWeight: 850,
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-        boxShadow: "0 16px 34px rgba(0,0,0,0.18)",
-      }}
+  height: "74px",
+  minWidth: "136px",
+  padding: "0 22px",
+  borderRadius: "24px",
+  border:
+    fechaDesde || fechaHasta
+      ? "1px solid rgba(96, 165, 250, 0.42)"
+      : "1px solid rgba(96, 165, 250, 0.18)",
+  background:
+    "linear-gradient(180deg, rgba(7,31,58,0.72), rgba(3,18,34,0.58))",
+  color: fechaDesde || fechaHasta ? "#dbeafe" : "rgba(214,228,245,0.58)",
+  fontSize: "14px",
+  fontWeight: 750,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+  boxShadow: "none",
+}}
     >
       Fecha ▾
     </button>
