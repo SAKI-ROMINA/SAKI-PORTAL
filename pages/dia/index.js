@@ -418,9 +418,9 @@ useEffect(() => {
           estado: item.status || item.estado || "Sin estado",
           href: `/dia/informes/detalle-preview-real?id=${item.id}`,
           fecha:
-  item.fecha_pedido_real ||
-  item.created_at,
-            
+            item.datos_legajo_actualizado_en ||
+            item.updated_at ||
+            item.created_at,
         }));
 
       const prendasResults = (prendasData || [])
@@ -439,7 +439,7 @@ useEffect(() => {
             .join(" · "),
           estado: item.estado || "Sin estado",
           href: `/dia/prendas/detalle-preview-real?id=${item.id}`,
-          fecha: item.fecha_envio_oficina || item.created_at,
+          fecha: item.updated_at || item.created_at,
         }));
 
       const combinedResults = [...informesResults, ...prendasResults]
