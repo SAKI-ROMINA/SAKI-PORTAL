@@ -594,34 +594,42 @@ const printDate = new Date().toLocaleDateString("es-AR");
   </div>
 
   <div style={{ position: "relative", flexShrink: 0 }}>
-    <button
-      type="button"
-      onClick={() => setFechaFiltroOpen((prev) => !prev)}
-      style={{
-  height: "74px",
-  width: "132px",
-  padding: "0 18px",
-  borderRadius: "24px",
-  border: "1px solid rgba(96, 165, 250, 0.18)",
-  background:
-    "linear-gradient(180deg, rgba(7,31,58,0.72), rgba(3,18,34,0.58))",
-  color: fechaDesde || fechaHasta
-    ? "#dbeafe"
-    : "rgba(214,228,245,0.42)",
-  fontSize: "20px",
-  fontWeight: 400,
-  letterSpacing: "-0.01em",
-  cursor: "pointer",
-  whiteSpace: "nowrap",
-  boxShadow: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "6px",
-}}
-    >
-  <span>Fecha</span>
-  <span style={{ fontSize: "11px", opacity: 0.55, marginTop: "2px" }}>▾</span>
+ <button
+  type="button"
+  onClick={() => setFechaFiltroOpen((prev) => !prev)}
+  style={{
+    ...searchInputWrapStyle,
+    height: "58px",
+    width: "128px",
+    minWidth: "128px",
+    flex: "0 0 128px",
+    padding: "0 16px",
+    justifyContent: "center",
+    gap: "6px",
+    cursor: "pointer",
+  }}
+>
+  <span
+    style={{
+      color: "rgba(255,255,255,0.42)",
+      fontSize: "16px",
+      fontWeight: 400,
+      lineHeight: "58px",
+    }}
+  >
+    Fecha
+  </span>
+
+  <span
+    style={{
+      color: "rgba(255,255,255,0.42)",
+      fontSize: "11px",
+      opacity: 0.7,
+      marginTop: "2px",
+    }}
+  >
+    ▾
+  </span>
 </button>
   </div>
 </div>
