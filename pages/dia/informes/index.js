@@ -144,11 +144,42 @@ function formatDate(value) {
   });
 }
 
+function parseFechaFiltro(value) {
+  const raw = (value || "").toString().trim();
+
+  if (!raw) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+
+  const match = raw.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+
+  if (!match) return null;
+
+  const [, day, month, year] = match;
+
+  return `${year}-${month}-${day}`;
+}
+
+function getFechaPedidoOrdenable(row) {
+  const fecha =
+    row?.fecha_pedido_real ||
+    row?.created_at ||
+    "";
+
+  return fecha ? fecha.toString().slice(0, 10) : "";
+}
+
 export default function InformesPreview() {
     const [informes, setInformes] = useState([]);
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState("");
 const [searchTerm, setSearchTerm] = useState("");
+const [fechaFiltroOpen, setFechaFiltroOpen] = useState(false);
+const [fechaDesde, setFechaDesde] = useState("");
+const [fechaHasta, setFechaHasta] = useState("");
+const [fechaOrden, setFechaOrden] = useState("desc");
 const [quickFilter, setQuickFilter] = useState("TODOS");
 const [selectedInforme, setSelectedInforme] = useState(null);
 const [selectedInformeFilesCount, setSelectedInformeFilesCount] = useState(0);
@@ -234,7 +265,8 @@ useEffect(() => {
 
 const normalizedSearch = searchTerm.trim().toLowerCase();
 
-const filteredInformes = informes.filter((row) => {
+const filteredInformes = informes
+  .filter((row) => {
   const matchesQuickFilter =
   quickFilter === "TODOS" ||
   (quickFilter === "SOLICITADOS" && row.status === "SOLICITADO") ||
@@ -248,6 +280,13 @@ const filteredInformes = informes.filter((row) => {
   (quickFilter === "ANULADOS" && row.status === "ANULADO");
 
   if (!matchesQuickFilter) return false;
+
+  const fechaInforme = getFechaPedidoOrdenable(row);
+const desdeNormalizada = parseFechaFiltro(fechaDesde);
+const hastaNormalizada = parseFechaFiltro(fechaHasta);
+
+if (desdeNormalizada && fechaInforme < desdeNormalizada) return false;
+if (hastaNormalizada && fechaInforme > hastaNormalizada) return false;
 
   if (!normalizedSearch) return true;
 
@@ -269,6 +308,16 @@ const filteredInformes = informes.filter((row) => {
     .toLowerCase();
 
   return text.includes(normalizedSearch);
+})
+.sort((a, b) => {
+  const fechaA = getFechaPedidoOrdenable(a);
+  const fechaB = getFechaPedidoOrdenable(b);
+
+  if (fechaOrden === "asc") {
+    return fechaA.localeCompare(fechaB);
+  }
+
+  return fechaB.localeCompare(fechaA);
 });
 
 const hasSearch = searchTerm.trim() !== "";
