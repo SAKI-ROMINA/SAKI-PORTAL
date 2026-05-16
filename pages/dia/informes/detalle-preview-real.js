@@ -1791,6 +1791,90 @@ async function handleAnularInforme() {
   });
 }
 
+async function enviarNotificacionInformePrueba({
+  titulo,
+  mensaje,
+  detalle = "",
+}) {
+  if (!id) return;
+
+  try {
+    const mailRes = await fetch("/api/dia/send-notification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: "rominamazzeo@gmail.com",
+        cc: "",
+        subject: `SAKI | PRUEBA INTERNA | ${titulo}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; font-size: 14px; color: #111; line-height: 1.5;">
+            <h2 style="margin: 0 0 16px 0; color: #0f172a;">Notificación del Portal Día</h2>
+
+            <p style="margin: 0 0 16px 0;">
+              ${mensaje || "Se registró un nuevo movimiento en el legajo."}
+            </p>
+
+            <p style="margin: 0 0 8px 0;"><strong>Legajo:</strong> ${
+              row?.short_code || id
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Tienda:</strong> ${
+              row?.tienda || "—"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Franquiciado:</strong> ${
+              row?.franquiciado || row?.frq_razon_social || row?.frq || "—"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Dominio / Persona:</strong> ${
+              row?.dominio ||
+              row?.titular_dominio ||
+              row?.identificacion_nombre ||
+              "—"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Tipo de informe:</strong> ${
+              getInformeTipoLabel(row?.type)
+            }</p>
+
+            ${
+              detalle
+                ? `<p style="margin: 16px 0 8px 0;"><strong>Detalle:</strong></p>
+                   <p style="margin: 0 0 8px 0; white-space: pre-wrap;">${detalle}</p>`
+                : ""
+            }
+
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;" />
+
+            <p style="margin: 0; color: #475569;">
+              Este mensaje fue generado automáticamente por SAKI Portal Día. Por favor, no responder a este correo.
+            </p>
+          </div>
+        `,
+        requestId: id,
+        threadId: row?.email_thread_id || null,
+      }),
+    });
+
+    const mailJson = await mailRes.json().catch(() => null);
+
+    if (mailJson?.threadId && !row?.email_thread_id) {
+      await supabase
+        .from("dia_requests")
+        .update({ email_thread_id: mailJson.threadId })
+        .eq("id", id);
+
+      setRow((prev) =>
+        prev ? { ...prev, email_thread_id: mailJson.threadId } : prev
+      );
+    }
+
+    if (!mailRes.ok) {
+      console.error("Error enviando notificación de prueba:", mailJson);
+    }
+  } catch (mailError) {
+    console.error("Error inesperado enviando notificación de prueba:", mailError);
+  }
+}
+
 async function handleCambiarEstadoInforme({
   nuevoStatus,
   nuevoResult,
@@ -1852,6 +1936,21 @@ async function handleCambiarEstadoInforme({
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
+    await enviarNotificacionInformePrueba({
+  titulo: tituloHistorial || "Movimiento del informe",
+  mensaje: "Se registró un nuevo movimiento operativo en el legajo de informe.",
+  detalle: `
+Estado: ${nuevoStatus || "—"}
+Resultado: ${nuevoResult || "—"}
+Movimiento: ${tituloHistorial || "—"}
+Detalle: ${
+    detalleHistorial?.accion ||
+    detalleHistorial?.observacion ||
+    detalleHistorial?.motivo ||
+    "Movimiento registrado en el historial del legajo."
+  }
+  `.trim(),
+});
   } catch (error) {
     console.error("Error cambiando estado del informe:", error);
     alert(error?.message || "No se pudo cambiar el estado del informe.");
