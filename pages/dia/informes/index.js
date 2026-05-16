@@ -624,7 +624,7 @@ const printDate = new Date().toLocaleDateString("es-AR");
   <span
     style={{
       color: "rgba(255,255,255,0.42)",
-      fontSize: "10px",
+      fontSize: "9px",
       opacity: 0.55,
       marginTop: "1px",
     }}
@@ -651,9 +651,9 @@ const printDate = new Date().toLocaleDateString("es-AR");
     <div
       style={{
         color: "#dbeafe",
-        fontSize: "12px",
-        fontWeight: 850,
-        letterSpacing: "0.08em",
+        fontSize: "11px",
+        fontWeight: 600,
+        letterSpacing: "0.06em",
         textTransform: "uppercase",
         marginBottom: "12px",
       }}
@@ -668,7 +668,7 @@ const printDate = new Date().toLocaleDateString("es-AR");
             display: "block",
             color: "rgba(214,228,245,0.62)",
             fontSize: "11px",
-            fontWeight: 750,
+            fontWeight: 600,
             marginBottom: "6px",
           }}
         >
@@ -701,7 +701,7 @@ const printDate = new Date().toLocaleDateString("es-AR");
             display: "block",
             color: "rgba(214,228,245,0.62)",
             fontSize: "11px",
-            fontWeight: 750,
+            fontWeight: 600,
             marginBottom: "6px",
           }}
         >
@@ -734,7 +734,7 @@ const printDate = new Date().toLocaleDateString("es-AR");
             display: "block",
             color: "rgba(214,228,245,0.62)",
             fontSize: "11px",
-            fontWeight: 750,
+            fontWeight: 600,
             marginBottom: "6px",
           }}
         >
@@ -778,8 +778,8 @@ const printDate = new Date().toLocaleDateString("es-AR");
             border: "1px solid rgba(96,165,250,0.24)",
             background: "rgba(37,99,235,0.12)",
             color: "#bfdbfe",
-            fontSize: "12px",
-            fontWeight: 800,
+            fontSize: "11px",
+            fontWeight: 600,
             cursor: "pointer",
           }}
         >
@@ -802,8 +802,8 @@ const printDate = new Date().toLocaleDateString("es-AR");
             border: "1px solid rgba(148,163,184,0.18)",
             background: "rgba(255,255,255,0.03)",
             color: "rgba(214,228,245,0.72)",
-            fontSize: "12px",
-            fontWeight: 800,
+            fontSize: "11px",
+            fontWeight: 600,
             cursor: "pointer",
           }}
         >
