@@ -119,6 +119,24 @@ function getWorkspaceInformeTitle(item) {
   );
 }
 
+function parseFechaFiltro(value) {
+  const raw = (value || "").toString().trim();
+
+  if (!raw) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+
+  const match = raw.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+
+  if (!match) return null;
+
+  const [, day, month, year] = match;
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function PanelPreview() {
     const router = useRouter();
 const [userEmail, setUserEmail] = useState("");
@@ -139,6 +157,11 @@ const [loadingWorkspace, setLoadingWorkspace] = useState(false);
 const [searchTerm, setSearchTerm] = useState("");
 const [searchResults, setSearchResults] = useState([]);
 const [searchingLegajos, setSearchingLegajos] = useState(false);
+
+const [fechaFiltroOpen, setFechaFiltroOpen] = useState(false);
+const [fechaDesde, setFechaDesde] = useState("");
+const [fechaHasta, setFechaHasta] = useState("");
+const [fechaOrden, setFechaOrden] = useState("desc");
 
 const [showNovedadModal, setShowNovedadModal] = useState(false);
 const [savingNovedad, setSavingNovedad] = useState(false);
@@ -442,9 +465,29 @@ useEffect(() => {
           fecha: item.updated_at || item.created_at,
         }));
 
-      const combinedResults = [...informesResults, ...prendasResults]
-        .sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0))
-        .slice(0, 12);
+const desdeNormalizada = parseFechaFiltro(fechaDesde);
+const hastaNormalizada = parseFechaFiltro(fechaHasta);
+
+const combinedResults = [...informesResults, ...prendasResults]
+  .filter((item) => {
+    const fechaItem = item.fecha ? item.fecha.toString().slice(0, 10) : "";
+
+    if (desdeNormalizada && fechaItem < desdeNormalizada) return false;
+    if (hastaNormalizada && fechaItem > hastaNormalizada) return false;
+
+    return true;
+  })
+  .sort((a, b) => {
+    const fechaA = a.fecha ? a.fecha.toString().slice(0, 10) : "";
+    const fechaB = b.fecha ? b.fecha.toString().slice(0, 10) : "";
+
+    if (fechaOrden === "asc") {
+      return fechaA.localeCompare(fechaB);
+    }
+
+    return fechaB.localeCompare(fechaA);
+  })
+  .slice(0, 12);
 
       setSearchResults(combinedResults);
     } catch (error) {
@@ -674,21 +717,245 @@ if (checkingSession) {
               <div style={resultBadgeStyle}>Búsqueda general</div>
             </div>
 
-            <div style={searchInputWrapStyle}>
-              <Search size={22} />
-
-              <input
-  style={searchInputStyle}
-  value={searchTerm}
-  onChange={(e) => setSearchTerm(e.target.value)}
-  onKeyDown={(e) => {
-    if (e.key === "Enter" && searchResults.length > 0) {
-      router.push(searchResults[0].href);
-    }
+            <div
+  style={{
+    display: "flex",
+    gap: "12px",
+    alignItems: "center",
+    width: "100%",
   }}
-  placeholder="Ejemplo: Mazzeo, AA555AA, 10020, CUIT o ID..."
-/>
-            </div>
+>
+  <div style={{ ...searchInputWrapStyle, flex: 1 }}>
+    <Search size={22} />
+
+    <input
+      style={searchInputStyle}
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && searchResults.length > 0) {
+          router.push(searchResults[0].href);
+        }
+      }}
+      placeholder="Ejemplo: Mazzeo, AA555AA, 10020, CUIT o ID..."
+    />
+  </div>
+
+  <div style={{ position: "relative", flexShrink: 0 }}>
+    <button
+      type="button"
+      onClick={() => setFechaFiltroOpen((prev) => !prev)}
+      style={{
+        ...searchInputWrapStyle,
+        height: "58px",
+        width: "118px",
+        minWidth: "118px",
+        flex: "0 0 118px",
+        padding: "0 16px",
+        justifyContent: "center",
+        gap: "6px",
+        cursor: "pointer",
+      }}
+    >
+      <span
+        style={{
+          color: "#ffffff",
+          opacity: 0.42,
+          fontSize: "16px",
+          fontWeight: 400,
+          lineHeight: 1,
+        }}
+      >
+        Fecha
+      </span>
+
+      <span
+        style={{
+          color: "rgba(255,255,255,0.42)",
+          fontSize: "10px",
+          opacity: 0.55,
+          marginTop: "1px",
+        }}
+      >
+        ▾
+      </span>
+    </button>
+    {fechaFiltroOpen && (
+  <div
+    style={{
+      position: "absolute",
+      top: "66px",
+      right: 0,
+      width: "280px",
+      borderRadius: "18px",
+      border: "1px solid rgba(96,165,250,0.22)",
+      background:
+        "linear-gradient(180deg, rgba(7,31,58,0.98), rgba(3,18,34,0.98))",
+      boxShadow: "0 24px 60px rgba(0,0,0,0.38)",
+      padding: "14px",
+      zIndex: 50,
+    }}
+  >
+    <div
+      style={{
+        color: "#dbeafe",
+        fontSize: "11px",
+        fontWeight: 650,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        marginBottom: "12px",
+      }}
+    >
+      Fecha de pedido
+    </div>
+
+    <div style={{ display: "grid", gap: "10px" }}>
+      <div>
+        <label
+          style={{
+            display: "block",
+            color: "rgba(214,228,245,0.62)",
+            fontSize: "11px",
+            fontWeight: 500,
+            marginBottom: "6px",
+          }}
+        >
+          Desde
+        </label>
+
+        <input
+          type="date"
+          value={fechaDesde}
+          onChange={(e) => setFechaDesde(e.target.value)}
+          style={{
+            width: "100%",
+            height: "38px",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(3,18,34,0.72)",
+            color: "#dbeafe",
+            padding: "0 10px",
+            outline: "none",
+          }}
+        />
+      </div>
+
+      <div>
+        <label
+          style={{
+            display: "block",
+            color: "rgba(214,228,245,0.62)",
+            fontSize: "11px",
+            fontWeight: 500,
+            marginBottom: "6px",
+          }}
+        >
+          Hasta
+        </label>
+
+        <input
+          type="date"
+          value={fechaHasta}
+          onChange={(e) => setFechaHasta(e.target.value)}
+          style={{
+            width: "100%",
+            height: "38px",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(3,18,34,0.72)",
+            color: "#dbeafe",
+            padding: "0 10px",
+            outline: "none",
+          }}
+        />
+      </div>
+
+      <div>
+        <label
+          style={{
+            display: "block",
+            color: "rgba(214,228,245,0.62)",
+            fontSize: "11px",
+            fontWeight: 500,
+            marginBottom: "6px",
+          }}
+        >
+          Orden
+        </label>
+
+        <select
+          value={fechaOrden}
+          onChange={(e) => setFechaOrden(e.target.value)}
+          style={{
+            width: "100%",
+            height: "38px",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(3,18,34,0.72)",
+            color: "#dbeafe",
+            padding: "0 10px",
+            outline: "none",
+          }}
+        >
+          <option value="desc">Más recientes primero</option>
+          <option value="asc">Más antiguos primero</option>
+        </select>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "8px",
+          marginTop: "4px",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setFechaFiltroOpen(false)}
+          style={{
+            height: "34px",
+            flex: 1,
+            borderRadius: "999px",
+            border: "1px solid rgba(96,165,250,0.24)",
+            background: "rgba(37,99,235,0.12)",
+            color: "#bfdbfe",
+            fontSize: "11px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Aplicar
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setFechaDesde("");
+            setFechaHasta("");
+            setFechaOrden("desc");
+            setFechaFiltroOpen(false);
+          }}
+          style={{
+            height: "34px",
+            flex: 1,
+            borderRadius: "999px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(255,255,255,0.03)",
+            color: "rgba(214,228,245,0.72)",
+            fontSize: "11px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+  </div>
+</div>
 
             {searchTerm.trim().length >= 2 && (
   <div style={searchResultsBoxStyle}>
