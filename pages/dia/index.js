@@ -959,7 +959,7 @@ if (checkingSession) {
   </div>
 </div>
 
-            {searchTerm.trim().length >= 2 && (
+            {(searchTerm.trim().length >= 2 || fechaDesde || fechaHasta) && (
   <div style={searchResultsBoxStyle}>
     {searchingLegajos ? (
       <div style={searchEmptyStyle}>Buscando legajos...</div>
