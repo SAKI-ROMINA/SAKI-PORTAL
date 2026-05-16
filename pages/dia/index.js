@@ -396,11 +396,13 @@ useEffect(() => {
 
   const term = searchTerm.trim();
 
-  if (term.length < 2) {
-    setSearchResults([]);
-    setSearchingLegajos(false);
-    return;
-  }
+const hayFiltroFecha = Boolean(fechaDesde || fechaHasta);
+
+if (!hayFiltroFecha && term.length < 2) {
+  setSearchResults([]);
+  setSearchingLegajos(false);
+  return;
+}
 
   let active = true;
 
@@ -504,7 +506,7 @@ const combinedResults = [...informesResults, ...prendasResults]
     active = false;
     clearTimeout(timer);
   };
-}, [searchTerm, checkingSession]);
+}, [searchTerm, fechaDesde, fechaHasta, fechaOrden, checkingSession]);
 
 useEffect(() => {
   if (checkingSession) return;
