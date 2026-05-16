@@ -600,9 +600,9 @@ const printDate = new Date().toLocaleDateString("es-AR");
   style={{
     ...searchInputWrapStyle,
     height: "58px",
-    width: "128px",
-    minWidth: "128px",
-    flex: "0 0 128px",
+    width: "118px",
+    minWidth: "118px",
+    flex: "0 0 118px",
     padding: "0 16px",
     justifyContent: "center",
     gap: "6px",
@@ -610,27 +610,209 @@ const printDate = new Date().toLocaleDateString("es-AR");
   }}
 >
   <span
-    style={{
-      color: "rgba(255,255,255,0.42)",
-      fontSize: "16px",
-      fontWeight: 400,
-      lineHeight: "58px",
-    }}
-  >
-    Fecha
-  </span>
+  style={{
+    color: "#ffffff",
+    opacity: 0.42,
+    fontSize: "16px",
+    fontWeight: 400,
+    lineHeight: 1,
+  }}
+>
+  Fecha
+</span>
 
   <span
     style={{
       color: "rgba(255,255,255,0.42)",
-      fontSize: "11px",
-      opacity: 0.7,
-      marginTop: "2px",
+      fontSize: "10px",
+      opacity: 0.55,
+      marginTop: "1px",
     }}
   >
     ▾
   </span>
 </button>
+{fechaFiltroOpen && (
+  <div
+    style={{
+      position: "absolute",
+      top: "68px",
+      right: 0,
+      width: "280px",
+      borderRadius: "18px",
+      border: "1px solid rgba(96,165,250,0.22)",
+      background:
+        "linear-gradient(180deg, rgba(7,31,58,0.98), rgba(3,18,34,0.98))",
+      boxShadow: "0 24px 60px rgba(0,0,0,0.38)",
+      padding: "14px",
+      zIndex: 50,
+    }}
+  >
+    <div
+      style={{
+        color: "#dbeafe",
+        fontSize: "12px",
+        fontWeight: 850,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        marginBottom: "12px",
+      }}
+    >
+      Fecha de pedido
+    </div>
+
+    <div style={{ display: "grid", gap: "10px" }}>
+      <div>
+        <label
+          style={{
+            display: "block",
+            color: "rgba(214,228,245,0.62)",
+            fontSize: "11px",
+            fontWeight: 750,
+            marginBottom: "6px",
+          }}
+        >
+          Desde
+        </label>
+
+        <input
+          type="date"
+          value={fechaDesde}
+          onChange={(e) => {
+            setFechaDesde(e.target.value);
+            setSelectedInforme(null);
+          }}
+          style={{
+            width: "100%",
+            height: "38px",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(3,18,34,0.72)",
+            color: "#dbeafe",
+            padding: "0 10px",
+            outline: "none",
+          }}
+        />
+      </div>
+
+      <div>
+        <label
+          style={{
+            display: "block",
+            color: "rgba(214,228,245,0.62)",
+            fontSize: "11px",
+            fontWeight: 750,
+            marginBottom: "6px",
+          }}
+        >
+          Hasta
+        </label>
+
+        <input
+          type="date"
+          value={fechaHasta}
+          onChange={(e) => {
+            setFechaHasta(e.target.value);
+            setSelectedInforme(null);
+          }}
+          style={{
+            width: "100%",
+            height: "38px",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(3,18,34,0.72)",
+            color: "#dbeafe",
+            padding: "0 10px",
+            outline: "none",
+          }}
+        />
+      </div>
+
+      <div>
+        <label
+          style={{
+            display: "block",
+            color: "rgba(214,228,245,0.62)",
+            fontSize: "11px",
+            fontWeight: 750,
+            marginBottom: "6px",
+          }}
+        >
+          Orden
+        </label>
+
+        <select
+          value={fechaOrden}
+          onChange={(e) => setFechaOrden(e.target.value)}
+          style={{
+            width: "100%",
+            height: "38px",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(3,18,34,0.72)",
+            color: "#dbeafe",
+            padding: "0 10px",
+            outline: "none",
+          }}
+        >
+          <option value="desc">Más recientes primero</option>
+          <option value="asc">Más antiguos primero</option>
+        </select>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "8px",
+          marginTop: "4px",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setFechaFiltroOpen(false)}
+          style={{
+            height: "34px",
+            flex: 1,
+            borderRadius: "999px",
+            border: "1px solid rgba(96,165,250,0.24)",
+            background: "rgba(37,99,235,0.12)",
+            color: "#bfdbfe",
+            fontSize: "12px",
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          Aplicar
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setFechaDesde("");
+            setFechaHasta("");
+            setFechaOrden("desc");
+            setSelectedInforme(null);
+            setFechaFiltroOpen(false);
+          }}
+          style={{
+            height: "34px",
+            flex: 1,
+            borderRadius: "999px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(255,255,255,0.03)",
+            color: "rgba(214,228,245,0.72)",
+            fontSize: "12px",
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
   </div>
 </div>
           </section>
