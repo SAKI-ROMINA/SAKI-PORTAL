@@ -373,13 +373,11 @@ useEffect(() => {
 
   const term = searchTerm.trim();
 
-const hayFiltroFecha = Boolean(fechaDesde || fechaHasta);
-
-if (!hayFiltroFecha && term.length < 2) {
-  setSearchResults([]);
-  setSearchingLegajos(false);
-  return;
-}
+  if (term.length < 2) {
+    setSearchResults([]);
+    setSearchingLegajos(false);
+    return;
+  }
 
   let active = true;
 
@@ -463,7 +461,7 @@ if (!hayFiltroFecha && term.length < 2) {
     active = false;
     clearTimeout(timer);
   };
-}, [searchTerm, fechaDesde, fechaHasta, fechaOrden, checkingSession]);
+}, [searchTerm, checkingSession]);
 
 useEffect(() => {
   if (checkingSession) return;
