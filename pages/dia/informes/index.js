@@ -599,18 +599,15 @@ const printDate = new Date().toLocaleDateString("es-AR");
       onClick={() => setFechaFiltroOpen((prev) => !prev)}
       style={{
   height: "74px",
-  width: "172px",
-  padding: "0 22px",
+  width: "132px",
+  padding: "0 18px",
   borderRadius: "24px",
-  border:
-    fechaDesde || fechaHasta
-      ? "1px solid rgba(96, 165, 250, 0.34)"
-      : "1px solid rgba(96, 165, 250, 0.18)",
+  border: "1px solid rgba(96, 165, 250, 0.18)",
   background:
     "linear-gradient(180deg, rgba(7,31,58,0.72), rgba(3,18,34,0.58))",
   color: fechaDesde || fechaHasta
     ? "#dbeafe"
-    : "rgba(214,228,245,0.46)",
+    : "rgba(214,228,245,0.42)",
   fontSize: "20px",
   fontWeight: 400,
   letterSpacing: "-0.01em",
@@ -620,14 +617,12 @@ const printDate = new Date().toLocaleDateString("es-AR");
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "8px",
+  gap: "6px",
 }}
     >
-      <>
   <span>Fecha</span>
-  <span style={{ fontSize: "12px", opacity: 0.7 }}>▾</span>
-</>
-    </button>
+  <span style={{ fontSize: "11px", opacity: 0.55, marginTop: "2px" }}>▾</span>
+</button>
   </div>
 </div>
           </section>
