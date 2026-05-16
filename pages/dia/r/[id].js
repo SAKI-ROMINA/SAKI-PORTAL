@@ -85,20 +85,19 @@ export default function DiaResultado() {
     cc = "",
   }) {
     try {
-      const mailRes = {
-  ok: true,
-  json: async () => ({
-    ok: true,
-    skipped: true,
-    reason: "Mails desactivados temporalmente para pruebas internas.",
+const mailRes = await fetch("/api/dia/send-notification", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    to,
+    cc,
+    subject,
+    html,
+    requestId: rowData?.id,
+    threadId: rowData?.email_thread_id || null,
   }),
-};
-
-console.log("MAIL DESACTIVADO TEMPORALMENTE - no se envió:", {
-  to,
-  cc,
-  subject,
-  requestId: rowData?.id,
 });
 
       const mailJson = await mailRes.json();
