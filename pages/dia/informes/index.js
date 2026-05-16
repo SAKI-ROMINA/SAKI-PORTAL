@@ -572,19 +572,55 @@ const printDate = new Date().toLocaleDateString("es-AR");
 </button>
             </div>
 
-            <div style={searchInputWrapStyle}>
-              <Search size={22} />
-              <input
-
-  style={searchInputStyle}
-  placeholder="Buscar por dominio, tienda, franquiciado, CUIT, persona o estado..."
-  value={searchTerm}
-  onChange={(e) => {
-    setSearchTerm(e.target.value);
-    setSelectedInforme(null);
+<div
+  style={{
+    display: "flex",
+    gap: "12px",
+    alignItems: "center",
+    width: "100%",
   }}
-/>
-            </div>
+>
+  <div style={{ ...searchInputWrapStyle, flex: 1 }}>
+    <Search size={22} />
+    <input
+      style={searchInputStyle}
+      placeholder="Buscar por dominio, tienda, franquiciado, CUIT, persona o estado..."
+      value={searchTerm}
+      onChange={(e) => {
+        setSearchTerm(e.target.value);
+        setSelectedInforme(null);
+      }}
+    />
+  </div>
+
+  <div style={{ position: "relative", flexShrink: 0 }}>
+    <button
+      type="button"
+      onClick={() => setFechaFiltroOpen((prev) => !prev)}
+      style={{
+        height: "74px",
+        padding: "0 20px",
+        borderRadius: "24px",
+        border:
+          fechaDesde || fechaHasta
+            ? "1px solid rgba(96, 165, 250, 0.55)"
+            : "1px solid rgba(96, 165, 250, 0.22)",
+        background:
+          fechaDesde || fechaHasta
+            ? "linear-gradient(180deg, rgba(37,99,235,0.28), rgba(7,31,58,0.72))"
+            : "linear-gradient(180deg, rgba(7,31,58,0.72), rgba(3,18,34,0.58))",
+        color: "#dbeafe",
+        fontSize: "14px",
+        fontWeight: 850,
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        boxShadow: "0 16px 34px rgba(0,0,0,0.18)",
+      }}
+    >
+      Fecha ▾
+    </button>
+  </div>
+</div>
           </section>
 
   <section style={summaryGridStyle} className="no-print">
