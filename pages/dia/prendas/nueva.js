@@ -151,12 +151,19 @@ const frqCuit = onlyDigits(form.frq_cuit);
 const fechaOperacion = form.fecha_envio_oficina;
 const esCargaHistorica = isAdmin && tipoCarga === "historica";
 
-if (!tienda || !dominio || !frqApellido || !frqNombre || !frqCuit || !fechaOperacion) {
-  setErrorMsg(
-    esCargaHistorica
-      ? "Completá Tienda, Dominio, Apellido, Nombre y CUIT de FRQ, y Fecha de retiro."
-      : "Completá Tienda, Dominio, Apellido, Nombre y CUIT de FRQ, y Fecha de envío."
-  );
+const camposFaltantes = [];
+
+if (!tienda) camposFaltantes.push("Tienda");
+if (!dominio) camposFaltantes.push("Dominio");
+if (!frqApellido) camposFaltantes.push("Apellido FRQ");
+if (!frqNombre) camposFaltantes.push("Nombre FRQ");
+if (!frqCuit) camposFaltantes.push("CUIT FRQ");
+if (!fechaOperacion) {
+  camposFaltantes.push(esCargaHistorica ? "Fecha de retiro" : "Fecha de envío");
+}
+
+if (camposFaltantes.length > 0) {
+  setErrorMsg(`Falta completar: ${camposFaltantes.join(", ")}.`);
   return;
 }
 
