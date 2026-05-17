@@ -42,6 +42,7 @@ const [form, setForm] = useState({
   tienda: "",
   franquiciado: "",
   dominio: "",
+  sector_responsable: "",
   identificacion_tipo_sujeto: "persona_humana",
   identificacion_nombre: "",
   identificacion_dni: "",
@@ -335,7 +336,8 @@ const enviarNotificacionNuevoInforme = async ({
   try {
     const mailAdminSaki = "rominamazzeo@gmail.com";
 
-    let sectorResponsable = currentUserSector || "";
+    let sectorResponsable =
+  payload?.sector_responsable || currentUserSector || "";
 
     if (!sectorResponsable && requesterEmail) {
       const { data: requesterProfile, error: requesterProfileError } =
@@ -464,12 +466,16 @@ const enviarNotificacionNuevoInforme = async ({
 
 const validateInformeForm = () => {
   if (!tipoInforme) {
-    return "Seleccioná el tipo de informe.";
-  }
+  return "Seleccioná el tipo de informe.";
+}
 
-  if (!(form.tienda || "").trim()) {
-    return "Completá la tienda.";
-  }
+if (isAdmin && !(form.sector_responsable || "").trim()) {
+  return "Seleccioná el sector responsable del informe.";
+}
+
+if (!(form.tienda || "").trim()) {
+  return "Completá la tienda.";
+}
 
   if (!(form.franquiciado || "").trim()) {
     return "Completá el franquiciado.";
@@ -576,7 +582,10 @@ const fechaEntregaReal =
       franquiciado: (form.franquiciado || "").trim().toUpperCase(),
       dominio: (form.dominio || "").trim().toUpperCase() || null,
       requester_email: requesterEmail,
-      type: tipoInforme,
+sector_responsable: isAdmin
+  ? (form.sector_responsable || "").trim()
+  : (currentUserSector || "").trim(),
+type: tipoInforme,
 status: statusInicial,
 result: resultInicial,
 fecha_pedido_real: fechaPedidoReal,
@@ -677,15 +686,17 @@ setGuardado(true);
     }, 3000);
 
     setForm({
-      tienda: "",
-      franquiciado: "",
-      dominio: "",
-      identificacion_nombre: "",
-      identificacion_dni: "",
-      identificacion_cuit: "",
-      cc_email: "",
-      notes: "",
-    });
+  tienda: "",
+  franquiciado: "",
+  dominio: "",
+  sector_responsable: "",
+  identificacion_tipo_sujeto: "persona_humana",
+  identificacion_nombre: "",
+  identificacion_dni: "",
+  identificacion_cuit: "",
+  cc_email: "",
+  notes: "",
+});
 
     setNotasOpen(false);
   } catch (err) {
