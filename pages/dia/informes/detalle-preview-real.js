@@ -1791,6 +1791,100 @@ async function handleAnularInforme() {
   });
 }
 
+function normalizarEmailInforme(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function separarEmailsInforme(value) {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => separarEmailsInforme(item));
+  }
+
+  return String(value || "")
+    .split(/[;,\n\s]+/)
+    .map((email) => normalizarEmailInforme(email))
+    .filter((email) => email && email.includes("@"));
+}
+
+function emailsUnicosInforme(values) {
+  return Array.from(new Set(values.flatMap((value) => separarEmailsInforme(value))));
+}
+
+function obtenerAliasesSectorInforme(sector) {
+  const texto = String(sector || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (texto.includes("franqu")) {
+    return ["Franquicias", "Administración Franquicias", "Administracion Franquicias"];
+  }
+
+  if (texto.includes("credito") || texto.includes("cobranza")) {
+    return ["Créditos y Cobranzas", "Creditos y Cobranzas"];
+  }
+
+  if (texto.includes("jurid")) {
+    return ["Asuntos Jurídicos", "Asuntos Juridicos"];
+  }
+
+  return sector ? [sector] : [];
+}
+
+async function obtenerDestinatariosInforme() {
+  const mailAdminSaki = "rominamazzeo@gmail.com";
+
+  const sectorResponsable =
+    row?.sector_responsable ||
+    row?.sector ||
+    row?.sector_solicitante ||
+    row?.created_by_sector ||
+    row?.area ||
+    "";
+
+  const aliasesSector = obtenerAliasesSectorInforme(sectorResponsable);
+
+  let mailsSector = [];
+
+  if (aliasesSector.length > 0) {
+    const { data: perfilesSector, error: perfilesError } = await supabase
+      .from("profiles")
+      .select("email, sector, role")
+      .eq("role", "member")
+      .in("sector", aliasesSector);
+
+    if (perfilesError) {
+      console.error("Error buscando destinatarios del sector:", perfilesError);
+    } else {
+      mailsSector = emailsUnicosInforme(
+        (perfilesSector || []).map((perfil) => perfil?.email)
+      );
+    }
+  }
+
+  const mailsCopiaExterna = emailsUnicosInforme([
+    row?.cc_email,
+    row?.cc_emails,
+    row?.emails_copia,
+    row?.mail_copia,
+  ]);
+
+  const destinatariosPrincipales = emailsUnicosInforme([
+    mailAdminSaki,
+    ...mailsSector,
+  ]);
+
+  const copias = mailsCopiaExterna.filter(
+    (email) => !destinatariosPrincipales.includes(email)
+  );
+
+  return {
+    to: destinatariosPrincipales.join(","),
+    cc: copias.join(","),
+    sectorResponsable: sectorResponsable || "Sin sector informado",
+  };
+}
+
 async function enviarNotificacionInformePrueba({
   titulo,
   mensaje,
@@ -1799,37 +1893,47 @@ async function enviarNotificacionInformePrueba({
   if (!id) return;
 
   try {
+    const destinatarios = await obtenerDestinatariosInforme();
+
+    if (!destinatarios?.to) {
+      console.warn("No hay destinatarios para notificar informe.");
+      return;
+    }
+
     const mailRes = await fetch("/api/dia/send-notification", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        to: "rominamazzeo@gmail.com",
-        cc: "",
-        subject: `SAKI | PRUEBA INTERNA | ${titulo}`,
+        to: destinatarios.to,
+        cc: destinatarios.cc,
+        subject: `SAKI | ${titulo}`,
         html: `
           <div style="font-family: Arial, sans-serif; font-size: 14px; color: #111; line-height: 1.5;">
             <h2 style="margin: 0 0 16px 0; color: #0f172a;">Notificación del Portal Día</h2>
 
             <p style="margin: 0 0 16px 0;">
-              ${mensaje || "Se registró un nuevo movimiento en el legajo."}
+              ${mensaje || "Se registró un nuevo movimiento operativo en el legajo de informe."}
             </p>
 
             <p style="margin: 0 0 8px 0;"><strong>Legajo:</strong> ${
               row?.short_code || id
             }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Sector responsable:</strong> ${
+              destinatarios.sectorResponsable
+            }</p>
             <p style="margin: 0 0 8px 0;"><strong>Tienda:</strong> ${
-              row?.tienda || "—"
+              row?.tienda || "-"
             }</p>
             <p style="margin: 0 0 8px 0;"><strong>Franquiciado:</strong> ${
-              row?.franquiciado || row?.frq_razon_social || row?.frq || "—"
+              row?.frq_razon_social || row?.frq || "-"
             }</p>
             <p style="margin: 0 0 8px 0;"><strong>Dominio / Persona:</strong> ${
               row?.dominio ||
               row?.titular_dominio ||
               row?.identificacion_nombre ||
-              "—"
+              "-"
             }</p>
             <p style="margin: 0 0 8px 0;"><strong>Tipo de informe:</strong> ${
               getInformeTipoLabel(row?.type)
@@ -1868,10 +1972,10 @@ async function enviarNotificacionInformePrueba({
     }
 
     if (!mailRes.ok) {
-      console.error("Error enviando notificación de prueba:", mailJson);
+      console.error("Error enviando notificación de informe:", mailJson);
     }
   } catch (mailError) {
-    console.error("Error inesperado enviando notificación de prueba:", mailError);
+    console.error("Error inesperado enviando notificación de informe:", mailError);
   }
 }
 
