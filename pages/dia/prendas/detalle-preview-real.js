@@ -2703,6 +2703,12 @@ const casePillItems = [
   row?.plazo_anios
     ? `Plazo ${row.plazo_anios} años`
     : null,
+  row?.fecha_inscripcion
+    ? `Inscripción ${formatDate(row.fecha_inscripcion)}`
+    : `Inscripción —`,
+  row?.fecha_vencimiento
+    ? `Reinscripción ${formatDate(row.fecha_vencimiento)}`
+    : `Reinscripción —`,
 ].filter(Boolean);
 
 const estadoFechaInfo = (() => {
@@ -3477,16 +3483,18 @@ const titularAdminCasado =
   icon={<ShieldCheck size={30} />}
   title="PRENDA"
   items={[
-    [
-      "Instrumento",
-      row?.numero_escritura
-        ? `Escritura ${row.numero_escritura}`
-        : "Por completar",
-    ],
-    ["Folio", row?.folio || "Por completar"],
-    ["Fecha", formatDate(row?.fecha_escritura) || "Por completar"],
-    ["Escribanía", row?.escribania || "Por completar"],
-  ]}
+  [
+    "Instrumento",
+    row?.numero_escritura
+      ? `Escritura ${row.numero_escritura}`
+      : "Por completar",
+  ],
+  ["Folio", row?.folio || "Por completar"],
+  ["Fecha", formatDate(row?.fecha_escritura) || "Por completar"],
+  ["Inscripción", formatDate(row?.fecha_inscripcion) || "—"],
+  ["Reinscripción", formatDate(row?.fecha_vencimiento) || "—"],
+  ["Escribanía", row?.escribania || "Por completar"],
+]}
   action={null}
   onClick={() => setActiveFicha("prenda")}
 />
@@ -10255,6 +10263,16 @@ function FichaPrenda({ row }) {
           label="Fecha"
           value={formatDate(row?.fecha_escritura) || "Por completar"}
         />
+
+        <FichaDato
+  label="Fecha de inscripción"
+  value={formatDate(row?.fecha_inscripcion) || "—"}
+/>
+
+<FichaDato
+  label="Fecha de reinscripción"
+  value={formatDate(row?.fecha_vencimiento) || "—"}
+/>
 
         <FichaDato
           label="Escribanía"
