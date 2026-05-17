@@ -212,8 +212,13 @@ if (hayTitularCuit && titularCuit.length !== 11) {
   frq_cuit: frqCuit || null,
   titular_dominio: cleanUpper(titularCompuesto),
   titular_cuit: titularCuit || null,
-  fecha_envio_oficina: form.fecha_envio_oficina || null,
-  estado: "Pendiente de envío",
+
+  fecha_envio_oficina: esCargaHistorica ? null : fechaOperacion,
+  fecha_real_retiro_final: esCargaHistorica ? fechaOperacion : null,
+
+  estado: esCargaHistorica ? "Retirada" : "Pendiente de envío",
+
+  carga_historica: esCargaHistorica,
 };
 
 const { data: createdPrenda, error } = await supabase
