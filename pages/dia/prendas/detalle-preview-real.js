@@ -8419,16 +8419,16 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       />
     </div>
 
-    <div style={fieldBlockStyle}>
-  <span style={subLabelStyle}>Mail</span>
+    <div style={{ gridColumn: "1 / -1" }}>
+  <label style={modalFieldLabelStyle}>Mail</label>
   <input
     type="email"
-    value={datosLegajoForm.titular_email}
+    style={modalInputStyle}
+    value={datosLegajoForm.titular_email || ""}
     onChange={(e) =>
       handleDatosLegajoChange("titular_email", e.target.value)
     }
-    placeholder="Ej. titular@email.com"
-    style={editorInputStyle}
+    placeholder="Mail del titular / garante"
   />
 </div>
 
