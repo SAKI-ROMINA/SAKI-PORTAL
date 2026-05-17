@@ -10281,46 +10281,25 @@ function FichaPrenda({ row }) {
 
       <div style={credentialInfoGridStyle}>
         <FichaDato
-          label="Instrumento"
-          value={
-            row?.numero_escritura
-              ? `Escritura ${row.numero_escritura}`
-              : "Por completar"
-          }
-        />
-
-        <FichaDato label="Folio" value={row?.folio || "Por completar"} />
-
-        <FichaDato
-          label="Fecha"
-          value={formatDate(row?.fecha_escritura) || "Por completar"}
-        />
-
-        <FichaDato
-  label="Fecha de inscripción"
-  value={formatDate(row?.fecha_inscripcion) || "—"}
-/>
-
-<FichaDato
-  label="Fecha de reinscripción"
+  label="Instrumento"
   value={
-    <span
-      style={{
-        color: row?.fecha_vencimiento ? "#fde68a" : "#94a3b8",
-        fontWeight: 800,
-      }}
-    >
-      {formatDate(row?.fecha_vencimiento) || "—"}
-    </span>
+    row?.numero_escritura
+      ? `Escritura ${row.numero_escritura}`
+      : "Por completar"
   }
 />
 
-        <FichaDato
-          label="Escribanía"
-          value={row?.escribania || "Por completar"}
-        />
+<FichaDato
+  label="Folio"
+  value={row?.folio || "Por completar"}
+/>
 
-        <FichaDato
+<FichaDato
+  label="Fecha"
+  value={formatDate(row?.fecha_escritura) || "Por completar"}
+/>
+
+<FichaDato
   label="Importe"
   value={
     row?.importe_prenda
@@ -10329,14 +10308,39 @@ function FichaPrenda({ row }) {
   }
 />
 
-        <FichaDato
-          label="Grado"
-          value={row?.grado_prenda ? `${row.grado_prenda} grado` : "Por completar"}
-        />
+<FichaDato
+  label="Grado"
+  value={row?.grado_prenda || "Por completar"}
+/>
 
-        <FichaDato
+<FichaDato
   label="Plazo"
   value={row?.plazo_anios ? `${row.plazo_anios} años` : "Por completar"}
+/>
+
+<FichaDato
+  label="Escribanía"
+  value={row?.escribania || "Por completar"}
+/>
+
+<FichaDato
+  label="Fecha de inscripción"
+  value={formatDate(row?.fecha_inscripcion) || "—"}
+/>
+
+<FichaDato
+  label="Fecha de reinscripción"
+  value={formatDate(row?.fecha_vencimiento) || "—"}
+/>
+
+<FichaDato
+  label="S.T. 02 N°"
+  value={row?.st02_numero || "—"}
+/>
+
+<FichaDato
+  label="S.T. 03 N°"
+  value={row?.st03_numero || "—"}
 />
         
       </div>
