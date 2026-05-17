@@ -7678,7 +7678,6 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       zIndex: 10000,
       padding: "24px",
     }}
-    onClick={handleCancelDatosLegajoEditor}
   >
     <div
       onClick={(e) => e.stopPropagation()}
