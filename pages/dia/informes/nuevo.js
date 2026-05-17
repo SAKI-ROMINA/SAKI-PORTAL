@@ -839,6 +839,10 @@ const dominioPlaceholder = esAnotaciones
     Seleccionar sector
   </option>
 
+  <option value="Prueba interna" style={{ backgroundColor: "#031222", color: "#ffffff" }}>
+  Prueba interna
+</option>
+
   <option value="Franquicias" style={{ backgroundColor: "#031222", color: "#ffffff" }}>
     Franquicias
   </option>
