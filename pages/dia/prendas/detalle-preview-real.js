@@ -354,6 +354,10 @@ const [showAnularPrenda, setShowAnularPrenda] = useState(false);
 const [motivoAnulacion, setMotivoAnulacion] = useState("");
 const [savingAnularPrenda, setSavingAnularPrenda] = useState(false);
 
+const [showEliminarLegajo, setShowEliminarLegajo] = useState(false);
+const [confirmacionEliminarLegajo, setConfirmacionEliminarLegajo] = useState("");
+const [savingEliminarLegajo, setSavingEliminarLegajo] = useState(false);
+
   const estadoActual = row?.estado || "—";
 
 const estadoActualKey = (row?.estado || "")
@@ -2574,6 +2578,75 @@ const anuladaPorTexto =
     alert("No se pudo anular la prenda.");
   } finally {
     setSavingAnularPrenda(false);
+  }
+}
+
+async function handleEliminarLegajoCompleto() {
+  if (!id || !isAdmin) return;
+
+  const confirmacion = confirmacionEliminarLegajo.trim().toUpperCase();
+
+  if (confirmacion !== "ELIMINAR") {
+    alert('Para confirmar, escribí "ELIMINAR".');
+    return;
+  }
+
+  try {
+    setSavingEliminarLegajo(true);
+
+    const { data: archivosData, error: archivosError } = await supabase
+      .from("dia_request_prendas_files")
+      .select("id, storage_path")
+      .eq("prenda_id", id);
+
+    if (archivosError) throw archivosError;
+
+    const storagePaths = (archivosData || [])
+      .map((file) => file.storage_path)
+      .filter(Boolean);
+
+    if (storagePaths.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from("dia-prendas-files")
+        .remove(storagePaths);
+
+      if (storageError) throw storageError;
+    }
+
+    const { error: deleteFilesError } = await supabase
+      .from("dia_request_prendas_files")
+      .delete()
+      .eq("prenda_id", id);
+
+    if (deleteFilesError) throw deleteFilesError;
+
+    const { error: deleteNotesError } = await supabase
+      .from("dia_notes")
+      .delete()
+      .eq("prenda_id", id);
+
+    if (deleteNotesError) throw deleteNotesError;
+
+    const { error: deleteHistoryError } = await supabase
+      .from("dia_request_prendas_history")
+      .delete()
+      .eq("prenda_id", id);
+
+    if (deleteHistoryError) throw deleteHistoryError;
+
+    const { error: deletePrendaError } = await supabase
+      .from("dia_request_prendas")
+      .delete()
+      .eq("id", id);
+
+    if (deletePrendaError) throw deletePrendaError;
+
+    router.push("/dia/prendas");
+  } catch (error) {
+    console.error("Error eliminando legajo completo:", error);
+    alert(error?.message || "No se pudo eliminar el legajo.");
+  } finally {
+    setSavingEliminarLegajo(false);
   }
 }
 
