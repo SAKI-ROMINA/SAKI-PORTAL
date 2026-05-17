@@ -10600,6 +10600,22 @@ if (item?.tipo_evento === "archivo_eliminado" && detalle) {
     return detalle;
   }
 
+if (item?.tipo_evento === "datos_legajo_actualizados") {
+  const secciones = Array.isArray(detalle?.secciones)
+    ? detalle.secciones.join(", ")
+    : "datos administrativos del legajo";
+
+  const titularidadTotal =
+    detalle?.titularidad_total !== null &&
+    detalle?.titularidad_total !== undefined
+      ? `${detalle.titularidad_total}%`
+      : null;
+
+  return titularidadTotal
+    ? `SAKI actualizó datos del legajo. Secciones modificadas: ${secciones}. Titularidad total declarada: ${titularidadTotal}.`
+    : `SAKI actualizó datos del legajo. Secciones modificadas: ${secciones}.`;
+}
+
   return "Movimiento registrado en el legajo.";
 };
 
