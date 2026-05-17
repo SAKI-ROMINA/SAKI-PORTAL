@@ -191,6 +191,7 @@ frq_domicilio: source?.frq_domicilio || "",
         ? String(source.porcentaje_titular)
         : "",
     titular_domicilio: source?.titular_domicilio || "",
+    titular_email: source?.titular_email || "",
 
     titular_conyuge_apellido: source?.titular_conyuge_apellido || "",
     titular_conyuge_nombres: source?.titular_conyuge_nombres || "",
@@ -1240,6 +1241,7 @@ frq_domicilio: datosLegajoForm.frq_domicilio || null,
           ? null
           : Number(datosLegajoForm.porcentaje_titular),
       titular_domicilio: datosLegajoForm.titular_domicilio || null,
+      titular_email: datosLegajoForm.titular_email || null,
 
       titular_conyuge_apellido:
         datosLegajoForm.titular_conyuge_apellido || null,
@@ -8416,6 +8418,19 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
         placeholder="Domicilio del titular / garante"
       />
     </div>
+
+    <div style={fieldBlockStyle}>
+  <span style={subLabelStyle}>Mail</span>
+  <input
+    type="email"
+    value={datosLegajoForm.titular_email}
+    onChange={(e) =>
+      handleDatosLegajoChange("titular_email", e.target.value)
+    }
+    placeholder="Ej. titular@email.com"
+    style={editorInputStyle}
+  />
+</div>
 
     {titularAdminCasado && (
       <>
