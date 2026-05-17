@@ -815,31 +815,71 @@ const dominioPlaceholder = esAnotaciones
         </div>
       </div>
 
-      <div style={gridThreeStyle}>
-        <Field
-  label="Tienda *"
-  placeholder="Ejemplo: 10020"
-  icon={<Store size={18} />}
-  value={form.tienda}
-  onChange={handleChange("tienda")}
-/>
+{isAdmin && (
+  <div style={{ marginBottom: "16px" }}>
+    <div style={fieldWrapStyle}>
+      <label style={labelStyle}>Sector responsable *</label>
 
-     <Field
-  label="Franquiciado *"
-  placeholder="Nombre del franquiciado"
-  icon={<Building2 size={18} />}
-  value={form.franquiciado}
-  onChange={handleChange("franquiciado")}
-/>
+      <div style={inputWrapStyle}>
+        <span style={inputIconStyle}>
+          <Building2 size={18} />
+        </span>
 
-        <Field
-  label={dominioLabel}
-  placeholder={dominioPlaceholder}
-  icon={<Car size={18} />}
-  value={form.dominio}
-  onChange={handleDominioChange}
-/>
+        <select
+          value={form.sector_responsable}
+          onChange={handleChange("sector_responsable")}
+          style={{
+            ...inputStyle,
+            cursor: "pointer",
+          }}
+        >
+          <option value="">Seleccionar sector</option>
+          <option value="Franquicias">Franquicias</option>
+          <option value="Créditos y Cobranzas">
+            Créditos y Cobranzas
+          </option>
+          <option value="Asuntos Jurídicos">Asuntos Jurídicos</option>
+        </select>
       </div>
+    </div>
+  </div>
+)}
+
+<div style={gridThreeStyle}>
+  <Field
+    label="Tienda *"
+    placeholder="Ejemplo: 10020"
+    icon={<Store size={18} />}
+    value={form.tienda}
+    onChange={handleChange("tienda")}
+  />
+
+  <Field
+    label="Franquiciado *"
+    placeholder="Nombre del franquiciado"
+    icon={<Building2 size={18} />}
+    value={form.franquiciado}
+    onChange={handleChange("franquiciado")}
+  />
+
+  <Field
+    label={dominioLabel}
+    placeholder={dominioPlaceholder}
+    icon={<Car size={18} />}
+    value={form.dominio}
+    onChange={handleDominioChange}
+  />
+</div>
+
+<div style={{ ...gridThreeStyle, marginTop: "16px" }}>
+  <Field
+    label="Copiar a otros"
+    placeholder="mail1@dia.com; mail2@externo.com"
+    icon={<Mail size={18} />}
+    value={form.cc_email}
+    onChange={handleChange("cc_email")}
+  />
+</div>
       {isAdmin &&
   (tipoInforme === "informe_dominio" ||
     tipoInforme === "certificado_dominio") &&
