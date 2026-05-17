@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { supabase } from "../../../lib/supabaseClient";
@@ -45,6 +45,8 @@ export default function DiaPrendasNueva() {
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+const [tipoCarga, setTipoCarga] = useState("nueva");
   const [form, setForm] = useState({
   tienda: "",
   dominio: "",
@@ -58,6 +60,51 @@ export default function DiaPrendasNueva() {
 });
 
   const todayStr = useMemo(() => getTodayLocalDateString(), []);
+
+  useEffect(() => {
+  async function fetchCurrentProfile() {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setIsAdmin(false);
+        setTipoCarga("nueva");
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Error cargando perfil:", profileError);
+        setIsAdmin(false);
+        setTipoCarga("nueva");
+        return;
+      }
+
+      const userIsAdmin =
+        (profile?.role || "").toString().trim().toLowerCase() === "admin";
+
+      setIsAdmin(userIsAdmin);
+
+      if (!userIsAdmin) {
+        setTipoCarga("nueva");
+      }
+    } catch (error) {
+      console.error("Error verificando usuario:", error);
+      setIsAdmin(false);
+      setTipoCarga("nueva");
+    }
+  }
+
+  fetchCurrentProfile();
+}, []);
 
   function setUpperField(name, value) {
     setForm((prev) => ({
@@ -225,13 +272,45 @@ router.push("/dia/prendas");
 
         <div style={formCardStyle}>
           <div style={formHeaderStyle}>
-            <div>
-              <div style={sectionTitleStyle}>Datos base</div>
-              <div style={sectionSubtitleStyle}>
-                Ingresá los datos y guardá la solicitud.
-              </div>
-            </div>
-          </div>
+  <div>
+    <div style={sectionTitleStyle}>Datos base</div>
+    <div style={sectionSubtitleStyle}>
+      {tipoCarga === "historica"
+        ? "Carga administrativa de una prenda histórica ya retirada."
+        : "Ingresá los datos y guardá la solicitud."}
+    </div>
+  </div>
+
+  {isAdmin && (
+    <div style={tipoCargaBoxStyle}>
+      <span style={tipoCargaLabelStyle}>Tipo de carga</span>
+
+      <div style={tipoCargaButtonsStyle}>
+        <button
+          type="button"
+          onClick={() => setTipoCarga("nueva")}
+          style={{
+            ...tipoCargaButtonStyle,
+            ...(tipoCarga === "nueva" ? tipoCargaButtonActiveStyle : {}),
+          }}
+        >
+          Solicitud nueva
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setTipoCarga("historica")}
+          style={{
+            ...tipoCargaButtonStyle,
+            ...(tipoCarga === "historica" ? tipoCargaButtonActiveStyle : {}),
+          }}
+        >
+          Carga histórica
+        </button>
+      </div>
+    </div>
+  )}
+</div>
 
           <form id="prenda-form" onSubmit={handleSubmit}>
             <div style={rowTwoColsStyle}>
@@ -662,4 +741,46 @@ const errorBoxStyle = {
   color: "#fecaca",
   fontSize: "14px",
   fontWeight: 500,
+};
+
+const tipoCargaBoxStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
+  alignItems: "flex-end",
+};
+
+const tipoCargaLabelStyle = {
+  fontSize: "11px",
+  fontWeight: 800,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "#8fa4c4",
+};
+
+const tipoCargaButtonsStyle = {
+  display: "inline-flex",
+  gap: "8px",
+  padding: "5px",
+  borderRadius: "999px",
+  background: "rgba(3, 11, 24, 0.46)",
+  border: "1px solid rgba(148, 163, 184, 0.14)",
+};
+
+const tipoCargaButtonStyle = {
+  height: "34px",
+  padding: "0 13px",
+  borderRadius: "999px",
+  border: "1px solid transparent",
+  background: "transparent",
+  color: "#8da0be",
+  fontSize: "12px",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const tipoCargaButtonActiveStyle = {
+  background: "rgba(59,130,246,0.18)",
+  border: "1px solid rgba(96,165,250,0.32)",
+  color: "#dbeafe",
 };
