@@ -217,8 +217,6 @@ if (hayTitularCuit && titularCuit.length !== 11) {
   fecha_real_retiro_final: esCargaHistorica ? fechaOperacion : null,
 
   estado: esCargaHistorica ? "Retirada" : "Pendiente de envío",
-
-  carga_historica: esCargaHistorica,
 };
 
 const { data: createdPrenda, error } = await supabase
