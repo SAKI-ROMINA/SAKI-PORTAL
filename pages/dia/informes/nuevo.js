@@ -20,6 +20,7 @@ export default function NuevoInformePreview() {
   const [saving, setSaving] = useState(false);
 const [error, setError] = useState("");
 const [currentUserEmail, setCurrentUserEmail] = useState("");
+const [currentUserSector, setCurrentUserSector] = useState("");
 
 const [isAdmin, setIsAdmin] = useState(false);
 const [usarCargaHistorica, setUsarCargaHistorica] = useState(false);
@@ -62,11 +63,11 @@ useEffect(() => {
       return;
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
+const { data: profile, error: profileError } = await supabase
+  .from("profiles")
+  .select("role, sector")
+  .eq("id", user.id)
+  .maybeSingle();
 
     if (profileError) {
       console.error("Error cargando perfil:", profileError);
@@ -77,6 +78,7 @@ useEffect(() => {
     const role = (profile?.role || "").toString().trim().toLowerCase();
 
     setIsAdmin(role === "admin");
+    setCurrentUserSector((profile?.sector || "").toString().trim());
   }
 
   loadCurrentUser();
@@ -408,7 +410,7 @@ observed_status:
         (form.identificacion_nombre || "").trim().toUpperCase() || null,
       identificacion_dni: form.identificacion_dni || null,
       identificacion_cuit: form.identificacion_cuit || null,
-      
+
       ...(datosDominioAplicados || {}),
     };
 
