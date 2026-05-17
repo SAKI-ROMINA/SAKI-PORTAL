@@ -39,6 +39,20 @@ function formatDate(value) {
   return raw;
 }
 
+function addYearsToDateString(value, years) {
+  if (!value) return "";
+
+  const [year, month, day] = String(value).slice(0, 10).split("-").map(Number);
+
+  if (!year || !month || !day) return "";
+
+  return [
+    year + years,
+    String(month).padStart(2, "0"),
+    String(day).padStart(2, "0"),
+  ].join("-");
+}
+
 function onlyDigits(value) {
   return (value || "").toString().replace(/\D/g, "").slice(0, 11);
 }
@@ -145,6 +159,8 @@ function buildDatosLegajoForm(source) {
     numero_escritura: source?.numero_escritura || "",
     folio: source?.folio || "",
     fecha_escritura: source?.fecha_escritura || "",
+    fecha_inscripcion: source?.fecha_inscripcion || "",
+fecha_vencimiento: source?.fecha_vencimiento || "",
 
     // Dominio / automotor
     dominio: source?.dominio || "",
@@ -1218,6 +1234,10 @@ async function handleSaveDatosLegajo() {
       numero_escritura: datosLegajoForm.numero_escritura || null,
       folio: datosLegajoForm.folio || null,
       fecha_escritura: datosLegajoForm.fecha_escritura || null,
+      fecha_inscripcion: datosLegajoForm.fecha_inscripcion || null,
+fecha_vencimiento: datosLegajoForm.fecha_inscripcion
+  ? addYearsToDateString(datosLegajoForm.fecha_inscripcion, 5)
+  : null,
 
       // Dominio / automotor
       dominio: datosLegajoForm.dominio || null,
@@ -7885,6 +7905,31 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
           }
         />
       </div>
+      <div>
+  <label style={modalFieldLabelStyle}>Fecha de inscripción</label>
+  <input
+    type="date"
+    style={modalInputStyle}
+    value={datosLegajoForm.fecha_inscripcion || ""}
+    onChange={(e) =>
+      handleDatosLegajoChange("fecha_inscripcion", e.target.value)
+    }
+  />
+</div>
+
+<div>
+  <label style={modalFieldLabelStyle}>Fecha de reinscripción</label>
+  <input
+    type="text"
+    style={modalInputStyle}
+    value={
+      datosLegajoForm.fecha_inscripcion
+        ? formatDate(addYearsToDateString(datosLegajoForm.fecha_inscripcion, 5))
+        : "—"
+    }
+    readOnly
+  />
+</div>
     </div>
   </div>
   <div
