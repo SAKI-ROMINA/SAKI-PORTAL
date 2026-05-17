@@ -148,11 +148,14 @@ const dominio = form.dominio.trim();
 const frqApellido = form.frq_apellido.trim();
 const frqNombre = form.frq_nombre.trim();
 const frqCuit = onlyDigits(form.frq_cuit);
-const fechaEnvio = form.fecha_envio_oficina;
+const fechaOperacion = form.fecha_envio_oficina;
+const esCargaHistorica = isAdmin && tipoCarga === "historica";
 
-    if (!tienda || !dominio || !frqApellido || !frqNombre || !frqCuit || !fechaEnvio) {
+if (!tienda || !dominio || !frqApellido || !frqNombre || !frqCuit || !fechaOperacion) {
   setErrorMsg(
-    "Completá Tienda, Dominio, Apellido, Nombre y CUIT de FRQ, y Fecha de envío."
+    esCargaHistorica
+      ? "Completá Tienda, Dominio, Apellido, Nombre y CUIT de FRQ, y Fecha de retiro."
+      : "Completá Tienda, Dominio, Apellido, Nombre y CUIT de FRQ, y Fecha de envío."
   );
   return;
 }
@@ -162,10 +165,10 @@ if (frqCuit.length !== 11) {
   return;
 }
 
-    if (fechaEnvio < todayStr) {
-      setErrorMsg("La Fecha de envío no puede ser anterior al día de hoy.");
-      return;
-    }
+if (!esCargaHistorica && fechaOperacion < todayStr) {
+  setErrorMsg("La Fecha de envío no puede ser anterior al día de hoy.");
+  return;
+}
 
     const titularApellido = form.titular_apellido.trim();
 const titularNombre = form.titular_nombre.trim();
@@ -422,40 +425,44 @@ router.push("/dia/prendas");
   </div>
 </div>
 
-            <div style={dateSectionStyle}>
-              <div style={dateFieldStyle}>
-                <label style={labelStyle}>Fecha de envío</label>
+<div style={dateSectionStyle}>
+  <div style={dateFieldStyle}>
+    <label style={labelStyle}>
+      {tipoCarga === "historica" ? "Fecha de retiro" : "Fecha de envío"}
+    </label>
 
-                <div style={dateInputWrapStyle}>
-                  <input
-                    ref={dateInputRef}
-                    type="date"
-                    value={form.fecha_envio_oficina}
-                    min={todayStr}
-                    onChange={(e) =>
-                      setField("fecha_envio_oficina", e.target.value)
-                    }
-                    style={dateInputStyle}
-                  />
+    <div style={dateInputWrapStyle}>
+      <input
+        ref={dateInputRef}
+        type="date"
+        value={form.fecha_envio_oficina}
+        min={tipoCarga === "historica" ? undefined : todayStr}
+        onChange={(e) =>
+          setField("fecha_envio_oficina", e.target.value)
+        }
+        style={dateInputStyle}
+      />
 
-                  <button
-                    type="button"
-                    onClick={openDatePicker}
-                    style={calendarButtonStyle}
-                    aria-label="Abrir calendario"
-                    title="Abrir calendario"
-                  >
-                    📅
-                  </button>
-                </div>
-              </div>
-            </div>
+      <button
+        type="button"
+        onClick={openDatePicker}
+        style={calendarButtonStyle}
+        aria-label="Abrir calendario"
+        title="Abrir calendario"
+      >
+        📅
+      </button>
+    </div>
+  </div>
+</div>
 
-            <div style={helperRowStyle}>
-              <span style={helperTextStyle}>
-                No permite elegir una fecha anterior a hoy.
-              </span>
-            </div>
+<div style={helperRowStyle}>
+  <span style={helperTextStyle}>
+    {tipoCarga === "historica"
+      ? "Carga histórica: permite registrar una fecha anterior porque corresponde a una prenda ya retirada."
+      : "No permite elegir una fecha anterior a hoy."}
+  </span>
+</div>
 
             <div style={footerBarStyle}>
               <div style={footerTextStyle}>
