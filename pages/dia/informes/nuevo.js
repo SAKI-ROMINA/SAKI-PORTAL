@@ -826,20 +826,31 @@ const dominioPlaceholder = esAnotaciones
         </span>
 
         <select
-          value={form.sector_responsable}
-          onChange={handleChange("sector_responsable")}
-          style={{
-            ...inputStyle,
-            cursor: "pointer",
-          }}
-        >
-          <option value="">Seleccionar sector</option>
-          <option value="Franquicias">Franquicias</option>
-          <option value="Créditos y Cobranzas">
-            Créditos y Cobranzas
-          </option>
-          <option value="Asuntos Jurídicos">Asuntos Jurídicos</option>
-        </select>
+  value={form.sector_responsable}
+  onChange={handleChange("sector_responsable")}
+  style={{
+    ...inputStyle,
+    cursor: "pointer",
+    backgroundColor: "#031222",
+    color: "#ffffff",
+  }}
+>
+  <option value="" style={{ backgroundColor: "#031222", color: "#ffffff" }}>
+    Seleccionar sector
+  </option>
+
+  <option value="Franquicias" style={{ backgroundColor: "#031222", color: "#ffffff" }}>
+    Franquicias
+  </option>
+
+  <option value="Créditos y Cobranzas" style={{ backgroundColor: "#031222", color: "#ffffff" }}>
+    Créditos y Cobranzas
+  </option>
+
+  <option value="Asuntos Jurídicos" style={{ backgroundColor: "#031222", color: "#ffffff" }}>
+    Asuntos Jurídicos
+  </option>
+</select>
       </div>
     </div>
   </div>
