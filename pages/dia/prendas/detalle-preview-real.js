@@ -11482,6 +11482,13 @@ function FichaGarante({ row }) {
           />
         )}
 
+{row?.titular_email && (
+  <FichaDato
+    label="Mail"
+    value={row.titular_email}
+  />
+)}
+
         {row?.titular_domicilio && (
           <FichaDato
             label="Domicilio"
