@@ -1918,8 +1918,8 @@ async function enviarNotificacionInformePrueba({
             </p>
 
             <p style="margin: 0 0 8px 0;"><strong>Legajo:</strong> ${
-              row?.short_code || id
-            }</p>
+  row?.short_code || `INF-${String(id || "").slice(0, 8).toUpperCase()}`
+}</p>
             <p style="margin: 0 0 8px 0;"><strong>Sector responsable:</strong> ${
               destinatarios.sectorResponsable
             }</p>
