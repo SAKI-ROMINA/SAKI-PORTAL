@@ -1013,8 +1013,12 @@ Fecha de generación: ${new Date().toLocaleDateString("es-AR")}
   }
 - Escribanía: ${row?.escribania || "—"}
 - Moneda: ${row?.moneda_importe || "—"}
-- Importe: ${row?.importe_prenda || "—"}
-- Plazo: ${row?.plazo_anios ? `${row.plazo_anios} meses` : "—"}
+- Importe: ${
+    row?.importe_prenda
+      ? `${row?.moneda_importe || "$"} ${formatNumberMiles(row.importe_prenda)}`
+      : "—"
+  }
+- Plazo: ${row?.plazo_anios ? `${row.plazo_anios} años` : "—"}
 - Grado / orden de prelación: ${row?.grado_prenda || "—"}
 
 3. Dominio / Automotor
@@ -2671,13 +2675,13 @@ async function handleEliminarLegajoCompleto() {
 
 const casePillItems = [
   row?.importe_prenda
-    ? `Importe ${row?.moneda_importe || "$"} ${row.importe_prenda}`
+    ? `Importe ${row?.moneda_importe || "$"} ${formatNumberMiles(row.importe_prenda)}`
     : null,
   row?.grado_prenda
     ? `Orden de Prelación ${row.grado_prenda} Grado`
     : null,
   row?.plazo_anios
-    ? `Plazo ${row.plazo_anios} meses`
+    ? `Plazo ${row.plazo_anios} años`
     : null,
 ].filter(Boolean);
 
@@ -3040,12 +3044,12 @@ const resumenLegajoTexto = [
   }`,
   "",
   `Importe: ${
-    row?.importe_prenda
-      ? `${row?.moneda_importe || "$"} ${row.importe_prenda}`
-      : "Por completar"
-  }`,
-  `Grado: ${row?.grado_prenda || "Por completar"}`,
-  `Plazo: ${row?.plazo_anios ? `${row.plazo_anios} meses` : "Por completar"}`,
+  row?.importe_prenda
+    ? `${row?.moneda_importe || "$"} ${formatNumberMiles(row.importe_prenda)}`
+    : "Por completar"
+}`,
+`Grado: ${row?.grado_prenda || "Por completar"}`,
+`Plazo: ${row?.plazo_anios ? `${row.plazo_anios} años` : "Por completar"}`,
 ].join("\n");
 
 const datosLegajoTitularidadTotal =
@@ -6981,16 +6985,20 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
         </div>
 
         <div>
-          <span>Importe</span>
-          <strong>{row?.importe_prenda || "—"}</strong>
-        </div>
+  <span>Importe</span>
+  <strong>
+    {row?.importe_prenda
+      ? `${row?.moneda_importe || "$"} ${formatNumberMiles(row.importe_prenda)}`
+      : "—"}
+  </strong>
+</div>
 
-        <div>
-          <span>Plazo</span>
-          <strong>
-            {row?.plazo_anios ? `${row.plazo_anios} meses` : "—"}
-          </strong>
-        </div>
+<div>
+  <span>Plazo</span>
+  <strong>
+    {row?.plazo_anios ? `${row.plazo_anios} años` : "—"}
+  </strong>
+</div>
 
         <div>
           <span>Grado / orden de prelación</span>
@@ -7797,7 +7805,7 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       </div>
 
       <div>
-        <label style={modalFieldLabelStyle}>Plazo en meses</label>
+        <label style={modalFieldLabelStyle}>Plazo en años</label>
         <input
           style={modalInputStyle}
           value={datosLegajoForm.plazo_anios}
@@ -10209,13 +10217,13 @@ function FichaPrenda({ row }) {
         />
 
         <FichaDato
-          label="Importe"
-          value={
-            row?.importe_prenda
-              ? `${row?.moneda_importe || "$"} ${row.importe_prenda}`
-              : "Por completar"
-          }
-        />
+  label="Importe"
+  value={
+    row?.importe_prenda
+      ? `${row?.moneda_importe || "$"} ${formatNumberMiles(row.importe_prenda)}`
+      : "Por completar"
+  }
+/>
 
         <FichaDato
           label="Grado"
@@ -10223,9 +10231,9 @@ function FichaPrenda({ row }) {
         />
 
         <FichaDato
-          label="Plazo"
-          value={row?.plazo_anios ? `${row.plazo_anios} meses` : "Por completar"}
-        />
+  label="Plazo"
+  value={row?.plazo_anios ? `${row.plazo_anios} años` : "Por completar"}
+/>
         
       </div>
     </div>
