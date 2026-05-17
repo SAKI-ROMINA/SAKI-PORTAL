@@ -3559,7 +3559,7 @@ const titularAdminCasado =
       </main>
 
       {activeFicha && (
-        <div style={overlayStyle} onClick={() => setActiveFicha(null)}>
+        <div style={overlayStyle}>
           <div style={floatingCardStyle} onClick={(e) => e.stopPropagation()}>
             <button style={closeButtonStyle} onClick={() => setActiveFicha(null)}>
               ×
