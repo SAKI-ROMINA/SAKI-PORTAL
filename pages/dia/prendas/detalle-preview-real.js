@@ -2706,9 +2706,13 @@ const casePillItems = [
   row?.fecha_inscripcion
     ? `Inscripción ${formatDate(row.fecha_inscripcion)}`
     : `Inscripción —`,
-  row?.fecha_vencimiento
-    ? `Reinscripción ${formatDate(row.fecha_vencimiento)}`
-    : `Reinscripción —`,
+  row?.fecha_vencimiento ? (
+  <span style={{ color: "#fde68a" }}>
+    Reinscripción {formatDate(row.fecha_vencimiento)}
+  </span>
+) : (
+  "Reinscripción —"
+),
 ].filter(Boolean);
 
 const estadoFechaInfo = (() => {
