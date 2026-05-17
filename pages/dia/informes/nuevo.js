@@ -405,7 +405,9 @@ const enviarNotificacionNuevoInforme = async ({
               Se registró una nueva solicitud de informe en el Portal Día.
             </p>
 
-            <p style="margin: 0 0 8px 0;"><strong>Legajo:</strong> ${requestId}</p>
+            <p style="margin: 0 0 8px 0;"><strong>Legajo:</strong> ${
+  `INF-${String(requestId || "").slice(0, 8).toUpperCase()}`
+}</p>
             <p style="margin: 0 0 8px 0;"><strong>Sector responsable:</strong> ${
               sectorResponsable || "Sin sector informado"
             }</p>
