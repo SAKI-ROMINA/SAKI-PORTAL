@@ -158,6 +158,8 @@ function buildDatosLegajoForm(source) {
     escribania: source?.escribania || "",
     numero_escritura: source?.numero_escritura || "",
     folio: source?.folio || "",
+    st03_numero: source?.st03_numero || "",
+st02_numero: source?.st02_numero || "",
     fecha_escritura: source?.fecha_escritura || "",
     fecha_inscripcion: source?.fecha_inscripcion || "",
 fecha_vencimiento: source?.fecha_vencimiento || "",
@@ -1233,6 +1235,8 @@ async function handleSaveDatosLegajo() {
       escribania: datosLegajoForm.escribania || null,
       numero_escritura: datosLegajoForm.numero_escritura || null,
       folio: datosLegajoForm.folio || null,
+      st03_numero: datosLegajoForm.st03_numero || null,
+st02_numero: datosLegajoForm.st02_numero || null,
       fecha_escritura: datosLegajoForm.fecha_escritura || null,
       fecha_inscripcion: datosLegajoForm.fecha_inscripcion || null,
 fecha_vencimiento: datosLegajoForm.fecha_inscripcion
@@ -7890,6 +7894,30 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
           placeholder="Ej. 12345"
         />
       </div>
+
+      <div>
+  <label style={modalFieldLabelStyle}>S.T. 03 N°</label>
+  <input
+    style={modalInputStyle}
+    value={datosLegajoForm.st03_numero || ""}
+    onChange={(e) =>
+      handleDatosLegajoChange("st03_numero", e.target.value)
+    }
+    placeholder="Ej. 123456"
+  />
+</div>
+
+<div>
+  <label style={modalFieldLabelStyle}>S.T. 02 N°</label>
+  <input
+    style={modalInputStyle}
+    value={datosLegajoForm.st02_numero || ""}
+    onChange={(e) =>
+      handleDatosLegajoChange("st02_numero", e.target.value)
+    }
+    placeholder="Ej. 123456"
+  />
+</div>
 
       <div>
         <label style={modalFieldLabelStyle}>Folio</label>
