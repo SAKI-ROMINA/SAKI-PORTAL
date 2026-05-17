@@ -10602,6 +10602,7 @@ if (item?.tipo_evento === "archivo_eliminado" && detalle) {
 
 if (item?.tipo_evento === "datos_legajo_actualizados") {
   return "SAKI registró cambios administrativos del legajo.";
+}
 
   return "Movimiento registrado en el legajo.";
 };
