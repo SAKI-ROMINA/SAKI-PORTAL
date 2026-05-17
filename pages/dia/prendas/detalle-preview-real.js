@@ -1213,14 +1213,15 @@ async function handleSaveDatosLegajo() {
         datosLegajoForm.registro_interviniente || null,
 
       // Franquiciado
-      tienda: datosLegajoForm.tienda || null,
-      frq_tipo_persona: datosLegajoForm.frq_tipo_persona || null,
-      frq_apellido: datosLegajoForm.frq_apellido || null,
-      frq_nombres: datosLegajoForm.frq_nombres || null,
-      frq_razon_social: datosLegajoForm.frq_razon_social || null,
-      frq_email: datosLegajoForm.frq_email || null,
-      frq_telefono: datosLegajoForm.frq_telefono || null,
-      frq_domicilio: datosLegajoForm.frq_domicilio || null,
+tienda: datosLegajoForm.tienda || null,
+frq_tipo_persona: datosLegajoForm.frq_tipo_persona || null,
+frq_apellido: datosLegajoForm.frq_apellido || null,
+frq_nombres: datosLegajoForm.frq_nombres || null,
+frq_razon_social: datosLegajoForm.frq_razon_social || null,
+frq_cuit: datosLegajoForm.frq_cuit || null,
+frq_email: datosLegajoForm.frq_email || null,
+frq_telefono: datosLegajoForm.frq_telefono || null,
+frq_domicilio: datosLegajoForm.frq_domicilio || null,
 
       // Titular / garante
       titular_tipo_persona: datosLegajoForm.titular_tipo_persona || null,
