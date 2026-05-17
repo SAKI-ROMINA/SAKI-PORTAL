@@ -1065,9 +1065,23 @@ async function handleGuardarNotaLegajo() {
 
     if (historyError) throw historyError;
 
-    if (createdNote) {
-      setNotasLegajo((prev) => [createdNote, ...(prev || [])]);
-    }
+    if (historyError) throw historyError;
+
+await enviarNotificacionInformePrueba({
+  titulo: parentId
+    ? "Respuesta agregada al legajo"
+    : "Nota agregada al legajo",
+  mensaje: parentId
+    ? "Se agregó una respuesta en las notas del legajo de informe."
+    : "Se agregó una nueva nota en el legajo de informe.",
+  detalle: `${
+    parentId ? "Respuesta" : "Nota"
+  } registrada por ${authorName}:\n\n${notaLimpia}`,
+});
+
+if (createdNote) {
+  setNotasLegajo((prev) => [createdNote, ...(prev || [])]);
+}
 
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...(prev || [])]);
