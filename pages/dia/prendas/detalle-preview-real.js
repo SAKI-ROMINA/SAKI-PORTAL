@@ -6610,6 +6610,180 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
   </div>
 )}
 
+{showEliminarLegajo && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(2, 8, 18, 0.76)",
+      backdropFilter: "blur(7px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10000,
+      padding: "24px",
+    }}
+    onClick={() => {
+      if (savingEliminarLegajo) return;
+      setShowEliminarLegajo(false);
+      setConfirmacionEliminarLegajo("");
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "min(620px, 100%)",
+        borderRadius: "22px",
+        background:
+          "linear-gradient(180deg, rgba(91,18,28,0.98) 0%, rgba(48,10,18,0.98) 100%)",
+        border: "1px solid rgba(248,113,113,0.24)",
+        boxShadow: "0 34px 90px rgba(0,0,0,0.52)",
+        padding: "24px",
+      }}
+    >
+      <div style={{ marginBottom: "20px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#fecaca",
+            fontWeight: 800,
+            marginBottom: "7px",
+          }}
+        >
+          Acción irreversible
+        </div>
+
+        <h3
+          style={{
+            margin: 0,
+            color: "#ffffff",
+            fontSize: "24px",
+            fontWeight: 750,
+            letterSpacing: "-0.03em",
+          }}
+        >
+          Eliminar legajo completo
+        </h3>
+
+        <p
+          style={{
+            margin: "10px 0 0",
+            color: "rgba(254,226,226,0.84)",
+            fontSize: "13px",
+            lineHeight: 1.5,
+          }}
+        >
+          Esta acción eliminará la prenda, sus archivos, notas e historial. No
+          se podrá recuperar desde el portal.
+        </p>
+      </div>
+
+      <div
+        style={{
+          borderRadius: "18px",
+          border: "1px solid rgba(248,113,113,0.20)",
+          background: "rgba(24,8,12,0.48)",
+          padding: "16px",
+          marginBottom: "18px",
+        }}
+      >
+        <label
+          style={{
+            display: "block",
+            fontSize: "11px",
+            fontWeight: 800,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#fecaca",
+            marginBottom: "10px",
+          }}
+        >
+          Para confirmar, escribí ELIMINAR
+        </label>
+
+        <input
+          type="text"
+          value={confirmacionEliminarLegajo}
+          onChange={(e) => setConfirmacionEliminarLegajo(e.target.value)}
+          placeholder="ELIMINAR"
+          style={{
+            width: "100%",
+            height: "48px",
+            borderRadius: "14px",
+            border: "1px solid rgba(248,113,113,0.22)",
+            background: "rgba(3, 11, 24, 0.72)",
+            color: "#f8fbff",
+            padding: "0 14px",
+            fontSize: "14px",
+            outline: "none",
+            boxSizing: "border-box",
+            textTransform: "uppercase",
+          }}
+        />
+
+        <div
+          style={{
+            marginTop: "10px",
+            color: "rgba(254,226,226,0.72)",
+            fontSize: "12px",
+            lineHeight: 1.45,
+          }}
+        >
+          Legajo: {row?.dominio || "—"} · Estado actual: {row?.estado || "—"}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+        <button
+          type="button"
+          disabled={savingEliminarLegajo}
+          onClick={() => {
+            setShowEliminarLegajo(false);
+            setConfirmacionEliminarLegajo("");
+          }}
+          style={{
+            height: "42px",
+            padding: "0 15px",
+            borderRadius: "12px",
+            border: "1px solid rgba(248,113,113,0.22)",
+            background: "rgba(255,255,255,0.03)",
+            color: "#fee2e2",
+            fontSize: "13px",
+            fontWeight: 700,
+            cursor: savingEliminarLegajo ? "not-allowed" : "pointer",
+            opacity: savingEliminarLegajo ? 0.65 : 1,
+          }}
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          onClick={handleEliminarLegajoCompleto}
+          disabled={savingEliminarLegajo}
+          style={{
+            height: "42px",
+            padding: "0 17px",
+            borderRadius: "12px",
+            border: "none",
+            background: "linear-gradient(180deg, #dc2626, #991b1b)",
+            color: "#ffffff",
+            fontSize: "13px",
+            fontWeight: 800,
+            cursor: savingEliminarLegajo ? "not-allowed" : "pointer",
+            opacity: savingEliminarLegajo ? 0.72 : 1,
+            boxShadow: "0 12px 24px rgba(127,29,29,0.28)",
+          }}
+        >
+          {savingEliminarLegajo ? "Eliminando..." : "Eliminar definitivamente"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 {printMode === "resumen" && (
   <div className="print-only print-resumen-legajo">
     <div className="print-header">
