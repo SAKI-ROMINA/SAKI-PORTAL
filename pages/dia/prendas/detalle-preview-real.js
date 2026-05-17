@@ -43,6 +43,22 @@ function onlyDigits(value) {
   return (value || "").toString().replace(/\D/g, "").slice(0, 11);
 }
 
+function formatNumberMiles(value) {
+  if (value === null || value === undefined || value === "") return "";
+
+  const onlyNumbers = String(value).replace(/\D/g, "");
+
+  if (!onlyNumbers) return "";
+
+  return new Intl.NumberFormat("es-AR").format(Number(onlyNumbers));
+}
+
+function parseNumberMiles(value) {
+  if (value === null || value === undefined || value === "") return "";
+
+  return String(value).replace(/\D/g, "");
+}
+
 function formatCuit(value) {
   const digits = onlyDigits(value);
 
@@ -7768,13 +7784,16 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       <div>
         <label style={modalFieldLabelStyle}>Importe</label>
         <input
-          style={modalInputStyle}
-          value={datosLegajoForm.importe_prenda}
-          onChange={(e) =>
-            handleDatosLegajoChange("importe_prenda", e.target.value)
-          }
-          placeholder="Ej. 50000"
-        />
+  style={modalInputStyle}
+  value={formatNumberMiles(datosLegajoForm.importe_prenda)}
+  onChange={(e) =>
+    handleDatosLegajoChange(
+      "importe_prenda",
+      parseNumberMiles(e.target.value)
+    )
+  }
+  placeholder="Ej. 50.000"
+/>
       </div>
 
       <div>
