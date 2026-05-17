@@ -10271,7 +10271,16 @@ function FichaPrenda({ row }) {
 
 <FichaDato
   label="Fecha de reinscripción"
-  value={formatDate(row?.fecha_vencimiento) || "—"}
+  value={
+    <span
+      style={{
+        color: row?.fecha_vencimiento ? "#fde68a" : "#94a3b8",
+        fontWeight: 800,
+      }}
+    >
+      {formatDate(row?.fecha_vencimiento) || "—"}
+    </span>
+  }
 />
 
         <FichaDato
