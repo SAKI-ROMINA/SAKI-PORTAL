@@ -3201,27 +3201,54 @@ const titularAdminCasado =
 
          <div style={topIconsStyle}>
 {isAdmin && (
-  <button
-    type="button"
-    onClick={handleOpenDatosLegajoEditor}
-    style={{
-      height: "38px",
-      padding: "0 14px",
-      borderRadius: "999px",
-      border: "1px solid rgba(96, 165, 250, 0.34)",
-      background:
-        "linear-gradient(135deg, rgba(37, 99, 235, 0.24), rgba(14, 165, 233, 0.16))",
-      color: "#dbeafe",
-      fontSize: "12px",
-      fontWeight: 850,
-      letterSpacing: "0.02em",
-      cursor: "pointer",
-      whiteSpace: "nowrap",
-      boxShadow: "0 12px 28px rgba(15, 23, 42, 0.20)",
-    }}
-  >
-    Cargar / editar datos del legajo
-  </button>
+  <>
+    <button
+      type="button"
+      onClick={handleOpenDatosLegajoEditor}
+      style={{
+        height: "38px",
+        padding: "0 14px",
+        borderRadius: "999px",
+        border: "1px solid rgba(96, 165, 250, 0.34)",
+        background:
+          "linear-gradient(135deg, rgba(37, 99, 235, 0.24), rgba(14, 165, 233, 0.16))",
+        color: "#dbeafe",
+        fontSize: "12px",
+        fontWeight: 850,
+        letterSpacing: "0.02em",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        boxShadow: "0 12px 28px rgba(15, 23, 42, 0.20)",
+      }}
+    >
+      Cargar / editar datos del legajo
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setConfirmacionEliminarLegajo("");
+        setShowEliminarLegajo(true);
+      }}
+      style={{
+        height: "38px",
+        padding: "0 14px",
+        borderRadius: "999px",
+        border: "1px solid rgba(248, 113, 113, 0.32)",
+        background:
+          "linear-gradient(135deg, rgba(127, 29, 29, 0.34), rgba(220, 38, 38, 0.18))",
+        color: "#fecaca",
+        fontSize: "12px",
+        fontWeight: 850,
+        letterSpacing: "0.02em",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        boxShadow: "0 12px 28px rgba(15, 23, 42, 0.20)",
+      }}
+    >
+      Eliminar legajo
+    </button>
+  </>
 )}
 
 <div style={topMenuWrapperStyle}>
