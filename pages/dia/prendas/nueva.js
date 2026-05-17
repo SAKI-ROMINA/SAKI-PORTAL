@@ -235,13 +235,13 @@ const { error: historyError } = await supabase
   .from("dia_request_prendas_history")
   .insert({
     prenda_id: createdPrenda.id,
-    tipo_evento: esCargaHistorica ? "carga_historica" : "carga_inicial",
+    tipo_evento: "carga_inicial",
     titulo: esCargaHistorica
       ? "Carga histórica del legajo"
       : "Carga inicial de nueva prenda",
     detalle: esCargaHistorica
       ? {
-          fecha_retiro_final: fechaOperacion || null,
+          fecha_retiro_final_real: fechaOperacion || null,
           estado: "Retirada",
           tienda: cleanUpper(form.tienda),
           dominio: cleanUpper(form.dominio),
