@@ -214,7 +214,7 @@ if (hayTitularCuit && titularCuit.length !== 11) {
   titular_cuit: titularCuit || null,
 
   fecha_envio_oficina: esCargaHistorica ? null : fechaOperacion,
-  fecha_real_retiro_final: esCargaHistorica ? fechaOperacion : null,
+  fecha_retiro_final_real: esCargaHistorica ? fechaOperacion : null,
 
   estado: esCargaHistorica ? "Retirada" : "Pendiente de envío",
 };
