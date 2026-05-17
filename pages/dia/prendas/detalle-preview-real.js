@@ -2700,24 +2700,28 @@ async function handleEliminarLegajoCompleto() {
 const casePillItems = [
   row?.importe_prenda
     ? `Importe ${row?.moneda_importe || "$"} ${formatNumberMiles(row.importe_prenda)}`
-    : null,
+    : `Importe ${row?.moneda_importe || "$"} —`,
+
   row?.grado_prenda
     ? `Orden de Prelación ${row.grado_prenda} Grado`
-    : null,
+    : "Orden de Prelación —",
+
   row?.plazo_anios
     ? `Plazo ${row.plazo_anios} años`
-    : null,
+    : "Plazo —",
+
   row?.fecha_inscripcion
     ? `Inscripción ${formatDate(row.fecha_inscripcion)}`
-    : `Inscripción —`,
+    : "Inscripción —",
+
   row?.fecha_vencimiento ? (
-  <span style={{ color: "#fde68a" }}>
-    Reinscripción {formatDate(row.fecha_vencimiento)}
-  </span>
-) : (
-  "Reinscripción —"
-),
-].filter(Boolean);
+    <span style={{ color: "#fde68a" }}>
+      Reinscripción {formatDate(row.fecha_vencimiento)}
+    </span>
+  ) : (
+    <span style={{ color: "#fde68a" }}>Reinscripción —</span>
+  ),
+];
 
 const estadoFechaInfo = (() => {
   if (estadoActualKey === "PENDIENTE DE ENVIO") {
