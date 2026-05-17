@@ -274,6 +274,194 @@ const normalizeDateForDb = (value) => {
   return `${year}-${month}-${day}`;
 };
 
+const normalizarEmailInforme = (value) => {
+  return String(value || "").trim().toLowerCase();
+};
+
+const separarEmailsInforme = (value) => {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => separarEmailsInforme(item));
+  }
+
+  return String(value || "")
+    .split(/[;,\n\s]+/)
+    .map((email) => normalizarEmailInforme(email))
+    .filter((email) => email && email.includes("@"));
+};
+
+const emailsUnicosInforme = (values) => {
+  return Array.from(new Set(values.flatMap((value) => separarEmailsInforme(value))));
+};
+
+const obtenerAliasesSectorInforme = (sector) => {
+  const texto = String(sector || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (texto.includes("franqu")) {
+    return ["Franquicias", "Administración Franquicias", "Administracion Franquicias"];
+  }
+
+  if (texto.includes("credito") || texto.includes("cobranza")) {
+    return ["Créditos y Cobranzas", "Creditos y Cobranzas"];
+  }
+
+  if (texto.includes("jurid")) {
+    return ["Asuntos Jurídicos", "Asuntos Juridicos"];
+  }
+
+  return sector ? [sector] : [];
+};
+
+const getInformeTipoLabelNuevo = (type) => {
+  const labels = {
+    informe_dominio: "Informe de dominio",
+    certificado_dominio: "Certificado de dominio",
+    anotaciones_personales: "Anotaciones personales",
+    indice_titularidad: "Índice de titularidad",
+  };
+
+  return labels[type] || type || "-";
+};
+
+const enviarNotificacionNuevoInforme = async ({
+  requestId,
+  payload,
+  requesterEmail,
+}) => {
+  if (!requestId) return;
+
+  try {
+    const mailAdminSaki = "rominamazzeo@gmail.com";
+
+    let sectorResponsable = currentUserSector || "";
+
+    if (!sectorResponsable && requesterEmail) {
+      const { data: requesterProfile, error: requesterProfileError } =
+        await supabase
+          .from("profiles")
+          .select("sector")
+          .eq("email", requesterEmail)
+          .maybeSingle();
+
+      if (requesterProfileError) {
+        console.error("Error buscando sector del solicitante:", requesterProfileError);
+      }
+
+      sectorResponsable = requesterProfile?.sector || "";
+    }
+
+    const aliasesSector = obtenerAliasesSectorInforme(sectorResponsable);
+
+    let mailsSector = [];
+
+    if (aliasesSector.length > 0) {
+      const { data: perfilesSector, error: perfilesError } = await supabase
+        .from("profiles")
+        .select("email, sector, role")
+        .eq("role", "member")
+        .in("sector", aliasesSector);
+
+      if (perfilesError) {
+        console.error("Error buscando destinatarios del sector:", perfilesError);
+      } else {
+        mailsSector = emailsUnicosInforme(
+          (perfilesSector || []).map((perfil) => perfil?.email)
+        );
+      }
+    }
+
+    const destinatariosPrincipales = emailsUnicosInforme([
+      mailAdminSaki,
+      ...mailsSector,
+    ]);
+
+    const copiasExternas = emailsUnicosInforme([payload?.cc_email]).filter(
+      (email) => !destinatariosPrincipales.includes(email)
+    );
+
+    if (!destinatariosPrincipales.length) {
+      console.warn("No hay destinatarios para notificar el nuevo informe.");
+      return;
+    }
+
+    const mailRes = await fetch("/api/dia/send-notification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: destinatariosPrincipales.join(","),
+        cc: copiasExternas.join(","),
+        subject: "SAKI | Nuevo informe solicitado",
+        html: `
+          <div style="font-family: Arial, sans-serif; font-size: 14px; color: #111; line-height: 1.5;">
+            <h2 style="margin: 0 0 16px 0; color: #0f172a;">Nuevo informe solicitado</h2>
+
+            <p style="margin: 0 0 16px 0;">
+              Se registró una nueva solicitud de informe en el Portal Día.
+            </p>
+
+            <p style="margin: 0 0 8px 0;"><strong>Legajo:</strong> ${requestId}</p>
+            <p style="margin: 0 0 8px 0;"><strong>Sector responsable:</strong> ${
+              sectorResponsable || "Sin sector informado"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Solicitante:</strong> ${
+              requesterEmail || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Tienda:</strong> ${
+              payload?.tienda || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Franquiciado:</strong> ${
+              payload?.franquiciado || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Dominio / Persona:</strong> ${
+              payload?.dominio || payload?.identificacion_nombre || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Tipo de informe:</strong> ${
+              getInformeTipoLabelNuevo(payload?.type)
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Estado:</strong> ${
+              payload?.status || "SOLICITADO"
+            }</p>
+
+            ${
+              payload?.notes
+                ? `<p style="margin: 16px 0 8px 0;"><strong>Nota inicial:</strong></p>
+                   <p style="margin: 0 0 8px 0; white-space: pre-wrap;">${payload.notes}</p>`
+                : ""
+            }
+
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;" />
+
+            <p style="margin: 0; color: #475569;">
+              Este mensaje fue generado automáticamente por SAKI Portal Día. Por favor, no responder a este correo.
+            </p>
+          </div>
+        `,
+        requestId,
+        threadId: null,
+      }),
+    });
+
+    const mailJson = await mailRes.json().catch(() => null);
+
+    if (mailJson?.threadId) {
+      await supabase
+        .from("dia_requests")
+        .update({ email_thread_id: mailJson.threadId })
+        .eq("id", requestId);
+    }
+
+    if (!mailRes.ok) {
+      console.error("Error enviando notificación de nuevo informe:", mailJson);
+    }
+  } catch (mailError) {
+    console.error("Error inesperado notificando nuevo informe:", mailError);
+  }
+};
+
 const validateInformeForm = () => {
   if (!tipoInforme) {
     return "Seleccioná el tipo de informe.";
@@ -476,7 +664,13 @@ if ((form.notes || "").trim()) {
   if (noteError) throw noteError;
 }
 
-    setGuardado(true);
+await enviarNotificacionNuevoInforme({
+  requestId: requestData.id,
+  payload,
+  requesterEmail,
+});
+
+setGuardado(true);
 
     setTimeout(() => {
       setGuardado(false);
