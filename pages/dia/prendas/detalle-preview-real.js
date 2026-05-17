@@ -3338,6 +3338,19 @@ const titularAdminCasado =
   onClick={() => setActiveFicha("prenda")}
 />
 
+<InfoCard
+  icon={<Car size={30} />}
+  title="DOMINIO"
+  items={[
+    ["Dominio", row?.dominio || "Por completar"],
+    ["Marca", row?.marca || "Por completar"],
+    ["Modelo", row?.modelo || "Por completar"],
+    ["Modelo año", row?.modelo_anio || "Por completar"],
+  ]}
+  action={null}
+  onClick={() => setActiveFicha("dominio")}
+/>
+
           <InfoCard
   icon={<Store size={30} />}
   title="FRANQUICIADO"
@@ -3376,13 +3389,7 @@ const titularAdminCasado =
   action={null}
   onClick={() => setActiveFicha("garante")}
 />
-
-          <TimelineCard
-  estado={estadoActual}
-  fecha={estadoFechaInfo.value}
-  texto={proximaAccionInfo.texto}
-  onClick={() => setActiveFicha("estado")}
-/>
+         
         </section>
       </main>
 
