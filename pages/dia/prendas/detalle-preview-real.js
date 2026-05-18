@@ -9277,93 +9277,126 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
 
     <div>
   <label style={modalFieldLabelStyle}>CUIT / CUIL</label>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1fr auto",
-      gap: "10px",
-      alignItems: "center",
+  <input
+    style={modalInputStyle}
+    value={datosLegajoForm.frq_cuit}
+    onChange={(e) => {
+      handleDatosLegajoChange(
+        "frq_cuit",
+        formatDocumentoInput(e.target.value)
+      );
+      setDatosFrqPrevios(null);
+      setDatosFrqMsg("");
     }}
-  >
-    <input
-      style={modalInputStyle}
-      value={datosLegajoForm.frq_cuit}
-      onChange={(e) => {
-        handleDatosLegajoChange(
-          "frq_cuit",
-          formatDocumentoInput(e.target.value)
-        );
-        setDatosFrqPrevios(null);
-        setDatosFrqMsg("");
-      }}
-      placeholder="Ej. 20-12345678-9"
-    />
+    placeholder="Ej. 20-12345678-9"
+  />
+</div>
 
-    <button
-      type="button"
-      onClick={handleBuscarDatosPreviosFrq}
-      disabled={buscandoDatosFrq}
-      style={{
-        height: "46px",
-        padding: "0 14px",
-        borderRadius: "14px",
-        border: "1px solid rgba(96,165,250,0.28)",
-        background: "rgba(37,99,235,0.18)",
-        color: "#dbeafe",
-        fontSize: "12px",
-        fontWeight: 800,
-        cursor: buscandoDatosFrq ? "not-allowed" : "pointer",
-        whiteSpace: "nowrap",
-        opacity: buscandoDatosFrq ? 0.65 : 1,
-      }}
-    >
-      {buscandoDatosFrq ? "Buscando..." : "Buscar datos"}
-    </button>
-  </div>
-
-  {datosFrqMsg && (
+<div
+  style={{
+    gridColumn: "1 / -1",
+    borderRadius: "16px",
+    border: "1px solid rgba(96,165,250,0.22)",
+    background: "rgba(15, 23, 42, 0.34)",
+    padding: "12px 14px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+  }}
+>
+  <div>
     <div
       style={{
-        marginTop: "10px",
-        padding: "12px",
-        borderRadius: "14px",
-        border: datosFrqPrevios
-          ? "1px solid rgba(34,197,94,0.24)"
-          : "1px solid rgba(148,163,184,0.18)",
-        background: datosFrqPrevios
-          ? "rgba(22,101,52,0.18)"
-          : "rgba(15,23,42,0.28)",
         color: "#dbeafe",
-        fontSize: "12px",
-        lineHeight: 1.45,
+        fontSize: "13px",
+        fontWeight: 850,
+        marginBottom: "3px",
       }}
     >
-      <div>{datosFrqMsg}</div>
-
-      {datosFrqPrevios && (
-        <button
-          type="button"
-          onClick={handleAplicarDatosFrqPrevios}
-          style={{
-            marginTop: "10px",
-            height: "34px",
-            padding: "0 12px",
-            borderRadius: "999px",
-            border: "1px solid rgba(74,222,128,0.28)",
-            background: "rgba(34,197,94,0.18)",
-            color: "#bbf7d0",
-            fontSize: "12px",
-            fontWeight: 800,
-            cursor: "pointer",
-          }}
-        >
-          Completar datos del FRQ
-        </button>
-      )}
+      Buscar datos previos del franquiciado
     </div>
-  )}
+
+    <div
+      style={{
+        color: "rgba(214,228,245,0.68)",
+        fontSize: "12px",
+        lineHeight: 1.4,
+      }}
+    >
+      Busca en Prendas e Informes por CUIT/CUIL, DNI, apellido, nombre, razón social o tienda.
+    </div>
+  </div>
+
+  <button
+    type="button"
+    onClick={handleBuscarDatosPreviosFrq}
+    disabled={buscandoDatosFrq}
+    style={{
+      height: "36px",
+      padding: "0 13px",
+      borderRadius: "999px",
+      border: "1px solid rgba(96,165,250,0.34)",
+      background:
+        "linear-gradient(135deg, rgba(37,99,235,0.24), rgba(14,165,233,0.16))",
+      color: "#dbeafe",
+      fontSize: "12px",
+      fontWeight: 850,
+      cursor: buscandoDatosFrq ? "not-allowed" : "pointer",
+      opacity: buscandoDatosFrq ? 0.7 : 1,
+      whiteSpace: "nowrap",
+    }}
+  >
+    {buscandoDatosFrq ? "Buscando..." : "Buscar datos"}
+  </button>
 </div>
+
+{datosFrqMsg && (
+  <div
+    style={{
+      gridColumn: "1 / -1",
+      borderRadius: "16px",
+      border: datosFrqPrevios
+        ? "1px solid rgba(34,197,94,0.32)"
+        : "1px solid rgba(251,191,36,0.32)",
+      background: datosFrqPrevios
+        ? "rgba(22,163,74,0.12)"
+        : "rgba(217,119,6,0.12)",
+      color: datosFrqPrevios ? "#bbf7d0" : "#fde68a",
+      padding: "12px 14px",
+      fontSize: "13px",
+      fontWeight: 750,
+      lineHeight: 1.45,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "12px",
+    }}
+  >
+    <span>{datosFrqMsg}</span>
+
+    {datosFrqPrevios && (
+      <button
+        type="button"
+        onClick={handleAplicarDatosFrqPrevios}
+        style={{
+          height: "34px",
+          padding: "0 12px",
+          borderRadius: "999px",
+          border: "1px solid rgba(34,197,94,0.34)",
+          background: "rgba(22,163,74,0.18)",
+          color: "#dcfce7",
+          fontSize: "12px",
+          fontWeight: 850,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Completar datos del FRQ
+      </button>
+    )}
+  </div>
+)}
 
 <div>
   <label style={modalFieldLabelStyle}>DNI</label>
