@@ -300,6 +300,10 @@ const [buscandoDatosDominio, setBuscandoDatosDominio] = useState(false);
 const [datosDominioPrevios, setDatosDominioPrevios] = useState(null);
 const [datosDominioMsg, setDatosDominioMsg] = useState("");
 
+const [buscandoDatosFrq, setBuscandoDatosFrq] = useState(false);
+const [datosFrqPrevios, setDatosFrqPrevios] = useState(null);
+const [datosFrqMsg, setDatosFrqMsg] = useState("");
+
 const [printMode, setPrintMode] = useState(null);
 
 const [currentProfile, setCurrentProfile] = useState(null);
@@ -1302,6 +1306,30 @@ function handleAplicarDatosDominioPrevios() {
 
   setDatosDominioMsg(
     `Datos del vehículo completados desde ${datosDominioPrevios.origen}. Revisá la información antes de guardar.`
+  );
+}
+
+function handleAplicarDatosFrqPrevios() {
+  if (!datosFrqPrevios?.datos) return;
+
+  setDatosLegajoForm((prev) => ({
+    ...prev,
+    frq_tipo_persona:
+      datosFrqPrevios.datos.frq_tipo_persona || prev.frq_tipo_persona,
+    frq_apellido: datosFrqPrevios.datos.frq_apellido || prev.frq_apellido,
+    frq_nombres: datosFrqPrevios.datos.frq_nombres || prev.frq_nombres,
+    frq_razon_social:
+      datosFrqPrevios.datos.frq_razon_social || prev.frq_razon_social,
+    frq_cuit: datosFrqPrevios.datos.frq_cuit || prev.frq_cuit,
+    frq_dni: datosFrqPrevios.datos.frq_dni || prev.frq_dni,
+    frq_email: datosFrqPrevios.datos.frq_email || prev.frq_email,
+    frq_telefono: datosFrqPrevios.datos.frq_telefono || prev.frq_telefono,
+    frq_domicilio:
+      datosFrqPrevios.datos.frq_domicilio || prev.frq_domicilio,
+  }));
+
+  setDatosFrqMsg(
+    "Datos del FRQ completados desde legajos previos. Revisá la información antes de guardar."
   );
 }
 
@@ -8492,25 +8520,103 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
     )}
 
     <div>
-      <label style={modalFieldLabelStyle}>CUIT / CUIL</label>
-      <input
-        style={modalInputStyle}
-        value={datosLegajoForm.frq_cuit}
-        onChange={(e) =>
-          handleDatosLegajoChange("frq_cuit", formatDocumentoInput(e.target.value))
-        }
-        placeholder="Ej. 20-12345678-9"
-      />
-    </div>
+  <label style={modalFieldLabelStyle}>CUIT / CUIL</label>
 
-    <div>
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "1fr auto",
+      gap: "10px",
+      alignItems: "center",
+    }}
+  >
+    <input
+      style={modalInputStyle}
+      value={datosLegajoForm.frq_cuit}
+      onChange={(e) => {
+        handleDatosLegajoChange(
+          "frq_cuit",
+          formatDocumentoInput(e.target.value)
+        );
+        setDatosFrqPrevios(null);
+        setDatosFrqMsg("");
+      }}
+      placeholder="Ej. 20-12345678-9"
+    />
+
+    <button
+      type="button"
+      onClick={handleBuscarDatosPreviosFrq}
+      disabled={buscandoDatosFrq}
+      style={{
+        height: "46px",
+        padding: "0 14px",
+        borderRadius: "14px",
+        border: "1px solid rgba(96,165,250,0.28)",
+        background: "rgba(37,99,235,0.18)",
+        color: "#dbeafe",
+        fontSize: "12px",
+        fontWeight: 800,
+        cursor: buscandoDatosFrq ? "not-allowed" : "pointer",
+        whiteSpace: "nowrap",
+        opacity: buscandoDatosFrq ? 0.65 : 1,
+      }}
+    >
+      {buscandoDatosFrq ? "Buscando..." : "Buscar datos"}
+    </button>
+  </div>
+
+  {datosFrqMsg && (
+    <div
+      style={{
+        marginTop: "10px",
+        padding: "12px",
+        borderRadius: "14px",
+        border: datosFrqPrevios
+          ? "1px solid rgba(34,197,94,0.24)"
+          : "1px solid rgba(148,163,184,0.18)",
+        background: datosFrqPrevios
+          ? "rgba(22,101,52,0.18)"
+          : "rgba(15,23,42,0.28)",
+        color: "#dbeafe",
+        fontSize: "12px",
+        lineHeight: 1.45,
+      }}
+    >
+      <div>{datosFrqMsg}</div>
+
+      {datosFrqPrevios && (
+        <button
+          type="button"
+          onClick={handleAplicarDatosFrqPrevios}
+          style={{
+            marginTop: "10px",
+            height: "34px",
+            padding: "0 12px",
+            borderRadius: "999px",
+            border: "1px solid rgba(74,222,128,0.28)",
+            background: "rgba(34,197,94,0.18)",
+            color: "#bbf7d0",
+            fontSize: "12px",
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          Completar datos del FRQ
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
+<div>
   <label style={modalFieldLabelStyle}>DNI</label>
   <input
     style={modalInputStyle}
     value={datosLegajoForm.frq_dni || ""}
     onChange={(e) =>
-  handleDatosLegajoChange("frq_dni", formatDocumentoInput(e.target.value))
-}
+      handleDatosLegajoChange("frq_dni", formatDocumentoInput(e.target.value))
+    }
     placeholder="Ej. 12345678"
   />
 </div>
