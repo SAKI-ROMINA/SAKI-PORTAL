@@ -295,6 +295,10 @@ const [datosLegajoForm, setDatosLegajoForm] = useState(
   buildDatosLegajoForm(null)
 );
 
+const [buscandoDatosDominio, setBuscandoDatosDominio] = useState(false);
+const [datosDominioPrevios, setDatosDominioPrevios] = useState(null);
+const [datosDominioMsg, setDatosDominioMsg] = useState("");
+
 const [printMode, setPrintMode] = useState(null);
 
 const [currentProfile, setCurrentProfile] = useState(null);
@@ -1159,6 +1163,145 @@ function handleDatosLegajoChange(field, value) {
     ...prev,
     [field]: value,
   }));
+}
+
+async function handleBuscarDatosPreviosDominio() {
+  const dominioBuscado = (datosLegajoForm?.dominio || "").trim().toUpperCase();
+
+  if (!dominioBuscado) {
+    setDatosDominioPrevios(null);
+    setDatosDominioMsg("Primero cargá un dominio para buscar datos previos.");
+    return;
+  }
+
+  try {
+    setBuscandoDatosDominio(true);
+    setDatosDominioPrevios(null);
+    setDatosDominioMsg("");
+
+    const camposPrendas =
+      "id, dominio, marca, modelo, tipo, modelo_anio, marca_motor, numero_motor, marca_chasis, numero_chasis, radicacion, registro_interviniente, updated_at, created_at";
+
+    const { data: prendaPrevia, error: prendasError } = await supabase
+      .from("dia_request_prendas")
+      .select(camposPrendas)
+      .eq("dominio", dominioBuscado)
+      .neq("id", id)
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (prendasError) throw prendasError;
+
+    if (prendaPrevia) {
+      setDatosDominioPrevios({
+        origen: "Prendas",
+        datos: {
+          marca: prendaPrevia.marca || "",
+          modelo: prendaPrevia.modelo || "",
+          tipo: prendaPrevia.tipo || "",
+          modelo_anio: prendaPrevia.modelo_anio || "",
+          marca_motor: prendaPrevia.marca_motor || "",
+          numero_motor: prendaPrevia.numero_motor || "",
+          marca_chasis: prendaPrevia.marca_chasis || "",
+          numero_chasis: prendaPrevia.numero_chasis || "",
+          radicacion: prendaPrevia.radicacion || "",
+          registro_interviniente: prendaPrevia.registro_interviniente || "",
+        },
+      });
+
+      setDatosDominioMsg(
+        "Se encontraron datos previos del vehículo en otro legajo de Prendas."
+      );
+      return;
+    }
+
+    const camposInformes =
+      "id, dominio, informe_vehiculo_marca, informe_vehiculo_modelo, informe_vehiculo_motor, informe_vehiculo_chasis, informe_radicacion, informe_registro_interviniente, marca, modelo_anio, marca_motor, numero_motor, marca_chasis, numero_chasis, radicacion, registro_interviniente, updated_at, created_at";
+
+    const { data: informePrevio, error: informesError } = await supabase
+      .from("dia_requests")
+      .select(camposInformes)
+      .eq("dominio", dominioBuscado)
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (informesError) throw informesError;
+
+    if (informePrevio) {
+      setDatosDominioPrevios({
+        origen: "Informes",
+        datos: {
+          marca:
+            informePrevio.marca ||
+            informePrevio.informe_vehiculo_marca ||
+            "",
+          modelo: informePrevio.informe_vehiculo_modelo || "",
+          tipo: "",
+          modelo_anio: informePrevio.modelo_anio || "",
+          marca_motor: informePrevio.marca_motor || "",
+          numero_motor:
+            informePrevio.numero_motor ||
+            informePrevio.informe_vehiculo_motor ||
+            "",
+          marca_chasis: informePrevio.marca_chasis || "",
+          numero_chasis:
+            informePrevio.numero_chasis ||
+            informePrevio.informe_vehiculo_chasis ||
+            "",
+          radicacion:
+            informePrevio.radicacion ||
+            informePrevio.informe_radicacion ||
+            "",
+          registro_interviniente:
+            informePrevio.registro_interviniente ||
+            informePrevio.informe_registro_interviniente ||
+            "",
+        },
+      });
+
+      setDatosDominioMsg(
+        "Se encontraron datos previos del vehículo en el módulo Informes."
+      );
+      return;
+    }
+
+    setDatosDominioPrevios(null);
+    setDatosDominioMsg("No se encontraron datos previos para este dominio.");
+  } catch (error) {
+    console.error("Error buscando datos previos del dominio:", error);
+    setDatosDominioPrevios(null);
+    setDatosDominioMsg(
+      error?.message || "No se pudieron buscar datos previos del dominio."
+    );
+  } finally {
+    setBuscandoDatosDominio(false);
+  }
+}
+
+function handleAplicarDatosDominioPrevios() {
+  if (!datosDominioPrevios?.datos) return;
+
+  setDatosLegajoForm((prev) => ({
+    ...prev,
+    marca: datosDominioPrevios.datos.marca || prev.marca,
+    modelo: datosDominioPrevios.datos.modelo || prev.modelo,
+    tipo: datosDominioPrevios.datos.tipo || prev.tipo,
+    modelo_anio: datosDominioPrevios.datos.modelo_anio || prev.modelo_anio,
+    marca_motor: datosDominioPrevios.datos.marca_motor || prev.marca_motor,
+    numero_motor: datosDominioPrevios.datos.numero_motor || prev.numero_motor,
+    marca_chasis: datosDominioPrevios.datos.marca_chasis || prev.marca_chasis,
+    numero_chasis: datosDominioPrevios.datos.numero_chasis || prev.numero_chasis,
+    radicacion: datosDominioPrevios.datos.radicacion || prev.radicacion,
+    registro_interviniente:
+      datosDominioPrevios.datos.registro_interviniente ||
+      prev.registro_interviniente,
+  }));
+
+  setDatosDominioMsg(
+    `Datos del vehículo completados desde ${datosDominioPrevios.origen}. Revisá la información antes de guardar.`
+  );
 }
 
 function handleAddPrendaCondomino() {
@@ -8018,16 +8161,91 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
     }}
   >
     <div>
-      <label style={modalFieldLabelStyle}>Dominio</label>
-      <input
-        style={modalInputStyle}
-        value={datosLegajoForm.dominio}
-        onChange={(e) =>
-          handleDatosLegajoChange("dominio", e.target.value.toUpperCase())
-        }
-        placeholder="Ej. AC384MD"
-      />
-    </div>
+  <label style={modalFieldLabelStyle}>Dominio</label>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "1fr auto",
+      gap: "10px",
+      alignItems: "center",
+    }}
+  >
+    <input
+      style={modalInputStyle}
+      value={datosLegajoForm.dominio}
+      onChange={(e) => {
+        handleDatosLegajoChange("dominio", e.target.value.toUpperCase());
+        setDatosDominioPrevios(null);
+        setDatosDominioMsg("");
+      }}
+      placeholder="Ej. AC384MD"
+    />
+
+    <button
+      type="button"
+      onClick={handleBuscarDatosPreviosDominio}
+      disabled={buscandoDatosDominio}
+      style={{
+        height: "46px",
+        padding: "0 14px",
+        borderRadius: "14px",
+        border: "1px solid rgba(96,165,250,0.28)",
+        background: "rgba(37,99,235,0.18)",
+        color: "#dbeafe",
+        fontSize: "12px",
+        fontWeight: 800,
+        cursor: buscandoDatosDominio ? "not-allowed" : "pointer",
+        whiteSpace: "nowrap",
+        opacity: buscandoDatosDominio ? 0.65 : 1,
+      }}
+    >
+      {buscandoDatosDominio ? "Buscando..." : "Buscar datos"}
+    </button>
+  </div>
+{datosDominioMsg && (
+  <div
+    style={{
+      marginTop: "10px",
+      padding: "12px",
+      borderRadius: "14px",
+      border: datosDominioPrevios
+        ? "1px solid rgba(34,197,94,0.24)"
+        : "1px solid rgba(148,163,184,0.18)",
+      background: datosDominioPrevios
+        ? "rgba(22,101,52,0.18)"
+        : "rgba(15,23,42,0.28)",
+      color: "#dbeafe",
+      fontSize: "12px",
+      lineHeight: 1.45,
+    }}
+  >
+    <div>{datosDominioMsg}</div>
+
+    {datosDominioPrevios && (
+      <button
+        type="button"
+        onClick={handleAplicarDatosDominioPrevios}
+        style={{
+          marginTop: "10px",
+          height: "34px",
+          padding: "0 12px",
+          borderRadius: "999px",
+          border: "1px solid rgba(74,222,128,0.28)",
+          background: "rgba(34,197,94,0.18)",
+          color: "#bbf7d0",
+          fontSize: "12px",
+          fontWeight: 800,
+          cursor: "pointer",
+        }}
+      >
+        Completar datos del vehículo
+      </button>
+    )}
+  </div>
+)}
+
+</div>
 
     <div>
       <label style={modalFieldLabelStyle}>Marca</label>
