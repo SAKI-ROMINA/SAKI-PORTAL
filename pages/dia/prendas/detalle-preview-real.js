@@ -1991,6 +1991,10 @@ titular_conyuge_cuil_cuit:
       return;
     }
 
+if (titularPrevioPrendas) {
+  return;
+}
+
     setDatosTitularPrevios(null);
     setDatosTitularMsg("No se encontraron datos previos para este titular.");
   } catch (error) {
