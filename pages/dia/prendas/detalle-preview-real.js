@@ -8918,47 +8918,75 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
   >
     <div>
   <label style={modalFieldLabelStyle}>Dominio</label>
+  <input
+    style={modalInputStyle}
+    value={datosLegajoForm.dominio}
+    onChange={(e) =>
+      handleDatosLegajoChange("dominio", e.target.value.toUpperCase())
+    }
+    placeholder="Ej. AC384MD"
+  />
+</div>
 
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1fr auto",
-      gap: "10px",
-      alignItems: "center",
-    }}
-  >
-    <input
-      style={modalInputStyle}
-      value={datosLegajoForm.dominio}
-      onChange={(e) => {
-        handleDatosLegajoChange("dominio", e.target.value.toUpperCase());
-        setDatosDominioPrevios(null);
-        setDatosDominioMsg("");
-      }}
-      placeholder="Ej. AC384MD"
-    />
-
-    <button
-      type="button"
-      onClick={handleBuscarDatosPreviosDominio}
-      disabled={buscandoDatosDominio}
+<div
+  style={{
+    gridColumn: "1 / -1",
+    borderRadius: "16px",
+    border: "1px solid rgba(96,165,250,0.22)",
+    background: "rgba(15, 23, 42, 0.34)",
+    padding: "12px 14px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+  }}
+>
+  <div>
+    <div
       style={{
-        height: "46px",
-        padding: "0 14px",
-        borderRadius: "14px",
-        border: "1px solid rgba(96,165,250,0.28)",
-        background: "rgba(37,99,235,0.18)",
         color: "#dbeafe",
-        fontSize: "12px",
-        fontWeight: 800,
-        cursor: buscandoDatosDominio ? "not-allowed" : "pointer",
-        whiteSpace: "nowrap",
-        opacity: buscandoDatosDominio ? 0.65 : 1,
+        fontSize: "13px",
+        fontWeight: 850,
+        marginBottom: "3px",
       }}
     >
-      {buscandoDatosDominio ? "Buscando..." : "Buscar datos"}
-    </button>
+      Buscar datos previos del dominio
+    </div>
+
+    <div
+      style={{
+        color: "rgba(214,228,245,0.68)",
+        fontSize: "12px",
+        lineHeight: 1.4,
+      }}
+    >
+      Busca en Prendas e Informes por dominio para completar datos del vehículo.
+    </div>
   </div>
+
+  <button
+    type="button"
+    onClick={handleBuscarDatosPreviosDominio}
+    disabled={buscandoDatosDominio}
+    style={{
+      height: "36px",
+      padding: "0 13px",
+      borderRadius: "999px",
+      border: "1px solid rgba(96,165,250,0.34)",
+      background:
+        "linear-gradient(135deg, rgba(37,99,235,0.24), rgba(14,165,233,0.16))",
+      color: "#dbeafe",
+      fontSize: "12px",
+      fontWeight: 850,
+      cursor: buscandoDatosDominio ? "not-allowed" : "pointer",
+      opacity: buscandoDatosDominio ? 0.7 : 1,
+      whiteSpace: "nowrap",
+    }}
+  >
+    {buscandoDatosDominio ? "Buscando..." : "Buscar datos"}
+  </button>
+</div>
+
 {datosDominioMsg && (
   <div
     style={{
@@ -9005,9 +9033,6 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
     )}
   </div>
 )}
-
-</div>
-
     <div>
       <label style={modalFieldLabelStyle}>Marca</label>
       <input
