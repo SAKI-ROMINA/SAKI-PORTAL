@@ -206,6 +206,7 @@ frq_cuit:
   source?.cuit ||
   source?.identificacion_cuit ||
   "",
+  frq_dni: source?.frq_dni || "",
 frq_email: source?.frq_email || "",
 frq_telefono: source?.frq_telefono || "",
 frq_domicilio: source?.frq_domicilio || "",
@@ -1407,6 +1408,7 @@ frq_apellido: datosLegajoForm.frq_apellido || null,
 frq_nombres: datosLegajoForm.frq_nombres || null,
 frq_razon_social: datosLegajoForm.frq_razon_social || null,
 frq_cuit: datosLegajoForm.frq_cuit || null,
+frq_dni: datosLegajoForm.frq_dni || null,
 frq_email: datosLegajoForm.frq_email || null,
 frq_telefono: datosLegajoForm.frq_telefono || null,
 frq_domicilio: datosLegajoForm.frq_domicilio || null,
@@ -8497,9 +8499,21 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
         onChange={(e) =>
           handleDatosLegajoChange("frq_cuit", formatDocumentoInput(e.target.value))
         }
-        placeholder="CUIT / CUIL"
+        placeholder="Ej. 20-12345678-9"
       />
     </div>
+
+    <div>
+  <label style={modalFieldLabelStyle}>DNI</label>
+  <input
+    style={modalInputStyle}
+    value={datosLegajoForm.frq_dni || ""}
+    onChange={(e) =>
+  handleDatosLegajoChange("frq_dni", formatDocumentoInput(e.target.value))
+}
+    placeholder="Ej. 12345678"
+  />
+</div>
 
     <div>
       <label style={modalFieldLabelStyle}>Email</label>
