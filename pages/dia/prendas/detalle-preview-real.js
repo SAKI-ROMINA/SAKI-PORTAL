@@ -2031,22 +2031,6 @@ function handleAplicarDatosTitularPrevios() {
 
   const datos = datosTitularPrevios.datos;
 
-  alert(
-  JSON.stringify(
-    {
-      origen: datosTitularPrevios.origen,
-      estado_civil: datos.titular_estado_civil,
-      conyuge_apellido: datos.titular_conyuge_apellido,
-      conyuge_nombres: datos.titular_conyuge_nombres,
-      conyuge_dni: datos.titular_conyuge_dni,
-      conyuge_cuil_cuit: datos.titular_conyuge_cuil_cuit,
-      condominos: datos.condominos,
-    },
-    null,
-    2
-  )
-);
-
   const hayConyugeEnDatos = [
   datos.titular_conyuge_apellido,
   datos.titular_conyuge_nombres,
