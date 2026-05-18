@@ -8962,37 +8962,42 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
 {datosDominioMsg && (
   <div
     style={{
-      marginTop: "10px",
-      padding: "12px",
-      borderRadius: "14px",
+      gridColumn: "1 / -1",
+      borderRadius: "16px",
       border: datosDominioPrevios
-        ? "1px solid rgba(34,197,94,0.24)"
-        : "1px solid rgba(148,163,184,0.18)",
+        ? "1px solid rgba(34,197,94,0.32)"
+        : "1px solid rgba(251,191,36,0.32)",
       background: datosDominioPrevios
-        ? "rgba(22,101,52,0.18)"
-        : "rgba(15,23,42,0.28)",
-      color: "#dbeafe",
-      fontSize: "12px",
+        ? "rgba(22,163,74,0.12)"
+        : "rgba(217,119,6,0.12)",
+      color: datosDominioPrevios ? "#bbf7d0" : "#fde68a",
+      padding: "12px 14px",
+      fontSize: "13px",
+      fontWeight: 750,
       lineHeight: 1.45,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "12px",
     }}
   >
-    <div>{datosDominioMsg}</div>
+    <span>{datosDominioMsg}</span>
 
     {datosDominioPrevios && (
       <button
         type="button"
         onClick={handleAplicarDatosDominioPrevios}
         style={{
-          marginTop: "10px",
           height: "34px",
           padding: "0 12px",
           borderRadius: "999px",
-          border: "1px solid rgba(74,222,128,0.28)",
-          background: "rgba(34,197,94,0.18)",
-          color: "#bbf7d0",
+          border: "1px solid rgba(34,197,94,0.34)",
+          background: "rgba(22,163,74,0.18)",
+          color: "#dcfce7",
           fontSize: "12px",
-          fontWeight: 800,
+          fontWeight: 850,
           cursor: "pointer",
+          whiteSpace: "nowrap",
         }}
       >
         Completar datos del vehículo
