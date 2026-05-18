@@ -2013,6 +2013,13 @@ function handleAplicarDatosTitularPrevios() {
 
   const datos = datosTitularPrevios.datos;
 
+  const hayConyugeEnDatos = [
+  datos.titular_conyuge_apellido,
+  datos.titular_conyuge_nombres,
+  datos.titular_conyuge_dni,
+  datos.titular_conyuge_cuil_cuit,
+].some((value) => value !== null && value !== undefined && String(value).trim() !== "");
+
   const tieneValor = (value) =>
     value !== null && value !== undefined && String(value).trim() !== "";
 
@@ -2035,10 +2042,9 @@ function handleAplicarDatosTitularPrevios() {
       datos.titular_cuil_cuit,
       prev.titular_cuil_cuit
     ),
-    titular_estado_civil: tomar(
-      datos.titular_estado_civil,
-      prev.titular_estado_civil
-    ),
+    titular_estado_civil: hayConyugeEnDatos
+  ? "CASADO/A"
+  : tomar(datos.titular_estado_civil, prev.titular_estado_civil),
     titular_desde: tomar(datos.titular_desde, prev.titular_desde),
     porcentaje_titular: tomar(
       datos.porcentaje_titular,
