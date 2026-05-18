@@ -1570,6 +1570,18 @@ async function handleBuscarDatosPreviosTitular() {
     return texto;
   };
 
+  const hayDatosConyugeTitular = (source) =>
+  [
+    source?.titular_conyuge_apellido,
+    source?.titular_conyuge_nombres,
+    source?.titular_conyuge_dni,
+    source?.titular_conyuge_cuil_cuit,
+    source?.informe_titular_conyuge_apellido,
+    source?.informe_titular_conyuge_nombres,
+    source?.informe_titular_conyuge_dni,
+    source?.informe_titular_conyuge_cuil_cuit,
+  ].some(tieneValor);
+
   const crearVariantesDocumento = (value) => {
     const raw = limpiarFiltro(value);
     const digits = limpiarDocumento(value);
@@ -1781,9 +1793,9 @@ async function handleBuscarDatosPreviosTitular() {
             titularPrevioPrendas.titular_cuil_cuit ||
             titularPrevioPrendas.titular_cuit ||
             "",
-          titular_estado_civil: normalizarEstadoCivil(
-            titularPrevioPrendas.titular_estado_civil
-          ),
+titular_estado_civil: hayDatosConyugeTitular(titularPrevioPrendas)
+  ? "CASADO/A"
+  : normalizarEstadoCivil(titularPrevioPrendas.titular_estado_civil),
           titular_desde: normalizarFecha(titularPrevioPrendas.titular_desde),
           porcentaje_titular:
             titularPrevioPrendas.porcentaje_titular !== null &&
@@ -1920,12 +1932,14 @@ async function handleBuscarDatosPreviosTitular() {
             titularPrevioInformes.informe_titular_cuil_cuit ||
             titularPrevioInformes.identificacion_cuit ||
             "",
-          titular_estado_civil: normalizarEstadoCivil(
-            titularPrevioInformes.titular_estado_civil ||
-              titularPrevioInformes.estado_civil ||
-              titularPrevioInformes.informe_titular_estado_civil ||
-              ""
-          ),
+titular_estado_civil: hayDatosConyugeTitular(titularPrevioInformes)
+  ? "CASADO/A"
+  : normalizarEstadoCivil(
+      titularPrevioInformes.informe_titular_estado_civil ||
+        titularPrevioInformes.titular_estado_civil ||
+        titularPrevioInformes.estado_civil ||
+        ""
+    ),
           titular_desde: normalizarFecha(
             titularPrevioInformes.titular_desde ||
               titularPrevioInformes.informe_titular_desde ||
@@ -1945,21 +1959,21 @@ async function handleBuscarDatosPreviosTitular() {
             "",
           titular_email: "",
           titular_conyuge_apellido:
-            titularPrevioInformes.titular_conyuge_apellido ||
-            titularPrevioInformes.informe_titular_conyuge_apellido ||
-            "",
-          titular_conyuge_nombres:
-            titularPrevioInformes.titular_conyuge_nombres ||
-            titularPrevioInformes.informe_titular_conyuge_nombres ||
-            "",
-          titular_conyuge_dni:
-            titularPrevioInformes.titular_conyuge_dni ||
-            titularPrevioInformes.informe_titular_conyuge_dni ||
-            "",
-          titular_conyuge_cuil_cuit:
-            titularPrevioInformes.titular_conyuge_cuil_cuit ||
-            titularPrevioInformes.informe_titular_conyuge_cuil_cuit ||
-            "",
+  titularPrevioInformes.informe_titular_conyuge_apellido ||
+  titularPrevioInformes.titular_conyuge_apellido ||
+  "",
+titular_conyuge_nombres:
+  titularPrevioInformes.informe_titular_conyuge_nombres ||
+  titularPrevioInformes.titular_conyuge_nombres ||
+  "",
+titular_conyuge_dni:
+  titularPrevioInformes.informe_titular_conyuge_dni ||
+  titularPrevioInformes.titular_conyuge_dni ||
+  "",
+titular_conyuge_cuil_cuit:
+  titularPrevioInformes.informe_titular_conyuge_cuil_cuit ||
+  titularPrevioInformes.titular_conyuge_cuil_cuit ||
+  "",
           condominos: condominosInformes,
           reemplazarCondominos:
             rawCondominosInformes !== null &&
