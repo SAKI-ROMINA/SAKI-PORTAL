@@ -1731,6 +1731,10 @@ async function handleBuscarDatosPreviosTitular() {
     .map(limpiarFiltro)
     .filter((value) => value && value.length >= 3);
 
+    const dominioBuscadoTitular = limpiarTexto(
+  datosLegajoForm?.dominio || row?.dominio || ""
+).toUpperCase();
+
   if (
     titularCuitValores.length === 0 &&
     titularDniValores.length === 0 &&
@@ -1865,16 +1869,30 @@ titular_estado_civil: hayDatosConyugeTitular(titularPrevioPrendas)
       ),
     ];
 
-    const { data: titularPrevioInformes, error: informesError } =
-      await supabase
-        .from("dia_requests")
-        .select(
-          "id, identificacion_nombre, identificacion_dni, identificacion_cuit, identificacion_tipo_sujeto, informe_titular_nombre, informe_titular_documento, informe_titular_estado_civil, informe_titular_porcentaje, informe_titular_tipo_persona, informe_titular_apellido, informe_titular_nombres, informe_titular_razon_social, informe_titular_dni, informe_titular_cuil_cuit, informe_titular_desde, informe_titular_domicilio, informe_titular_conyuge_apellido, informe_titular_conyuge_nombres, informe_titular_conyuge_dni, informe_titular_conyuge_cuil_cuit, informe_condominos, titular_dominio, estado_civil, titular_tipo_persona, titular_apellido, titular_nombres, titular_razon_social, titular_dni, titular_cuil_cuit, titular_cuit, titular_estado_civil, titular_desde, porcentaje_titular, titular_domicilio, titular_conyuge_apellido, titular_conyuge_nombres, titular_conyuge_dni, titular_conyuge_cuil_cuit, condominos, created_at"
-        )
-        .or(filtrosInformes.join(","))
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    const dominioActualTitular = limpiarTexto(
+  datosLegajoForm?.dominio || row?.dominio || ""
+).toUpperCase();
+
+const { data: titularesPreviosInformes, error: informesError } =
+  await supabase
+    .from("dia_requests")
+    .select(
+      "id, dominio, identificacion_nombre, identificacion_dni, identificacion_cuit, identificacion_tipo_sujeto, informe_titular_nombre, informe_titular_documento, informe_titular_estado_civil, informe_titular_porcentaje, informe_titular_tipo_persona, informe_titular_apellido, informe_titular_nombres, informe_titular_razon_social, informe_titular_dni, informe_titular_cuil_cuit, informe_titular_desde, informe_titular_domicilio, informe_titular_conyuge_apellido, informe_titular_conyuge_nombres, informe_titular_conyuge_dni, informe_titular_conyuge_cuil_cuit, informe_condominos, titular_dominio, estado_civil, titular_tipo_persona, titular_apellido, titular_nombres, titular_razon_social, titular_dni, titular_cuil_cuit, titular_cuit, titular_estado_civil, titular_desde, porcentaje_titular, titular_domicilio, titular_conyuge_apellido, titular_conyuge_nombres, titular_conyuge_dni, titular_conyuge_cuil_cuit, condominos, created_at"
+    )
+    .or(filtrosInformes.join(","))
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+if (informesError) throw informesError;
+
+const informesEncontrados = titularesPreviosInformes || [];
+
+const titularPrevioInformes =
+  informesEncontrados.find(
+    (item) =>
+      dominioActualTitular &&
+      limpiarTexto(item?.dominio).toUpperCase() === dominioActualTitular
+  ) || informesEncontrados[0];
 
     if (informesError) throw informesError;
 
