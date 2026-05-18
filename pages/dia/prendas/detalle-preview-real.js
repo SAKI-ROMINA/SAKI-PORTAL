@@ -1309,6 +1309,84 @@ function handleAplicarDatosDominioPrevios() {
   );
 }
 
+async function handleBuscarDatosPreviosFrq() {
+  const frqCuitBuscado = (datosLegajoForm?.frq_cuit || "")
+    .replace(/\D/g, "")
+    .trim();
+
+  const frqDniBuscado = (datosLegajoForm?.frq_dni || "")
+    .replace(/\D/g, "")
+    .trim();
+
+  if (!frqCuitBuscado && !frqDniBuscado) {
+    setDatosFrqPrevios(null);
+    setDatosFrqMsg(
+      "Primero cargá CUIT/CUIL o DNI del FRQ para buscar datos previos."
+    );
+    return;
+  }
+
+  try {
+    setBuscandoDatosFrq(true);
+    setDatosFrqPrevios(null);
+    setDatosFrqMsg("");
+
+    let query = supabase
+      .from("dia_request_prendas")
+      .select(
+        "id, frq_tipo_persona, frq_apellido, frq_nombres, frq_razon_social, frq_cuit, frq_dni, frq_email, frq_telefono, frq_domicilio, updated_at, created_at"
+      )
+      .neq("id", id)
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .limit(1);
+
+    if (frqCuitBuscado && frqDniBuscado) {
+      query = query.or(
+        `frq_cuit.ilike.%${frqCuitBuscado}%,frq_dni.ilike.%${frqDniBuscado}%`
+      );
+    } else if (frqCuitBuscado) {
+      query = query.ilike("frq_cuit", `%${frqCuitBuscado}%`);
+    } else {
+      query = query.ilike("frq_dni", `%${frqDniBuscado}%`);
+    }
+
+    const { data: frqPrevio, error } = await query.maybeSingle();
+
+    if (error) throw error;
+
+    if (!frqPrevio) {
+      setDatosFrqPrevios(null);
+      setDatosFrqMsg("No se encontraron datos previos para este FRQ.");
+      return;
+    }
+
+    setDatosFrqPrevios({
+      origen: "Prendas",
+      datos: {
+        frq_tipo_persona: frqPrevio.frq_tipo_persona || "",
+        frq_apellido: frqPrevio.frq_apellido || "",
+        frq_nombres: frqPrevio.frq_nombres || "",
+        frq_razon_social: frqPrevio.frq_razon_social || "",
+        frq_cuit: frqPrevio.frq_cuit || "",
+        frq_dni: frqPrevio.frq_dni || "",
+        frq_email: frqPrevio.frq_email || "",
+        frq_telefono: frqPrevio.frq_telefono || "",
+        frq_domicilio: frqPrevio.frq_domicilio || "",
+      },
+    });
+
+    setDatosFrqMsg("Se encontraron datos previos del FRQ.");
+  } catch (error) {
+    console.error("Error buscando datos previos del FRQ:", error);
+    setDatosFrqPrevios(null);
+    setDatosFrqMsg(
+      error?.message || "No se pudieron buscar datos previos del FRQ."
+    );
+  } finally {
+    setBuscandoDatosFrq(false);
+  }
+}
+
 function handleAplicarDatosFrqPrevios() {
   if (!datosFrqPrevios?.datos) return;
 
