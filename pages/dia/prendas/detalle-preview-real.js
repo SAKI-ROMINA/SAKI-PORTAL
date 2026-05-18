@@ -1310,18 +1310,64 @@ function handleAplicarDatosDominioPrevios() {
 }
 
 async function handleBuscarDatosPreviosFrq() {
-  const frqCuitBuscado = (datosLegajoForm?.frq_cuit || "")
-    .replace(/\D/g, "")
-    .trim();
+  const limpiarTexto = (value) =>
+    String(value || "").trim().replace(/\s+/g, " ");
 
-  const frqDniBuscado = (datosLegajoForm?.frq_dni || "")
-    .replace(/\D/g, "")
-    .trim();
+  const limpiarDocumento = (value) =>
+    String(value || "").replace(/\D/g, "").trim();
 
-  if (!frqCuitBuscado && !frqDniBuscado) {
+  const limpiarFiltro = (value) =>
+    limpiarTexto(value).replace(/[(),]/g, " ").trim();
+
+  const crearVariantesDocumento = (value) => {
+    const raw = limpiarFiltro(value);
+    const digits = limpiarDocumento(value);
+    const variantes = new Set();
+
+    if (raw) variantes.add(raw);
+    if (digits) variantes.add(digits);
+    if (digits) variantes.add(formatDocumentoInput(digits));
+    if (digits.length === 11) variantes.add(formatCuit(digits));
+
+    return Array.from(variantes).filter(Boolean);
+  };
+
+  const crearFiltrosIlike = (columnas, valores) => {
+    const filtros = [];
+
+    columnas.forEach((columna) => {
+      valores.forEach((valor) => {
+        const valorLimpio = limpiarFiltro(valor);
+
+        if (valorLimpio && valorLimpio.length >= 2) {
+          filtros.push(`${columna}.ilike.%${valorLimpio}%`);
+        }
+      });
+    });
+
+    return filtros;
+  };
+
+  const frqCuitValores = crearVariantesDocumento(datosLegajoForm?.frq_cuit);
+  const frqDniValores = crearVariantesDocumento(datosLegajoForm?.frq_dni);
+
+  const frqTextoValores = [
+    datosLegajoForm?.frq_apellido,
+    datosLegajoForm?.frq_nombres,
+    datosLegajoForm?.frq_razon_social,
+    datosLegajoForm?.tienda,
+  ]
+    .map(limpiarFiltro)
+    .filter((value) => value && value.length >= 3);
+
+  if (
+    frqCuitValores.length === 0 &&
+    frqDniValores.length === 0 &&
+    frqTextoValores.length === 0
+  ) {
     setDatosFrqPrevios(null);
     setDatosFrqMsg(
-      "Primero cargá CUIT/CUIL o DNI del FRQ para buscar datos previos."
+      "Primero cargá algún dato del FRQ: CUIT/CUIL, DNI, apellido, nombre, razón social o tienda."
     );
     return;
   }
@@ -1331,51 +1377,118 @@ async function handleBuscarDatosPreviosFrq() {
     setDatosFrqPrevios(null);
     setDatosFrqMsg("");
 
-    let query = supabase
+    const filtrosPrendas = [
+      ...crearFiltrosIlike(["frq_cuit"], frqCuitValores),
+      ...crearFiltrosIlike(["frq_dni"], frqDniValores),
+      ...crearFiltrosIlike(
+        ["frq_apellido", "frq_nombres", "frq_razon_social", "tienda"],
+        frqTextoValores
+      ),
+    ];
+
+    const { data: frqPrevioPrendas, error: prendasError } = await supabase
       .from("dia_request_prendas")
       .select(
-        "id, frq_tipo_persona, frq_apellido, frq_nombres, frq_razon_social, frq_cuit, frq_dni, frq_email, frq_telefono, frq_domicilio, updated_at, created_at"
+        "id, tienda, frq_tipo_persona, frq_apellido, frq_nombres, frq_razon_social, frq_cuit, frq_dni, frq_email, frq_telefono, frq_domicilio, created_at"
       )
       .neq("id", id)
-      .order("updated_at", { ascending: false, nullsFirst: false })
-      .limit(1);
+      .or(filtrosPrendas.join(","))
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (frqCuitBuscado && frqDniBuscado) {
-      query = query.or(
-        `frq_cuit.ilike.%${frqCuitBuscado}%,frq_dni.ilike.%${frqDniBuscado}%`
+    if (prendasError) throw prendasError;
+
+    if (frqPrevioPrendas) {
+      setDatosFrqPrevios({
+        origen: "Prendas",
+        datos: {
+          tienda: frqPrevioPrendas.tienda || "",
+          frq_tipo_persona: frqPrevioPrendas.frq_tipo_persona || "",
+          frq_apellido: frqPrevioPrendas.frq_apellido || "",
+          frq_nombres: frqPrevioPrendas.frq_nombres || "",
+          frq_razon_social: frqPrevioPrendas.frq_razon_social || "",
+          frq_cuit: frqPrevioPrendas.frq_cuit || "",
+          frq_dni: frqPrevioPrendas.frq_dni || "",
+          frq_email: frqPrevioPrendas.frq_email || "",
+          frq_telefono: frqPrevioPrendas.frq_telefono || "",
+          frq_domicilio: frqPrevioPrendas.frq_domicilio || "",
+        },
+      });
+
+      setDatosFrqMsg(
+        "Se encontraron datos previos del FRQ en otro legajo de Prendas."
       );
-    } else if (frqCuitBuscado) {
-      query = query.ilike("frq_cuit", `%${frqCuitBuscado}%`);
-    } else {
-      query = query.ilike("frq_dni", `%${frqDniBuscado}%`);
-    }
-
-    const { data: frqPrevio, error } = await query.maybeSingle();
-
-    if (error) throw error;
-
-    if (!frqPrevio) {
-      setDatosFrqPrevios(null);
-      setDatosFrqMsg("No se encontraron datos previos para este FRQ.");
       return;
     }
 
-    setDatosFrqPrevios({
-      origen: "Prendas",
-      datos: {
-        frq_tipo_persona: frqPrevio.frq_tipo_persona || "",
-        frq_apellido: frqPrevio.frq_apellido || "",
-        frq_nombres: frqPrevio.frq_nombres || "",
-        frq_razon_social: frqPrevio.frq_razon_social || "",
-        frq_cuit: frqPrevio.frq_cuit || "",
-        frq_dni: frqPrevio.frq_dni || "",
-        frq_email: frqPrevio.frq_email || "",
-        frq_telefono: frqPrevio.frq_telefono || "",
-        frq_domicilio: frqPrevio.frq_domicilio || "",
-      },
-    });
+    const filtrosInformes = [
+      ...crearFiltrosIlike(["frq_cuit", "identificacion_cuit"], frqCuitValores),
+      ...crearFiltrosIlike(["identificacion_dni"], frqDniValores),
+      ...crearFiltrosIlike(
+        ["frq_apellido", "frq_nombres", "frq_razon_social", "franquiciado"],
+        frqTextoValores
+      ),
+    ];
 
-    setDatosFrqMsg("Se encontraron datos previos del FRQ.");
+    const { data: frqPrevioInformes, error: informesError } = await supabase
+      .from("dia_requests")
+      .select(
+        "id, franquiciado, requester_email, identificacion_dni, identificacion_cuit, frq_tipo_persona, frq_apellido, frq_nombres, frq_razon_social, frq_cuit, frq_email, frq_telefono, frq_domicilio, created_at"
+      )
+      .or(filtrosInformes.join(","))
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (informesError) throw informesError;
+
+    if (frqPrevioInformes) {
+      const franquiciadoTexto = limpiarTexto(frqPrevioInformes.franquiciado);
+
+      const apellidoDesdeFranquiciado =
+        franquiciadoTexto.split(" ")[0] || "";
+
+      const nombresDesdeFranquiciado =
+        franquiciadoTexto.split(" ").slice(1).join(" ") || "";
+
+      setDatosFrqPrevios({
+        origen: "Informes",
+        datos: {
+          tienda: "",
+          frq_tipo_persona:
+            frqPrevioInformes.frq_tipo_persona ||
+            (frqPrevioInformes.frq_apellido || frqPrevioInformes.frq_nombres
+              ? "HUMANA"
+              : "JURIDICA"),
+          frq_apellido:
+            frqPrevioInformes.frq_apellido || apellidoDesdeFranquiciado || "",
+          frq_nombres:
+            frqPrevioInformes.frq_nombres || nombresDesdeFranquiciado || "",
+          frq_razon_social:
+            frqPrevioInformes.frq_razon_social || franquiciadoTexto || "",
+          frq_cuit:
+            frqPrevioInformes.frq_cuit ||
+            frqPrevioInformes.identificacion_cuit ||
+            "",
+          frq_dni: frqPrevioInformes.identificacion_dni || "",
+          frq_email:
+            frqPrevioInformes.frq_email ||
+            frqPrevioInformes.requester_email ||
+            "",
+          frq_telefono: frqPrevioInformes.frq_telefono || "",
+          frq_domicilio: frqPrevioInformes.frq_domicilio || "",
+        },
+      });
+
+      setDatosFrqMsg(
+        "Se encontraron datos previos del FRQ en el módulo Informes."
+      );
+      return;
+    }
+
+    setDatosFrqPrevios(null);
+    setDatosFrqMsg("No se encontraron datos previos para este FRQ.");
   } catch (error) {
     console.error("Error buscando datos previos del FRQ:", error);
     setDatosFrqPrevios(null);
@@ -1392,6 +1505,7 @@ function handleAplicarDatosFrqPrevios() {
 
   setDatosLegajoForm((prev) => ({
     ...prev,
+    tienda: datosFrqPrevios.datos.tienda || prev.tienda,
     frq_tipo_persona:
       datosFrqPrevios.datos.frq_tipo_persona || prev.frq_tipo_persona,
     frq_apellido: datosFrqPrevios.datos.frq_apellido || prev.frq_apellido,
