@@ -1226,7 +1226,7 @@ async function handleBuscarDatosPreviosDominio() {
     }
 
     const camposInformes =
-      "id, dominio, informe_vehiculo_marca, informe_vehiculo_modelo, informe_vehiculo_motor, informe_vehiculo_chasis, informe_radicacion, informe_registro_interviniente, marca, modelo_anio, marca_motor, numero_motor, marca_chasis, numero_chasis, radicacion, registro_interviniente, updated_at, created_at";
+  "id, dominio, informe_vehiculo_marca, informe_vehiculo_modelo, informe_vehiculo_motor, informe_vehiculo_chasis, informe_radicacion, informe_registro_interviniente, marca, modelo, tipo, modelo_anio, marca_motor, numero_motor, marca_chasis, numero_chasis, radicacion, registro_interviniente, updated_at, created_at";
 
     const { data: informePrevio, error: informesError } = await supabase
       .from("dia_requests")
@@ -1246,8 +1246,11 @@ async function handleBuscarDatosPreviosDominio() {
             informePrevio.marca ||
             informePrevio.informe_vehiculo_marca ||
             "",
-          modelo: informePrevio.informe_vehiculo_modelo || "",
-          tipo: "",
+       modelo:
+  informePrevio.modelo ||
+  informePrevio.informe_vehiculo_modelo ||
+  "",
+tipo: informePrevio.tipo || "",
           modelo_anio: informePrevio.modelo_anio || "",
           marca_motor: informePrevio.marca_motor || "",
           numero_motor:
@@ -1476,10 +1479,7 @@ async function handleBuscarDatosPreviosFrq() {
             frqPrevioInformes.identificacion_cuit ||
             "",
           frq_dni: frqPrevioInformes.identificacion_dni || "",
-          frq_email:
-            frqPrevioInformes.frq_email ||
-            frqPrevioInformes.requester_email ||
-            "",
+          frq_email: frqPrevioInformes.frq_email || "",
           frq_telefono: frqPrevioInformes.frq_telefono || "",
           frq_domicilio: frqPrevioInformes.frq_domicilio || "",
         },
