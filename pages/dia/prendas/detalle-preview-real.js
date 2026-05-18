@@ -304,6 +304,10 @@ const [buscandoDatosFrq, setBuscandoDatosFrq] = useState(false);
 const [datosFrqPrevios, setDatosFrqPrevios] = useState(null);
 const [datosFrqMsg, setDatosFrqMsg] = useState("");
 
+const [buscandoDatosTitular, setBuscandoDatosTitular] = useState(false);
+const [datosTitularPrevios, setDatosTitularPrevios] = useState(null);
+const [datosTitularMsg, setDatosTitularMsg] = useState("");
+
 const [printMode, setPrintMode] = useState(null);
 
 const [currentProfile, setCurrentProfile] = useState(null);
@@ -1522,6 +1526,536 @@ function handleAplicarDatosFrqPrevios() {
 
   setDatosFrqMsg(
     "Datos del FRQ completados desde legajos previos. Revisá la información antes de guardar."
+  );
+}
+
+async function handleBuscarDatosPreviosTitular() {
+  const limpiarTexto = (value) =>
+    String(value || "").trim().replace(/\s+/g, " ");
+
+  const limpiarDocumento = (value) =>
+    String(value || "").replace(/\D/g, "").trim();
+
+  const limpiarFiltro = (value) =>
+    limpiarTexto(value).replace(/[(),%'"]/g, " ").trim();
+
+  const tieneValor = (value) =>
+    value !== null && value !== undefined && String(value).trim() !== "";
+
+  const normalizarFecha = (value) => {
+    if (!value) return "";
+    return String(value).slice(0, 10);
+  };
+
+  const normalizarTipoPersona = (value) => {
+    const texto = limpiarTexto(value).toUpperCase();
+
+    if (!texto) return "";
+    if (texto.includes("JUR")) return "JURIDICA";
+    if (texto.includes("HUM")) return "HUMANA";
+    if (texto.includes("FIS")) return "HUMANA";
+
+    return texto;
+  };
+
+  const normalizarEstadoCivil = (value) => {
+    const texto = limpiarTexto(value).toUpperCase();
+
+    if (!texto) return "";
+    if (texto.includes("CASAD")) return "CASADO/A";
+    if (texto.includes("SOLTER")) return "SOLTERO/A";
+    if (texto.includes("DIVORCI")) return "DIVORCIADO/A";
+    if (texto.includes("VIUD")) return "VIUDO/A";
+
+    return texto;
+  };
+
+  const crearVariantesDocumento = (value) => {
+    const raw = limpiarFiltro(value);
+    const digits = limpiarDocumento(value);
+    const variantes = new Set();
+
+    if (raw) variantes.add(raw);
+    if (digits) variantes.add(digits);
+    if (digits) variantes.add(formatDocumentoInput(digits));
+    if (digits.length === 11) variantes.add(formatCuit(digits));
+
+    return Array.from(variantes).filter(Boolean);
+  };
+
+  const crearFiltrosIlike = (columnas, valores) => {
+    const filtros = [];
+
+    columnas.forEach((columna) => {
+      valores.forEach((valor) => {
+        const valorLimpio = limpiarFiltro(valor);
+
+        if (valorLimpio && valorLimpio.length >= 2) {
+          filtros.push(`${columna}.ilike.%${valorLimpio}%`);
+        }
+      });
+    });
+
+    return filtros;
+  };
+
+  const normalizarCondominos = (value) => {
+    let lista = [];
+
+    if (Array.isArray(value)) {
+      lista = value;
+    } else if (value && Array.isArray(value.condominos)) {
+      lista = value.condominos;
+    } else if (value && Array.isArray(value.items)) {
+      lista = value.items;
+    } else if (value && Array.isArray(value.titulares)) {
+      lista = value.titulares;
+    } else if (value && typeof value === "object") {
+      const values = Object.values(value);
+
+      if (values.every((item) => item && typeof item === "object")) {
+        lista = values;
+      }
+    }
+
+    return lista
+      .map((item) => ({
+        apellido: limpiarTexto(
+          item?.apellido ||
+            item?.titular_apellido ||
+            item?.condomino_apellido ||
+            ""
+        ),
+        nombres: limpiarTexto(
+          item?.nombres ||
+            item?.nombre ||
+            item?.titular_nombres ||
+            item?.condomino_nombres ||
+            ""
+        ),
+        dni: limpiarTexto(
+          item?.dni ||
+            item?.documento ||
+            item?.titular_dni ||
+            item?.condomino_dni ||
+            ""
+        ),
+        cuil_cuit: limpiarTexto(
+          item?.cuil_cuit ||
+            item?.cuit ||
+            item?.cuil ||
+            item?.titular_cuil_cuit ||
+            item?.condomino_cuil_cuit ||
+            ""
+        ),
+        estado_civil: normalizarEstadoCivil(
+          item?.estado_civil ||
+            item?.titular_estado_civil ||
+            item?.condomino_estado_civil ||
+            ""
+        ),
+        titular_desde: normalizarFecha(
+          item?.titular_desde ||
+            item?.desde ||
+            item?.fecha_desde ||
+            ""
+        ),
+        porcentaje:
+          item?.porcentaje !== null && item?.porcentaje !== undefined
+            ? String(item.porcentaje)
+            : item?.porcentaje_titular !== null &&
+              item?.porcentaje_titular !== undefined
+            ? String(item.porcentaje_titular)
+            : "",
+        domicilio: limpiarTexto(
+          item?.domicilio ||
+            item?.titular_domicilio ||
+            item?.condomino_domicilio ||
+            ""
+        ),
+        conyuge_apellido: limpiarTexto(
+          item?.conyuge_apellido ||
+            item?.titular_conyuge_apellido ||
+            item?.condomino_conyuge_apellido ||
+            ""
+        ),
+        conyuge_nombres: limpiarTexto(
+          item?.conyuge_nombres ||
+            item?.conyuge_nombre ||
+            item?.titular_conyuge_nombres ||
+            item?.condomino_conyuge_nombres ||
+            ""
+        ),
+        conyuge_dni: limpiarTexto(
+          item?.conyuge_dni ||
+            item?.titular_conyuge_dni ||
+            item?.condomino_conyuge_dni ||
+            ""
+        ),
+        conyuge_cuil_cuit: limpiarTexto(
+          item?.conyuge_cuil_cuit ||
+            item?.conyuge_cuit ||
+            item?.titular_conyuge_cuil_cuit ||
+            item?.condomino_conyuge_cuil_cuit ||
+            ""
+        ),
+      }))
+      .filter((item) => Object.values(item).some(tieneValor));
+  };
+
+  const titularCuitValores = crearVariantesDocumento(
+    datosLegajoForm?.titular_cuil_cuit
+  );
+
+  const titularDniValores = crearVariantesDocumento(
+    datosLegajoForm?.titular_dni
+  );
+
+  const titularTextoValores = [
+    datosLegajoForm?.titular_apellido,
+    datosLegajoForm?.titular_nombres,
+    datosLegajoForm?.titular_razon_social,
+  ]
+    .map(limpiarFiltro)
+    .filter((value) => value && value.length >= 3);
+
+  if (
+    titularCuitValores.length === 0 &&
+    titularDniValores.length === 0 &&
+    titularTextoValores.length === 0
+  ) {
+    setDatosTitularPrevios(null);
+    setDatosTitularMsg(
+      "Primero cargá algún dato del titular: CUIT/CUIL, DNI, apellido, nombre o razón social."
+    );
+    return;
+  }
+
+  try {
+    setBuscandoDatosTitular(true);
+    setDatosTitularPrevios(null);
+    setDatosTitularMsg("");
+
+    const filtrosPrendas = [
+      ...crearFiltrosIlike(
+        ["titular_cuil_cuit", "titular_cuit"],
+        titularCuitValores
+      ),
+      ...crearFiltrosIlike(["titular_dni"], titularDniValores),
+      ...crearFiltrosIlike(
+        ["titular_apellido", "titular_nombres", "titular_razon_social"],
+        titularTextoValores
+      ),
+    ];
+
+    const { data: titularPrevioPrendas, error: prendasError } = await supabase
+      .from("dia_request_prendas")
+      .select(
+        "id, titular_tipo_persona, titular_apellido, titular_nombres, titular_razon_social, titular_dni, titular_cuil_cuit, titular_cuit, titular_estado_civil, titular_desde, porcentaje_titular, titular_domicilio, titular_email, titular_conyuge_apellido, titular_conyuge_nombres, titular_conyuge_dni, titular_conyuge_cuil_cuit, condominos, created_at"
+      )
+      .neq("id", id)
+      .or(filtrosPrendas.join(","))
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (prendasError) throw prendasError;
+
+    if (titularPrevioPrendas) {
+      const condominosPrendas = normalizarCondominos(
+        titularPrevioPrendas.condominos
+      );
+
+      setDatosTitularPrevios({
+        origen: "Prendas",
+        datos: {
+          titular_tipo_persona: normalizarTipoPersona(
+            titularPrevioPrendas.titular_tipo_persona
+          ),
+          titular_apellido: titularPrevioPrendas.titular_apellido || "",
+          titular_nombres: titularPrevioPrendas.titular_nombres || "",
+          titular_razon_social:
+            titularPrevioPrendas.titular_razon_social || "",
+          titular_dni: titularPrevioPrendas.titular_dni || "",
+          titular_cuil_cuit:
+            titularPrevioPrendas.titular_cuil_cuit ||
+            titularPrevioPrendas.titular_cuit ||
+            "",
+          titular_estado_civil: normalizarEstadoCivil(
+            titularPrevioPrendas.titular_estado_civil
+          ),
+          titular_desde: normalizarFecha(titularPrevioPrendas.titular_desde),
+          porcentaje_titular:
+            titularPrevioPrendas.porcentaje_titular !== null &&
+            titularPrevioPrendas.porcentaje_titular !== undefined
+              ? String(titularPrevioPrendas.porcentaje_titular)
+              : "",
+          titular_domicilio: titularPrevioPrendas.titular_domicilio || "",
+          titular_email: titularPrevioPrendas.titular_email || "",
+          titular_conyuge_apellido:
+            titularPrevioPrendas.titular_conyuge_apellido || "",
+          titular_conyuge_nombres:
+            titularPrevioPrendas.titular_conyuge_nombres || "",
+          titular_conyuge_dni:
+            titularPrevioPrendas.titular_conyuge_dni || "",
+          titular_conyuge_cuil_cuit:
+            titularPrevioPrendas.titular_conyuge_cuil_cuit || "",
+          condominos: condominosPrendas,
+          reemplazarCondominos:
+            titularPrevioPrendas.condominos !== null &&
+            titularPrevioPrendas.condominos !== undefined,
+        },
+      });
+
+      setDatosTitularMsg(
+        condominosPrendas.length > 0
+          ? "Se encontraron datos previos de titularidad en Prendas, incluyendo condóminos."
+          : "Se encontraron datos previos de titularidad en Prendas."
+      );
+      return;
+    }
+
+    const filtrosInformes = [
+      ...crearFiltrosIlike(
+        [
+          "titular_cuil_cuit",
+          "titular_cuit",
+          "informe_titular_cuil_cuit",
+          "identificacion_cuit",
+          "informe_titular_documento",
+        ],
+        titularCuitValores
+      ),
+      ...crearFiltrosIlike(
+        [
+          "titular_dni",
+          "informe_titular_dni",
+          "informe_titular_documento",
+          "identificacion_dni",
+        ],
+        titularDniValores
+      ),
+      ...crearFiltrosIlike(
+        [
+          "titular_apellido",
+          "titular_nombres",
+          "titular_razon_social",
+          "titular_dominio",
+          "informe_titular_nombre",
+          "informe_titular_apellido",
+          "informe_titular_nombres",
+          "informe_titular_razon_social",
+          "identificacion_nombre",
+        ],
+        titularTextoValores
+      ),
+    ];
+
+    const { data: titularPrevioInformes, error: informesError } =
+      await supabase
+        .from("dia_requests")
+        .select(
+          "id, identificacion_nombre, identificacion_dni, identificacion_cuit, identificacion_tipo_sujeto, informe_titular_nombre, informe_titular_documento, informe_titular_estado_civil, informe_titular_porcentaje, informe_titular_tipo_persona, informe_titular_apellido, informe_titular_nombres, informe_titular_razon_social, informe_titular_dni, informe_titular_cuil_cuit, informe_titular_desde, informe_titular_domicilio, informe_titular_conyuge_apellido, informe_titular_conyuge_nombres, informe_titular_conyuge_dni, informe_titular_conyuge_cuil_cuit, informe_condominos, titular_dominio, estado_civil, titular_tipo_persona, titular_apellido, titular_nombres, titular_razon_social, titular_dni, titular_cuil_cuit, titular_cuit, titular_estado_civil, titular_desde, porcentaje_titular, titular_domicilio, titular_conyuge_apellido, titular_conyuge_nombres, titular_conyuge_dni, titular_conyuge_cuil_cuit, condominos, created_at"
+        )
+        .or(filtrosInformes.join(","))
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (informesError) throw informesError;
+
+    if (titularPrevioInformes) {
+      const nombreCompletoInforme = limpiarTexto(
+        titularPrevioInformes.informe_titular_nombre ||
+          titularPrevioInformes.identificacion_nombre ||
+          titularPrevioInformes.titular_dominio ||
+          ""
+      );
+
+      const apellidoDesdeNombre = nombreCompletoInforme.split(" ")[0] || "";
+      const nombresDesdeNombre =
+        nombreCompletoInforme.split(" ").slice(1).join(" ") || "";
+
+      const rawCondominosInformes =
+        titularPrevioInformes.informe_condominos !== null &&
+        titularPrevioInformes.informe_condominos !== undefined
+          ? titularPrevioInformes.informe_condominos
+          : titularPrevioInformes.condominos;
+
+      const condominosInformes = normalizarCondominos(rawCondominosInformes);
+
+      setDatosTitularPrevios({
+        origen: "Informes",
+        datos: {
+          titular_tipo_persona: normalizarTipoPersona(
+            titularPrevioInformes.titular_tipo_persona ||
+              titularPrevioInformes.informe_titular_tipo_persona ||
+              titularPrevioInformes.identificacion_tipo_sujeto ||
+              "HUMANA"
+          ),
+          titular_apellido:
+            titularPrevioInformes.titular_apellido ||
+            titularPrevioInformes.informe_titular_apellido ||
+            apellidoDesdeNombre ||
+            "",
+          titular_nombres:
+            titularPrevioInformes.titular_nombres ||
+            titularPrevioInformes.informe_titular_nombres ||
+            nombresDesdeNombre ||
+            "",
+          titular_razon_social:
+            titularPrevioInformes.titular_razon_social ||
+            titularPrevioInformes.informe_titular_razon_social ||
+            nombreCompletoInforme ||
+            "",
+          titular_dni:
+            titularPrevioInformes.titular_dni ||
+            titularPrevioInformes.informe_titular_dni ||
+            titularPrevioInformes.informe_titular_documento ||
+            titularPrevioInformes.identificacion_dni ||
+            "",
+          titular_cuil_cuit:
+            titularPrevioInformes.titular_cuil_cuit ||
+            titularPrevioInformes.titular_cuit ||
+            titularPrevioInformes.informe_titular_cuil_cuit ||
+            titularPrevioInformes.identificacion_cuit ||
+            "",
+          titular_estado_civil: normalizarEstadoCivil(
+            titularPrevioInformes.titular_estado_civil ||
+              titularPrevioInformes.estado_civil ||
+              titularPrevioInformes.informe_titular_estado_civil ||
+              ""
+          ),
+          titular_desde: normalizarFecha(
+            titularPrevioInformes.titular_desde ||
+              titularPrevioInformes.informe_titular_desde ||
+              ""
+          ),
+          porcentaje_titular:
+            titularPrevioInformes.porcentaje_titular !== null &&
+            titularPrevioInformes.porcentaje_titular !== undefined
+              ? String(titularPrevioInformes.porcentaje_titular)
+              : titularPrevioInformes.informe_titular_porcentaje !== null &&
+                titularPrevioInformes.informe_titular_porcentaje !== undefined
+              ? String(titularPrevioInformes.informe_titular_porcentaje)
+              : "",
+          titular_domicilio:
+            titularPrevioInformes.titular_domicilio ||
+            titularPrevioInformes.informe_titular_domicilio ||
+            "",
+          titular_email: "",
+          titular_conyuge_apellido:
+            titularPrevioInformes.titular_conyuge_apellido ||
+            titularPrevioInformes.informe_titular_conyuge_apellido ||
+            "",
+          titular_conyuge_nombres:
+            titularPrevioInformes.titular_conyuge_nombres ||
+            titularPrevioInformes.informe_titular_conyuge_nombres ||
+            "",
+          titular_conyuge_dni:
+            titularPrevioInformes.titular_conyuge_dni ||
+            titularPrevioInformes.informe_titular_conyuge_dni ||
+            "",
+          titular_conyuge_cuil_cuit:
+            titularPrevioInformes.titular_conyuge_cuil_cuit ||
+            titularPrevioInformes.informe_titular_conyuge_cuil_cuit ||
+            "",
+          condominos: condominosInformes,
+          reemplazarCondominos:
+            rawCondominosInformes !== null &&
+            rawCondominosInformes !== undefined,
+        },
+      });
+
+      setDatosTitularMsg(
+        condominosInformes.length > 0
+          ? "Se encontraron datos previos de titularidad en Informes, incluyendo condóminos."
+          : "Se encontraron datos previos de titularidad en Informes."
+      );
+      return;
+    }
+
+    setDatosTitularPrevios(null);
+    setDatosTitularMsg("No se encontraron datos previos para este titular.");
+  } catch (error) {
+    console.error("Error buscando datos previos del titular:", error);
+    setDatosTitularPrevios(null);
+    setDatosTitularMsg(
+      error?.message || "No se pudieron buscar datos previos del titular."
+    );
+  } finally {
+    setBuscandoDatosTitular(false);
+  }
+}
+
+function handleAplicarDatosTitularPrevios() {
+  if (!datosTitularPrevios?.datos) return;
+
+  const datos = datosTitularPrevios.datos;
+
+  const tieneValor = (value) =>
+    value !== null && value !== undefined && String(value).trim() !== "";
+
+  const tomar = (nuevo, actual) => (tieneValor(nuevo) ? String(nuevo) : actual);
+
+  setDatosLegajoForm((prev) => ({
+    ...prev,
+    titular_tipo_persona: tomar(
+      datos.titular_tipo_persona,
+      prev.titular_tipo_persona
+    ),
+    titular_apellido: tomar(datos.titular_apellido, prev.titular_apellido),
+    titular_nombres: tomar(datos.titular_nombres, prev.titular_nombres),
+    titular_razon_social: tomar(
+      datos.titular_razon_social,
+      prev.titular_razon_social
+    ),
+    titular_dni: tomar(datos.titular_dni, prev.titular_dni),
+    titular_cuil_cuit: tomar(
+      datos.titular_cuil_cuit,
+      prev.titular_cuil_cuit
+    ),
+    titular_estado_civil: tomar(
+      datos.titular_estado_civil,
+      prev.titular_estado_civil
+    ),
+    titular_desde: tomar(datos.titular_desde, prev.titular_desde),
+    porcentaje_titular: tomar(
+      datos.porcentaje_titular,
+      prev.porcentaje_titular
+    ),
+    titular_domicilio: tomar(
+      datos.titular_domicilio,
+      prev.titular_domicilio
+    ),
+    titular_email: tomar(datos.titular_email, prev.titular_email),
+
+    titular_conyuge_apellido: tomar(
+      datos.titular_conyuge_apellido,
+      prev.titular_conyuge_apellido
+    ),
+    titular_conyuge_nombres: tomar(
+      datos.titular_conyuge_nombres,
+      prev.titular_conyuge_nombres
+    ),
+    titular_conyuge_dni: tomar(
+      datos.titular_conyuge_dni,
+      prev.titular_conyuge_dni
+    ),
+    titular_conyuge_cuil_cuit: tomar(
+      datos.titular_conyuge_cuil_cuit,
+      prev.titular_conyuge_cuil_cuit
+    ),
+
+    condominos: datos.reemplazarCondominos
+      ? Array.isArray(datos.condominos)
+        ? datos.condominos
+        : []
+      : prev.condominos,
+  }));
+
+  setDatosTitularMsg(
+    `Datos de titularidad completados desde ${datosTitularPrevios.origen}. Revisá titular, cónyuge, condóminos y porcentajes antes de guardar.`
   );
 }
 
@@ -9020,6 +9554,112 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
           </select>
         </div>
       </>
+    )}
+
+    <div
+      style={{
+        gridColumn: "1 / -1",
+        borderRadius: "16px",
+        border: "1px solid rgba(96,165,250,0.22)",
+        background: "rgba(15, 23, 42, 0.34)",
+        padding: "12px 14px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "12px",
+      }}
+    >
+      <div>
+        <div
+          style={{
+            color: "#dbeafe",
+            fontSize: "13px",
+            fontWeight: 850,
+            marginBottom: "3px",
+          }}
+        >
+          Buscar datos previos de titularidad
+        </div>
+
+        <div
+          style={{
+            color: "rgba(214,228,245,0.68)",
+            fontSize: "12px",
+            lineHeight: 1.4,
+          }}
+        >
+          Busca en Prendas e Informes por DNI, CUIT/CUIL, apellido, nombre o razón social.
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleBuscarDatosPreviosTitular}
+        disabled={buscandoDatosTitular}
+        style={{
+          height: "36px",
+          padding: "0 13px",
+          borderRadius: "999px",
+          border: "1px solid rgba(96,165,250,0.34)",
+          background:
+            "linear-gradient(135deg, rgba(37,99,235,0.24), rgba(14,165,233,0.16))",
+          color: "#dbeafe",
+          fontSize: "12px",
+          fontWeight: 850,
+          cursor: buscandoDatosTitular ? "not-allowed" : "pointer",
+          opacity: buscandoDatosTitular ? 0.7 : 1,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {buscandoDatosTitular ? "Buscando..." : "Buscar datos"}
+      </button>
+    </div>
+
+    {datosTitularMsg && (
+      <div
+        style={{
+          gridColumn: "1 / -1",
+          borderRadius: "16px",
+          border: datosTitularPrevios
+            ? "1px solid rgba(34,197,94,0.32)"
+            : "1px solid rgba(251,191,36,0.32)",
+          background: datosTitularPrevios
+            ? "rgba(22,163,74,0.12)"
+            : "rgba(217,119,6,0.12)",
+          color: datosTitularPrevios ? "#bbf7d0" : "#fde68a",
+          padding: "12px 14px",
+          fontSize: "13px",
+          fontWeight: 750,
+          lineHeight: 1.45,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "12px",
+        }}
+      >
+        <span>{datosTitularMsg}</span>
+
+        {datosTitularPrevios && (
+          <button
+            type="button"
+            onClick={handleAplicarDatosTitularPrevios}
+            style={{
+              height: "34px",
+              padding: "0 12px",
+              borderRadius: "999px",
+              border: "1px solid rgba(34,197,94,0.34)",
+              background: "rgba(22,163,74,0.18)",
+              color: "#dcfce7",
+              fontSize: "12px",
+              fontWeight: 850,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Completar datos de titularidad
+          </button>
+        )}
+      </div>
     )}
 
     <div>
