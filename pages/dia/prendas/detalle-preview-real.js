@@ -1824,7 +1824,9 @@ titular_estado_civil: hayDatosConyugeTitular(titularPrevioPrendas)
           ? "Se encontraron datos previos de titularidad en Prendas, incluyendo condóminos."
           : "Se encontraron datos previos de titularidad en Prendas."
       );
-      return;
+      if (hayDatosConyugeTitular(titularPrevioPrendas)) {
+  return;
+}
     }
 
     const filtrosInformes = [
