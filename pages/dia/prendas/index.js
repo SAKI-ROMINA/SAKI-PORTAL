@@ -78,6 +78,15 @@ function getStatusPillStyle(summary) {
         color: "#fde68a",
       };
 
+case "Rectificación solicitada":
+case "Rectificacion solicitada":
+  return {
+    ...base,
+    background: "rgba(245, 158, 11, 0.16)",
+    border: "1px solid rgba(245, 158, 11, 0.34)",
+    color: "#fde68a",
+  };
+
     case "En curso":
       return {
         ...base,
