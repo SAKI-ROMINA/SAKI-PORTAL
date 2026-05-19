@@ -332,6 +332,9 @@ const [rectificacionMotivo, setRectificacionMotivo] = useState("");
 const [rectificacionNota, setRectificacionNota] = useState("");
 const [savingRectificacion, setSavingRectificacion] = useState(false);
 
+const [editandoRectificacion, setEditandoRectificacion] = useState(false);
+const [rectificacionEditId, setRectificacionEditId] = useState(null);
+
 const [
   showDisponibleRetiroCorreccion,
   setShowDisponibleRetiroCorreccion,
@@ -2568,6 +2571,24 @@ async function handleGuardarAprobarRevision() {
   }
 }
 
+function handleEditarRectificacionActual() {
+  const ultimaRectificacion = Array.isArray(historyRows)
+    ? historyRows.find(
+        (item) => item?.tipo_evento === "rectificacion_solicitada"
+      )
+    : null;
+
+  const detalle = ultimaRectificacion?.detalle || {};
+
+  setRectificacionTipo(detalle?.tipo_rectificacion || "");
+  setRectificacionMotivo(detalle?.motivo_rectificacion || "");
+  setRectificacionNota(detalle?.nota || "");
+
+  setRectificacionEditId(ultimaRectificacion?.id || null);
+  setEditandoRectificacion(true);
+  setShowSolicitarRectificacion(true);
+}
+
 async function handleGuardarSolicitarRectificacion() {
   if (!id) return;
 
@@ -4536,6 +4557,7 @@ const titularAdminCasado =
     proximaAccionInfo={proximaAccionInfo}
     isAdmin={isAdmin}
     canOperatePrendas={canOperatePrendas}
+    onEditarRectificacion={handleEditarRectificacionActual}
     onReprogramarEnvio={() => {
       setNuevaFechaEnvio(row?.fecha_envio_oficina || "");
       setShowReprogramarEnvio(true);
@@ -13120,6 +13142,7 @@ function FichaEstado({
   proximaAccionInfo,
   isAdmin,
   canOperatePrendas,
+  onEditarRectificacion,
   onReprogramarEnvio,
   onRecibirPrenda,
   onAprobarRevision,
