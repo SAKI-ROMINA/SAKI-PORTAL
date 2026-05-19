@@ -220,10 +220,10 @@ if (hayTitularCuit && titularCuit.length !== 11) {
   titular_dominio: cleanUpper(titularCompuesto),
   titular_cuit: titularCuit || null,
 
-  fecha_envio_oficina: esCargaHistorica ? null : fechaOperacion,
-  fecha_retiro_final_real: esCargaHistorica ? fechaOperacion : null,
+  fecha_envio_oficina: fechaOperacion || null,
+  fecha_retiro_final_real: null,
 
-  estado: esCargaHistorica ? "Retirada" : "Pendiente de envío",
+estado: "Pendiente de envío",
 };
 
 const { data: createdPrenda, error } = await supabase
@@ -246,23 +246,16 @@ const { error: historyError } = await supabase
     titulo: esCargaHistorica
       ? "Carga histórica del legajo"
       : "Carga inicial de nueva prenda",
-    detalle: esCargaHistorica
-      ? {
-          fecha_retiro_final_real: fechaOperacion || null,
-          estado: "Retirada",
-          tienda: cleanUpper(form.tienda),
-          dominio: cleanUpper(form.dominio),
-          frq: cleanUpper(frqCompuesto),
-          nota:
-            "Legajo cargado administrativamente como trámite histórico ya retirado.",
-        }
-      : {
-          fecha_envio_inicial: fechaOperacion || null,
-          estado: "Pendiente de envío",
-          tienda: cleanUpper(form.tienda),
-          dominio: cleanUpper(form.dominio),
-          frq: cleanUpper(frqCompuesto),
-        },
+    detalle: {
+  fecha_envio_inicial: fechaOperacion || null,
+  estado: "Pendiente de envío",
+  tienda: cleanUpper(form.tienda),
+  dominio: cleanUpper(form.dominio),
+  frq: cleanUpper(frqCompuesto),
+  nota: esCargaHistorica
+    ? "Legajo cargado administrativamente como carga histórica. Continúa el mismo circuito operativo que una prenda nueva."
+    : null,
+},
     created_by_name: user?.user_metadata?.full_name || null,
     created_by_email: user?.email || null,
     created_at: new Date().toISOString(),
@@ -481,8 +474,8 @@ router.push("/dia/prendas");
 <div style={helperRowStyle}>
   <span style={helperTextStyle}>
     {tipoCarga === "historica"
-      ? "Carga histórica: permite registrar una fecha anterior porque corresponde a una prenda ya retirada."
-      : "No permite elegir una fecha anterior a hoy."}
+  ? "Carga histórica: permite registrar una fecha anterior de envío inicial. Luego continúa el mismo circuito operativo que una prenda nueva."
+  : "No permite elegir una fecha anterior a hoy."}
   </span>
 </div>
 
