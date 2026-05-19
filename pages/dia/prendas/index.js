@@ -70,43 +70,52 @@ function getStatusPillStyle(summary) {
   };
 
   switch (summary) {
-        case "Pendiente de envío":
+    case "Pendiente de envío":
       return {
         ...base,
         background: "rgba(245, 158, 11, 0.16)",
+        border: "1px solid rgba(245, 158, 11, 0.34)",
         color: "#fde68a",
-        border: "1px solid rgba(245, 158, 11, 0.30)",
       };
-    case "Inscripta":
+
+    case "En curso":
       return {
         ...base,
-        background: "rgba(34,197,94,0.14)",
-        color: "#bbf7d0",
-        border: "1px solid rgba(34,197,94,0.24)",
+        background: "rgba(59, 130, 246, 0.22)",
+        border: "1px solid rgba(147, 197, 253, 0.42)",
+        color: "#dbeafe",
       };
 
     case "Observada":
       return {
         ...base,
-        background: "rgba(245,158,11,0.14)",
-        color: "#fde68a",
-        border: "1px solid rgba(245,158,11,0.24)",
+        background: "rgba(239, 68, 68, 0.16)",
+        border: "1px solid rgba(239, 68, 68, 0.34)",
+        color: "#fecaca",
       };
 
     case "Anulada":
       return {
         ...base,
-        background: "rgba(239,68,68,0.14)",
+        background: "rgba(127, 29, 29, 0.26)",
+        border: "1px solid rgba(248, 113, 113, 0.34)",
         color: "#fecaca",
-        border: "1px solid rgba(239,68,68,0.24)",
+      };
+
+    case "Inscripta":
+      return {
+        ...base,
+        background: "rgba(16, 185, 129, 0.18)",
+        border: "1px solid rgba(16, 185, 129, 0.36)",
+        color: "#bbf7d0",
       };
 
     default:
       return {
         ...base,
-        background: "rgba(16,185,129,0.12)",
-        color: "#d1fae5",
-        border: "1px solid rgba(16,185,129,0.20)",
+        background: "rgba(148, 163, 184, 0.12)",
+        border: "1px solid rgba(148, 163, 184, 0.22)",
+        color: "#cbd5e1",
       };
   }
 }
