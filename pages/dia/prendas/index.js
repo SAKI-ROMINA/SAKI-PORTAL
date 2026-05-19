@@ -40,6 +40,7 @@ function getStatusSummary(status) {
 
   if (value === "pendiente de envio") return "Pendiente de envío";
   if (value === "en curso") return "En curso";
+  if (value === "rectificacion solicitada") return "Rectificación solicitada";
   if (value === "anulada") return "Anulada";
   if (value === "observada") return "Observada";
 
@@ -312,7 +313,10 @@ const totalEnCurso = rows.filter((row) => {
 
 const totalObservadas = rows.filter((row) => {
   const summary = getStatusSummary(row.estado);
-  return summary === "Observada";
+  return (
+    summary === "Observada" ||
+    summary === "Rectificación solicitada"
+  );
 }).length;
 
 const totalInscriptas = rows.filter((row) => {
