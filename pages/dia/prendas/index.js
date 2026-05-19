@@ -289,7 +289,7 @@ const noSearchResults =
 
 const totalEnCurso = rows.filter((row) => {
   const summary = getStatusSummary(row.estado);
-  return summary === "En proceso";
+  return summary === "En curso";
 }).length;
 
 const totalObservadas = rows.filter((row) => {
@@ -518,12 +518,12 @@ const totalAvisosPrendas = totalEnCurso + totalObservadas;
     label="En curso"
     value={totalEnCurso}
     text="Pendientes de gestión o seguimiento."
-    active={search.trim().toLowerCase() === "en proceso"}
-    onClick={() => {
-      setSearch("en proceso");
-      setAvisosOpen(false);
-      setTopMenuOpen(false);
-    }}
+    active={search.trim().toLowerCase() === "en curso"}
+onClick={() => {
+  setSearch("en curso");
+  setAvisosOpen(false);
+  setTopMenuOpen(false);
+}}
   />
 
   <SummaryCard

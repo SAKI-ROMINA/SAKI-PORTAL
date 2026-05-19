@@ -1004,22 +1004,25 @@ Cónyuge del titular:
 - CUIL / CUIT: ${row?.titular_conyuge_cuil_cuit || "—"}`
       : "Cónyuge del titular: No corresponde / no informado.";
 
-  const trazabilidadTexto = [
-    ["Carga inicial", row?.created_at],
-    ["Envío programado", row?.fecha_envio_oficina],
-    ["Recepción SAKI", row?.fecha_recepcion_inicial_oficina],
-    ["Presentación en Registro", row?.fecha_presentacion_registro],
-    ["Observación", row?.fecha_observacion],
-    ["Reingreso subsanado", row?.fecha_reingreso_subsanada],
-    ["Inscripción", row?.fecha_inscripcion],
-    ["Vencimiento", row?.fecha_vencimiento],
-    ["Disponible para retiro", row?.fecha_disponible_retiro_final],
-    ["Retiro final", row?.fecha_real_retiro_final],
-    ["Cierre de legajo", row?.fecha_cierre_legajo || row?.legajo_cerrado_en],
-  ]
-    .filter(([, fecha]) => fecha)
-    .map(([titulo, fecha]) => `- ${titulo}: ${formatDate(fecha)}`)
-    .join("\n");
+const trazabilidadTexto = [
+  ["Carga inicial", row?.created_at],
+  ["Envío programado", row?.fecha_envio_oficina],
+  ["Recepción SAKI", row?.fecha_recepcion_inicial_oficina],
+  ["Presentación en Registro", row?.fecha_presentacion_registro],
+  ["Observación", row?.fecha_observacion],
+  ["Reingreso subsanado", row?.fecha_reingreso_subsanada],
+  ["Inscripción", row?.fecha_inscripcion],
+  ["Vencimiento", row?.fecha_vencimiento],
+  ["Disponible para retiro", row?.fecha_disponible_retiro_final],
+  [
+    "Retiro final",
+    row?.fecha_real_retiro_final || row?.fecha_retiro_final_real,
+  ],
+  ["Cierre de legajo", row?.fecha_cierre_legajo || row?.legajo_cerrado_en],
+]
+  .filter(([, fecha]) => fecha)
+  .map(([titulo, fecha]) => `- ${titulo}: ${formatDate(fecha)}`)
+  .join("\n");
 
   return `SAKI — Resumen del legajo prendario
 
