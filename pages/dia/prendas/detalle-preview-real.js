@@ -2605,6 +2605,87 @@ async function handleGuardarSolicitarRectificacion() {
   try {
     setSavingRectificacion(true);
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (editandoRectificacion) {
+      if (!rectificacionEditId) {
+        alert("No se encontró la rectificación original para editar.");
+        return;
+      }
+
+      const rectificacionOriginal = Array.isArray(historyRows)
+        ? historyRows.find((item) => item?.id === rectificacionEditId)
+        : null;
+
+      const detalleAnterior = rectificacionOriginal?.detalle || {};
+
+      const detalleActualizado = {
+        ...detalleAnterior,
+        tipo_rectificacion: rectificacionTipo,
+        motivo_rectificacion: rectificacionMotivo.trim(),
+        nota: rectificacionNota.trim() || null,
+        actualizado_en: new Date().toISOString(),
+        actualizado_por_nombre: user?.user_metadata?.full_name || null,
+        actualizado_por_email: user?.email || null,
+      };
+
+      const { data: updatedHistory, error: updateHistoryError } =
+        await supabase
+          .from("dia_request_prendas_history")
+          .update({
+            detalle: detalleActualizado,
+          })
+          .eq("id", rectificacionEditId)
+          .select("*")
+          .single();
+
+      if (updateHistoryError) throw updateHistoryError;
+
+      const { data: editHistory, error: editHistoryError } = await supabase
+        .from("dia_request_prendas_history")
+        .insert({
+          prenda_id: id,
+          tipo_evento: "rectificacion_actualizada",
+          titulo: "Rectificación actualizada",
+          detalle: {
+            rectificacion_original_id: rectificacionEditId,
+            estado_actual: row?.estado || "Rectificación solicitada",
+            tipo_rectificacion: rectificacionTipo,
+            motivo_rectificacion: rectificacionMotivo.trim(),
+            nota: rectificacionNota.trim() || null,
+          },
+          created_by_name: user?.user_metadata?.full_name || null,
+          created_by_email: user?.email || null,
+          created_at: new Date().toISOString(),
+        })
+        .select("*")
+        .single();
+
+      if (editHistoryError) throw editHistoryError;
+
+      setHistoryRows((prev) => {
+        const base = Array.isArray(prev) ? prev : [];
+
+        const reemplazado = base.map((item) =>
+          item?.id === rectificacionEditId ? updatedHistory : item
+        );
+
+        return editHistory ? [editHistory, ...reemplazado] : reemplazado;
+      });
+
+      setShowSolicitarRectificacion(false);
+      setEditandoRectificacion(false);
+      setRectificacionEditId(null);
+      setRectificacionTipo("");
+      setRectificacionMotivo("");
+      setRectificacionNota("");
+
+      alert("Rectificación actualizada correctamente.");
+      return;
+    }
+
     const estadoAnterior = row?.estado || null;
 
     const { error } = await supabase
@@ -2615,10 +2696,6 @@ async function handleGuardarSolicitarRectificacion() {
       .eq("id", id);
 
     if (error) throw error;
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
     const { data: createdHistory, error: historyError } = await supabase
       .from("dia_request_prendas_history")
@@ -2652,14 +2729,16 @@ async function handleGuardarSolicitarRectificacion() {
     }));
 
     setShowSolicitarRectificacion(false);
+    setEditandoRectificacion(false);
+    setRectificacionEditId(null);
     setRectificacionTipo("");
     setRectificacionMotivo("");
     setRectificacionNota("");
 
     alert("Rectificación solicitada correctamente.");
   } catch (error) {
-    console.error("Error solicitando rectificación:", error);
-    alert("No se pudo solicitar la rectificación.");
+    console.error("Error guardando rectificación:", error);
+    alert("No se pudo guardar la rectificación.");
   } finally {
     setSavingRectificacion(false);
   }
