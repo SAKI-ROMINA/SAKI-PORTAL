@@ -5290,7 +5290,7 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
             <option value="rectificacion_escribania_interviniente">
   Rectificación por escribanía interviniente
 </option>
-            <option value="error_documental">Error documental</option>
+            <option value="error_documental">Rectificacion de datos</option>
             <option value="datos_incompletos">Datos incompletos</option>
             <option value="diferencia_datos">Diferencia en datos</option>
             <option value="otro">Otro</option>
