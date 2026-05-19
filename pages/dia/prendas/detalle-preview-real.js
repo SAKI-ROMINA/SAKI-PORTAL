@@ -3765,12 +3765,15 @@ const estadoFechaInfo = (() => {
     };
   }
 
-  if (estadoActualKey === "RETIRADA") {
-    return {
-      label: "Retirada",
-      value: formatDate(row?.fecha_real_retiro_final),
-    };
-  }
+if (estadoActualKey === "RETIRADA") {
+  return {
+    label: "Retirada",
+    value: formatDate(
+      row?.fecha_real_retiro_final ||
+        row?.fecha_retiro_final_real
+    ),
+  };
+}
 
   if (estadoActualKey === "LEGAJO CERRADO") {
     return {
