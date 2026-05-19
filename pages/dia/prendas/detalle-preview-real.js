@@ -4529,6 +4529,7 @@ const titularAdminCasado =
 {activeFicha === "estado" && (
   <FichaEstado
     row={row}
+    historyRows={historyRows}
     estadoActual={estadoActual}
     estadoActualKey={estadoActualKey}
     estadoFechaInfo={estadoFechaInfo}
@@ -13112,6 +13113,7 @@ function FichaGarante({ row }) {
 
 function FichaEstado({
   row,
+  historyRows,
   estadoActual,
   estadoActualKey,
   estadoFechaInfo,
@@ -13145,6 +13147,28 @@ function FichaEstado({
       : estadoActualKey === "OBSERVADA"
       ? "Por completar"
       : "No aplica";
+
+      const ultimaRectificacion = Array.isArray(historyRows)
+  ? historyRows.find((item) => item?.tipo_evento === "rectificacion_solicitada")
+  : null;
+
+const rectificacionDetalle = ultimaRectificacion?.detalle || {};
+
+const rectificacionTipoLabel =
+  rectificacionDetalle?.tipo_rectificacion === "rectificacion_escribania_interviniente"
+    ? "Rectificación por escribanía interviniente"
+    : rectificacionDetalle?.tipo_rectificacion === "error_documental"
+    ? "Rectificación de datos"
+    : rectificacionDetalle?.tipo_rectificacion === "datos_incompletos"
+    ? "Datos incompletos"
+    : rectificacionDetalle?.tipo_rectificacion === "diferencia_datos"
+    ? "Diferencia en datos"
+    : rectificacionDetalle?.tipo_rectificacion === "otro"
+    ? "Otro"
+    : "Por completar";
+
+const mostrarDetalleRectificacion =
+  estadoActualKey === "RECTIFICACION SOLICITADA" && ultimaRectificacion;
 
   return (
     <div style={credentialStyle}>
@@ -13199,6 +13223,122 @@ function FichaEstado({
   }
   wide
 />
+
+{mostrarDetalleRectificacion && (
+  <div
+    style={{
+      gridColumn: "1 / -1",
+      borderRadius: "18px",
+      border: "1px solid rgba(248, 113, 113, 0.28)",
+      background:
+        "linear-gradient(135deg, rgba(127, 29, 29, 0.26), rgba(30, 41, 59, 0.34))",
+      padding: "16px",
+      marginTop: "4px",
+    }}
+  >
+    <div
+      style={{
+        fontSize: "11px",
+        fontWeight: 850,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        color: "#fecaca",
+        marginBottom: "12px",
+      }}
+    >
+      Detalle de rectificación
+    </div>
+
+    <div
+      style={{
+        display: "grid",
+        gap: "12px",
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: "11px",
+            fontWeight: 800,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "rgba(254, 202, 202, 0.78)",
+            marginBottom: "5px",
+          }}
+        >
+          Tipo
+        </div>
+
+        <div
+          style={{
+            color: "#fff7ed",
+            fontSize: "13px",
+            fontWeight: 750,
+            lineHeight: 1.45,
+          }}
+        >
+          {rectificacionTipoLabel}
+        </div>
+      </div>
+
+      {rectificacionDetalle?.motivo_rectificacion && (
+        <div>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "rgba(254, 202, 202, 0.78)",
+              marginBottom: "5px",
+            }}
+          >
+            Motivo
+          </div>
+
+          <div
+            style={{
+              color: "#f8fafc",
+              fontSize: "13px",
+              lineHeight: 1.55,
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {rectificacionDetalle.motivo_rectificacion}
+          </div>
+        </div>
+      )}
+
+      {rectificacionDetalle?.nota && (
+        <div>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "rgba(254, 202, 202, 0.78)",
+              marginBottom: "5px",
+            }}
+          >
+            Indicación para Día
+          </div>
+
+          <div
+            style={{
+              color: "#f8fafc",
+              fontSize: "13px",
+              lineHeight: 1.55,
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {rectificacionDetalle.nota}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
 {estadoActualKey === "PENDIENTE DE ENVIO" && canOperatePrendas && (
   <div
