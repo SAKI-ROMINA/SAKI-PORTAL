@@ -13359,6 +13359,35 @@ const mostrarDetalleRectificacion =
           </div>
         </div>
       )}
+
+      {canOperatePrendas && typeof onEditarRectificacion === "function" && (
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "flex-end",
+      marginTop: "4px",
+    }}
+  >
+    <button
+      type="button"
+      onClick={onEditarRectificacion}
+      style={{
+        height: "34px",
+        padding: "0 13px",
+        borderRadius: "999px",
+        border: "1px solid rgba(248, 113, 113, 0.34)",
+        background: "rgba(127, 29, 29, 0.24)",
+        color: "#fecaca",
+        fontSize: "12px",
+        fontWeight: 850,
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+      }}
+    >
+      Editar rectificación
+    </button>
+  </div>
+)}
     </div>
   </div>
 )}
