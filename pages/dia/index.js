@@ -322,7 +322,12 @@ useEffect(() => {
         .slice(0, 4);
 
       const prendasObservadas = (prendasData || []).filter((item) => {
-        const estado = (item.estado || "").toString().toUpperCase();
+        const estado = (item.estado || "")
+  .toString()
+  .trim()
+  .toUpperCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "");
 
         return (
           estado.includes("OBSERVADA") ||
