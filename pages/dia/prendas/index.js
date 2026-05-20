@@ -567,13 +567,21 @@ const totalAvisosPrendas = totalEnCurso + totalObservadas;
   <div style={dateFilterFieldStyle}>
     <span style={dateFilterLabelStyle}>Orden</span>
     <select
-      value={ordenFecha}
-      onChange={(e) => setOrdenFecha(e.target.value)}
-      style={dateFilterInputStyle}
-    >
-      <option value="desc">Más recientes primero</option>
-      <option value="asc">Más antiguas primero</option>
-    </select>
+  value={ordenFecha}
+  onChange={(e) => setOrdenFecha(e.target.value)}
+  style={{
+    ...dateFilterInputStyle,
+    background: "#071326",
+    color: "#e7eef9",
+  }}
+>
+  <option value="desc" style={{ background: "#071326", color: "#e7eef9" }}>
+    Más recientes primero
+  </option>
+  <option value="asc" style={{ background: "#071326", color: "#e7eef9" }}>
+    Más antiguas primero
+  </option>
+</select>
   </div>
 
   {(fechaDesde || fechaHasta || ordenFecha !== "desc") && (
