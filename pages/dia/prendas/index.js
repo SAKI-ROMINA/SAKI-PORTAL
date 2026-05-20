@@ -263,8 +263,13 @@ useEffect(() => {
   }
 
   const filteredRows = useMemo(() => {
-  const q = search.trim().toLowerCase();
-  const qDigits = onlyDigits(search);
+  const q = search
+  .trim()
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "");
+
+const qDigits = onlyDigits(search);
 
   const getFechaBase = (row) =>
     (row?.fecha_envio_oficina || row?.created_at || "").toString().slice(0, 10);
@@ -274,17 +279,22 @@ useEffect(() => {
     const fechaBase = getFechaBase(row);
 
     const textValues = [
-      row.tienda,
-      row.frq,
-      formatCuit(row.frq_cuit),
-      row.dominio,
-      row.titular_dominio,
-      formatCuit(row.titular_cuit),
-      row.estado,
-      summary,
-    ]
-      .filter(Boolean)
-      .map((value) => String(value).toLowerCase());
+  row.tienda,
+  row.frq,
+  formatCuit(row.frq_cuit),
+  row.dominio,
+  row.titular_dominio,
+  formatCuit(row.titular_cuit),
+  row.estado,
+  summary,
+]
+  .filter(Boolean)
+  .map((value) =>
+    String(value)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+  );
 
     const digitValues = [row.frq_cuit, row.titular_cuit]
       .filter(Boolean)
@@ -298,7 +308,14 @@ const matchesDigits = qDigits
   ? digitValues.some((value) => value.includes(qDigits))
   : false;
 
-const matchesSearch = q || qDigits ? matchesText || matchesDigits : true;
+const matchesObservadasGrupo =
+  q === "observada" || q === "observadas"
+    ? summary === "Observada" || summary === "Rectificación solicitada"
+    : false;
+
+const matchesSearch = q || qDigits
+  ? matchesText || matchesDigits || matchesObservadasGrupo
+  : true;
 
     const matchesDesde = fechaDesde ? fechaBase >= fechaDesde : true;
     const matchesHasta = fechaHasta ? fechaBase <= fechaHasta : true;
