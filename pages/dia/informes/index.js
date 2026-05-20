@@ -572,248 +572,81 @@ const printDate = new Date().toLocaleDateString("es-AR");
 </button>
             </div>
 
-<div
-  style={{
-    display: "flex",
-    gap: "12px",
-    alignItems: "center",
-    width: "100%",
-  }}
->
-  <div style={{ ...searchInputWrapStyle, flex: 1 }}>
-    <Search size={22} />
+<div style={searchInputWrapStyle}>
+  <Search size={22} />
+
+  <input
+    style={searchInputStyle}
+    placeholder="Buscar por dominio, tienda, franquiciado, CUIT, persona o estado..."
+    value={searchTerm}
+    onChange={(e) => {
+      setSearchTerm(e.target.value);
+      setSelectedInforme(null);
+    }}
+  />
+</div>
+
+<div style={dateFiltersRowStyle}>
+  <div style={dateFilterFieldStyle}>
+    <span style={dateFilterLabelStyle}>Desde</span>
     <input
-      style={searchInputStyle}
-      placeholder="Buscar por dominio, tienda, franquiciado, CUIT, persona o estado..."
-      value={searchTerm}
+      type="date"
+      value={fechaDesde}
       onChange={(e) => {
-        setSearchTerm(e.target.value);
+        setFechaDesde(e.target.value);
         setSelectedInforme(null);
       }}
+      style={dateFilterInputStyle}
     />
   </div>
 
-  <div style={{ position: "relative", flexShrink: 0 }}>
- <button
-  type="button"
-  onClick={() => setFechaFiltroOpen((prev) => !prev)}
-  style={{
-    ...searchInputWrapStyle,
-    height: "58px",
-    width: "118px",
-    minWidth: "118px",
-    flex: "0 0 118px",
-    padding: "0 16px",
-    justifyContent: "center",
-    gap: "6px",
-    cursor: "pointer",
-  }}
->
-  <span
-  style={{
-    color: "#ffffff",
-    opacity: 0.42,
-    fontSize: "16px",
-    fontWeight: 400,
-    lineHeight: 1,
-  }}
->
-  Fecha
-</span>
+  <div style={dateFilterFieldStyle}>
+    <span style={dateFilterLabelStyle}>Hasta</span>
+    <input
+      type="date"
+      value={fechaHasta}
+      onChange={(e) => {
+        setFechaHasta(e.target.value);
+        setSelectedInforme(null);
+      }}
+      style={dateFilterInputStyle}
+    />
+  </div>
 
-  <span
-    style={{
-      color: "rgba(255,255,255,0.42)",
-      fontSize: "9px",
-      opacity: 0.55,
-      marginTop: "1px",
-    }}
-  >
-    ▾
-  </span>
-</button>
-{fechaFiltroOpen && (
-  <div
-    style={{
-      position: "absolute",
-      top: "68px",
-      right: 0,
-      width: "280px",
-      borderRadius: "18px",
-      border: "1px solid rgba(96,165,250,0.22)",
-      background:
-        "linear-gradient(180deg, rgba(7,31,58,0.98), rgba(3,18,34,0.98))",
-      boxShadow: "0 24px 60px rgba(0,0,0,0.38)",
-      padding: "14px",
-      zIndex: 50,
-    }}
-  >
-    <div
+  <div style={dateFilterFieldStyle}>
+    <span style={dateFilterLabelStyle}>Orden</span>
+    <select
+      value={fechaOrden}
+      onChange={(e) => setFechaOrden(e.target.value)}
       style={{
-        color: "#dbeafe",
-        fontSize: "11px",
-        fontWeight: 600,
-        letterSpacing: "0.06em",
-        textTransform: "uppercase",
-        marginBottom: "12px",
+        ...dateFilterInputStyle,
+        background: "#071326",
+        color: "#e7eef9",
       }}
     >
-      Fecha de pedido
-    </div>
-
-    <div style={{ display: "grid", gap: "10px" }}>
-      <div>
-        <label
-          style={{
-            display: "block",
-            color: "rgba(214,228,245,0.62)",
-            fontSize: "11px",
-            fontWeight: 600,
-            marginBottom: "6px",
-          }}
-        >
-          Desde
-        </label>
-
-        <input
-          type="date"
-          value={fechaDesde}
-          onChange={(e) => {
-            setFechaDesde(e.target.value);
-            setSelectedInforme(null);
-          }}
-          style={{
-            width: "100%",
-            height: "38px",
-            borderRadius: "12px",
-            border: "1px solid rgba(148,163,184,0.18)",
-            background: "rgba(3,18,34,0.72)",
-            color: "#dbeafe",
-            padding: "0 10px",
-            outline: "none",
-          }}
-        />
-      </div>
-
-      <div>
-        <label
-          style={{
-            display: "block",
-            color: "rgba(214,228,245,0.62)",
-            fontSize: "11px",
-            fontWeight: 600,
-            marginBottom: "6px",
-          }}
-        >
-          Hasta
-        </label>
-
-        <input
-          type="date"
-          value={fechaHasta}
-          onChange={(e) => {
-            setFechaHasta(e.target.value);
-            setSelectedInforme(null);
-          }}
-          style={{
-            width: "100%",
-            height: "38px",
-            borderRadius: "12px",
-            border: "1px solid rgba(148,163,184,0.18)",
-            background: "rgba(3,18,34,0.72)",
-            color: "#dbeafe",
-            padding: "0 10px",
-            outline: "none",
-          }}
-        />
-      </div>
-
-      <div>
-        <label
-          style={{
-            display: "block",
-            color: "rgba(214,228,245,0.62)",
-            fontSize: "11px",
-            fontWeight: 600,
-            marginBottom: "6px",
-          }}
-        >
-          Orden
-        </label>
-
-        <select
-          value={fechaOrden}
-          onChange={(e) => setFechaOrden(e.target.value)}
-          style={{
-            width: "100%",
-            height: "38px",
-            borderRadius: "12px",
-            border: "1px solid rgba(148,163,184,0.18)",
-            background: "rgba(3,18,34,0.72)",
-            color: "#dbeafe",
-            padding: "0 10px",
-            outline: "none",
-          }}
-        >
-          <option value="desc">Más recientes primero</option>
-          <option value="asc">Más antiguos primero</option>
-        </select>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: "8px",
-          marginTop: "4px",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setFechaFiltroOpen(false)}
-          style={{
-            height: "34px",
-            flex: 1,
-            borderRadius: "999px",
-            border: "1px solid rgba(96,165,250,0.24)",
-            background: "rgba(37,99,235,0.12)",
-            color: "#bfdbfe",
-            fontSize: "11px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Aplicar
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setFechaDesde("");
-            setFechaHasta("");
-            setFechaOrden("desc");
-            setSelectedInforme(null);
-            setFechaFiltroOpen(false);
-          }}
-          style={{
-            height: "34px",
-            flex: 1,
-            borderRadius: "999px",
-            border: "1px solid rgba(148,163,184,0.18)",
-            background: "rgba(255,255,255,0.03)",
-            color: "rgba(214,228,245,0.72)",
-            fontSize: "11px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Limpiar
-        </button>
-      </div>
-    </div>
+      <option value="desc" style={{ background: "#071326", color: "#e7eef9" }}>
+        Más recientes primero
+      </option>
+      <option value="asc" style={{ background: "#071326", color: "#e7eef9" }}>
+        Más antiguas primero
+      </option>
+    </select>
   </div>
-)}
-  </div>
+
+  {(fechaDesde || fechaHasta || fechaOrden !== "desc") && (
+    <button
+      type="button"
+      onClick={() => {
+        setFechaDesde("");
+        setFechaHasta("");
+        setFechaOrden("desc");
+        setSelectedInforme(null);
+      }}
+      style={dateFilterClearButtonStyle}
+    >
+      Limpiar filtros
+    </button>
+  )}
 </div>
           </section>
 
@@ -1492,6 +1325,56 @@ const searchInputStyle = {
   background: "transparent",
   color: "#ffffff",
   fontSize: "16px",
+};
+
+const dateFiltersRowStyle = {
+  marginTop: "12px",
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr)) auto",
+  gap: "10px",
+  alignItems: "end",
+};
+
+const dateFilterFieldStyle = {
+  borderRadius: "16px",
+  border: "1px solid rgba(148, 163, 184, 0.14)",
+  background: "rgba(3,18,34,0.58)",
+  padding: "9px 12px 10px",
+};
+
+const dateFilterLabelStyle = {
+  display: "block",
+  marginBottom: "6px",
+  color: "rgba(168,196,232,0.72)",
+  fontSize: "10px",
+  fontWeight: 500,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+};
+
+const dateFilterInputStyle = {
+  width: "100%",
+  height: "30px",
+  border: "none",
+  outline: "none",
+  background: "transparent",
+  color: "#e7eef9",
+  fontSize: "12px",
+  fontWeight: 400,
+  colorScheme: "dark",
+};
+
+const dateFilterClearButtonStyle = {
+  height: "40px",
+  padding: "0 12px",
+  borderRadius: "999px",
+  border: "1px solid rgba(148, 163, 184, 0.16)",
+  background: "rgba(30,64,108,0.28)",
+  color: "rgba(219,234,254,0.82)",
+  fontSize: "12px",
+  fontWeight: 500,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
 };
 
 const summaryGridStyle = {
