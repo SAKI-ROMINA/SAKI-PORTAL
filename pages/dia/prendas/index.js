@@ -134,6 +134,9 @@ export default function DiaPrendasIndex() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+const [fechaHasta, setFechaHasta] = useState("");
+const [ordenFecha, setOrdenFecha] = useState("desc");
   const [selectedPrenda, setSelectedPrenda] = useState(null);
 
   const [topMenuOpen, setTopMenuOpen] = useState(false);
@@ -236,16 +239,17 @@ useEffect(() => {
     const { data, error } = await supabase
       .from("dia_request_prendas")
       .select(`
-        id,
-        tienda,
-        frq,
-        frq_cuit,
-        dominio,
-        titular_dominio,
-        titular_cuit,
-        estado,
-        created_at
-      `)
+  id,
+  tienda,
+  frq,
+  frq_cuit,
+  dominio,
+  titular_dominio,
+  titular_cuit,
+  estado,
+  fecha_envio_oficina,
+  created_at
+`)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -259,45 +263,64 @@ useEffect(() => {
   }
 
   const filteredRows = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const qDigits = onlyDigits(search);
+  const q = search.trim().toLowerCase();
+  const qDigits = onlyDigits(search);
 
-    if (!q && !qDigits) return rows;
+  const getFechaBase = (row) =>
+    (row?.fecha_envio_oficina || row?.created_at || "").toString().slice(0, 10);
 
-    return rows.filter((row) => {
-      const summary = getStatusSummary(row.estado);
+  const filtradas = rows.filter((row) => {
+    const summary = getStatusSummary(row.estado);
+    const fechaBase = getFechaBase(row);
 
-      const textValues = [
-        row.tienda,
-        row.frq,
-        formatCuit(row.frq_cuit),
-        row.dominio,
-        row.titular_dominio,
-        formatCuit(row.titular_cuit),
-        row.estado,
-        summary,
-      ]
-        .filter(Boolean)
-        .map((value) => String(value).toLowerCase());
+    const textValues = [
+      row.tienda,
+      row.frq,
+      formatCuit(row.frq_cuit),
+      row.dominio,
+      row.titular_dominio,
+      formatCuit(row.titular_cuit),
+      row.estado,
+      summary,
+    ]
+      .filter(Boolean)
+      .map((value) => String(value).toLowerCase());
 
-      const digitValues = [
-        row.frq_cuit,
-        row.titular_cuit,
-      ]
-        .filter(Boolean)
-        .map((value) => onlyDigits(value));
+    const digitValues = [row.frq_cuit, row.titular_cuit]
+      .filter(Boolean)
+      .map((value) => onlyDigits(value));
 
-      const matchesText = q
-        ? textValues.some((value) => value.includes(q))
-        : false;
+    const matchesText = q
+      ? textValues.some((value) => value.includes(q))
+      : true;
 
-      const matchesDigits = qDigits
-        ? digitValues.some((value) => value.includes(qDigits))
-        : false;
+    const matchesDigits = qDigits
+      ? digitValues.some((value) => value.includes(qDigits))
+      : true;
 
-      return matchesText || matchesDigits;
-    });
-  }, [rows, search]);
+    const matchesSearch = q || qDigits ? matchesText || matchesDigits : true;
+
+    const matchesDesde = fechaDesde ? fechaBase >= fechaDesde : true;
+    const matchesHasta = fechaHasta ? fechaBase <= fechaHasta : true;
+
+    return matchesSearch && matchesDesde && matchesHasta;
+  });
+
+  return filtradas.sort((a, b) => {
+    const fechaA = getFechaBase(a);
+    const fechaB = getFechaBase(b);
+
+    if (!fechaA && !fechaB) return 0;
+    if (!fechaA) return 1;
+    if (!fechaB) return -1;
+
+    if (ordenFecha === "asc") {
+      return fechaA.localeCompare(fechaB);
+    }
+
+    return fechaB.localeCompare(fechaA);
+  });
+}, [rows, search, fechaDesde, fechaHasta, ordenFecha]);
 
   const hasSearch = search.trim() !== "";
 
@@ -520,6 +543,53 @@ const totalAvisosPrendas = totalEnCurso + totalObservadas;
       style={searchInputStyle}
     />
   </div>
+  <div style={dateFiltersRowStyle}>
+  <div style={dateFilterFieldStyle}>
+    <span style={dateFilterLabelStyle}>Desde</span>
+    <input
+      type="date"
+      value={fechaDesde}
+      onChange={(e) => setFechaDesde(e.target.value)}
+      style={dateFilterInputStyle}
+    />
+  </div>
+
+  <div style={dateFilterFieldStyle}>
+    <span style={dateFilterLabelStyle}>Hasta</span>
+    <input
+      type="date"
+      value={fechaHasta}
+      onChange={(e) => setFechaHasta(e.target.value)}
+      style={dateFilterInputStyle}
+    />
+  </div>
+
+  <div style={dateFilterFieldStyle}>
+    <span style={dateFilterLabelStyle}>Orden</span>
+    <select
+      value={ordenFecha}
+      onChange={(e) => setOrdenFecha(e.target.value)}
+      style={dateFilterInputStyle}
+    >
+      <option value="desc">Más recientes primero</option>
+      <option value="asc">Más antiguas primero</option>
+    </select>
+  </div>
+
+  {(fechaDesde || fechaHasta || ordenFecha !== "desc") && (
+    <button
+      type="button"
+      onClick={() => {
+        setFechaDesde("");
+        setFechaHasta("");
+        setOrdenFecha("desc");
+      }}
+      style={dateFilterClearButtonStyle}
+    >
+      Limpiar filtros
+    </button>
+  )}
+</div>
 </section>
 <section style={summaryGridStyle}>
   <SummaryCard
@@ -1367,5 +1437,55 @@ const detailButtonStyle = {
   color: "#dbeafe",
   background: "rgba(59,130,246,0.10)",
   border: "1px solid rgba(59,130,246,0.18)",
+  whiteSpace: "nowrap",
+};
+
+const dateFiltersRowStyle = {
+  marginTop: "12px",
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr)) auto",
+  gap: "10px",
+  alignItems: "end",
+};
+
+const dateFilterFieldStyle = {
+  borderRadius: "16px",
+  border: "1px solid rgba(148, 163, 184, 0.14)",
+  background: "rgba(3,18,34,0.58)",
+  padding: "9px 12px 10px",
+};
+
+const dateFilterLabelStyle = {
+  display: "block",
+  marginBottom: "6px",
+  color: "rgba(168,196,232,0.72)",
+  fontSize: "10px",
+  fontWeight: 500,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+};
+
+const dateFilterInputStyle = {
+  width: "100%",
+  height: "30px",
+  border: "none",
+  outline: "none",
+  background: "transparent",
+  color: "#e7eef9",
+  fontSize: "12px",
+  fontWeight: 400,
+  colorScheme: "dark",
+};
+
+const dateFilterClearButtonStyle = {
+  height: "40px",
+  padding: "0 12px",
+  borderRadius: "999px",
+  border: "1px solid rgba(148, 163, 184, 0.16)",
+  background: "rgba(30,64,108,0.28)",
+  color: "rgba(219,234,254,0.82)",
+  fontSize: "12px",
+  fontWeight: 500,
+  cursor: "pointer",
   whiteSpace: "nowrap",
 };
