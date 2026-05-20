@@ -291,14 +291,14 @@ useEffect(() => {
       .map((value) => onlyDigits(value));
 
     const matchesText = q
-      ? textValues.some((value) => value.includes(q))
-      : true;
+  ? textValues.some((value) => value.includes(q))
+  : false;
 
-    const matchesDigits = qDigits
-      ? digitValues.some((value) => value.includes(qDigits))
-      : true;
+const matchesDigits = qDigits
+  ? digitValues.some((value) => value.includes(qDigits))
+  : false;
 
-    const matchesSearch = q || qDigits ? matchesText || matchesDigits : true;
+const matchesSearch = q || qDigits ? matchesText || matchesDigits : true;
 
     const matchesDesde = fechaDesde ? fechaBase >= fechaDesde : true;
     const matchesHasta = fechaHasta ? fechaBase <= fechaHasta : true;
