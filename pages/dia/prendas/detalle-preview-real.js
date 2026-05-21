@@ -14163,7 +14163,7 @@ const mostrarDetalleRectificacion =
   </div>
 )}
 
-{estadoActualKey === "RECTIFICACION SOLICITADA" && isAdmin && (
+{estadoActualKey === "RECTIFICACION SOLICITADA" && (isAdmin || canOperatePrendas) && (
   <div
     style={{
       ...fichaDatoWideStyle,
@@ -14172,7 +14172,7 @@ const mostrarDetalleRectificacion =
       flexWrap: "wrap",
     }}
   >
-    {!row?.fecha_disponible_retiro_correccion && (
+    {isAdmin && !row?.fecha_disponible_retiro_correccion && (
       <button
         type="button"
         onClick={onDisponibleRetiroCorreccion}
@@ -14186,7 +14186,8 @@ const mostrarDetalleRectificacion =
       </button>
     )}
 
-    {row?.fecha_disponible_retiro_correccion &&
+    {isAdmin &&
+      row?.fecha_disponible_retiro_correccion &&
       !row?.fecha_retiro_correccion && (
         <button
           type="button"
@@ -14216,7 +14217,8 @@ const mostrarDetalleRectificacion =
         </button>
       )}
 
-    {row?.fecha_reenvio_oficina &&
+    {isAdmin &&
+      row?.fecha_reenvio_oficina &&
       !row?.fecha_reingreso_correccion && (
         <button
           type="button"
@@ -14231,7 +14233,7 @@ const mostrarDetalleRectificacion =
         </button>
       )}
 
-    {row?.fecha_reingreso_correccion && (
+    {isAdmin && row?.fecha_reingreso_correccion && (
       <button
         type="button"
         onClick={onAprobarRevision}
