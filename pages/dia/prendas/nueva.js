@@ -39,6 +39,138 @@ function formatCuit(value) {
   if (digits.length <= 10) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
   return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10, 11)}`;
 }
+
+const normalizarEmailPrenda = (value) => {
+  return String(value || "").trim().toLowerCase();
+};
+
+const separarEmailsPrenda = (value) => {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => separarEmailsPrenda(item));
+  }
+
+  return String(value || "")
+    .split(/[;,\n\s]+/)
+    .map((email) => normalizarEmailPrenda(email))
+    .filter((email) => email && email.includes("@"));
+};
+
+const emailsUnicosPrenda = (values) => {
+  return Array.from(new Set(values.flatMap((value) => separarEmailsPrenda(value))));
+};
+
+const enviarNotificacionNuevaPrenda = async ({
+  prendaId,
+  payload,
+  requesterEmail,
+}) => {
+  if (!prendaId) return;
+
+  try {
+    const mailAdminSaki = "rominamazzeo@gmail.com";
+    const sectorResponsable = "Créditos y Cobranzas";
+
+    const { data: perfilesSector, error: perfilesError } = await supabase
+      .from("profiles")
+      .select("email, sector, role")
+      .eq("role", "member")
+      .in("sector", ["Créditos y Cobranzas", "Creditos y Cobranzas"]);
+
+    if (perfilesError) {
+      console.error("Error buscando destinatarios de Prendas:", perfilesError);
+    }
+
+    const mailsSector = emailsUnicosPrenda(
+      (perfilesSector || []).map((perfil) => perfil?.email)
+    );
+
+const destinatariosPrincipales = emailsUnicosPrenda([
+  mailAdminSaki,
+]);
+
+// PRUEBA INTERNA: por ahora no se envía a miembros de Créditos y Cobranzas.
+// Cuando validemos el mail, volvemos a agregar:
+// ...mailsSector,
+
+    if (!destinatariosPrincipales.length) {
+      console.warn("No hay destinatarios para notificar la nueva prenda.");
+      return;
+    }
+
+    const mailRes = await fetch("/api/dia/send-notification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: destinatariosPrincipales.join(","),
+        cc: "",
+        subject: "SAKI | Nueva prenda cargada",
+        html: `
+          <div style="font-family: Arial, sans-serif; font-size: 14px; color: #111; line-height: 1.5;">
+            <h2 style="margin: 0 0 16px 0; color: #0f172a;">Nueva prenda cargada</h2>
+
+            <p style="margin: 0 0 16px 0;">
+              Se registró una nueva prenda en el Portal Día.
+            </p>
+
+            <p style="margin: 0 0 8px 0;"><strong>Legajo:</strong> ${
+              `PR-${String(prendaId || "").slice(0, 8).toUpperCase()}`
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Sector responsable:</strong> ${
+              sectorResponsable
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Solicitante:</strong> ${
+              requesterEmail || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Tienda:</strong> ${
+              payload?.tienda || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Franquiciado:</strong> ${
+              payload?.frq || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>CUIT FRQ:</strong> ${
+              payload?.frq_cuit || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Dominio:</strong> ${
+              payload?.dominio || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Estado:</strong> ${
+              payload?.estado || "Pendiente de envío"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Fecha de envío:</strong> ${
+              payload?.fecha_envio_oficina || "-"
+            }</p>
+
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;" />
+
+            <p style="margin: 0; color: #475569;">
+              Este mensaje fue generado automáticamente por SAKI Portal Día. Por favor, no responder a este correo.
+            </p>
+          </div>
+        `,
+        requestId: prendaId,
+        threadId: null,
+      }),
+    });
+
+    const mailJson = await mailRes.json().catch(() => null);
+
+    if (mailJson?.threadId) {
+      await supabase
+        .from("dia_request_prendas")
+        .update({ email_thread_id: mailJson.threadId })
+        .eq("id", prendaId);
+    }
+
+    if (!mailRes.ok) {
+      console.error("Error enviando notificación de nueva prenda:", mailJson);
+    }
+  } catch (mailError) {
+    console.error("Error inesperado notificando nueva prenda:", mailError);
+  }
+};
+
 export default function DiaPrendasNueva() {
   const router = useRouter();
   const dateInputRef = useRef(null);
@@ -262,6 +394,12 @@ const { error: historyError } = await supabase
   });
 
 if (historyError) throw historyError;
+
+await enviarNotificacionNuevaPrenda({
+  prendaId: createdPrenda.id,
+  payload,
+  requesterEmail: user?.email || "",
+});
 
 router.push("/dia/prendas");
     } catch (err) {
