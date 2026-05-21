@@ -4447,6 +4447,20 @@ const proximaAccionInfo = (() => {
       };
     }
 
+if (
+  row?.fecha_disponible_retiro_correccion &&
+  row?.fecha_programada_retiro_correccion &&
+  !row?.fecha_retiro_correccion
+) {
+  return {
+    titulo: "Retiro programado por Día",
+    texto: `Día informó fecha de retiro para el ${formatDate(
+      row.fecha_programada_retiro_correccion
+    )}.`,
+    boton: "Ver retiro programado →",
+  };
+}
+
     if (row?.fecha_disponible_retiro_correccion) {
       return {
         titulo: "Lista para retiro por corrección",
