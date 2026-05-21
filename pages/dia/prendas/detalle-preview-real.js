@@ -411,6 +411,8 @@ const [motivoPendiente, setMotivoPendiente] = useState("");
 const [notaPendiente, setNotaPendiente] = useState("");
 const [savingPendiente, setSavingPendiente] = useState(false);
 
+const [editandoPendiente, setEditandoPendiente] = useState(false);
+
 const [showRetomarGestion, setShowRetomarGestion] = useState(false);
 const [fechaRetomarGestion, setFechaRetomarGestion] = useState("");
 const [savingRetomarGestion, setSavingRetomarGestion] = useState(false);
@@ -2581,6 +2583,15 @@ async function handleGuardarAprobarRevision() {
   }
 }
 
+function handleEditarPendienteActual() {
+  setFechaPendiente(row?.fecha_pendiente || "");
+  setMotivoPendiente(row?.motivo_pendiente || "");
+  setNotaPendiente(row?.nota_pendiente || "");
+
+  setEditandoPendiente(true);
+  setShowMarcarPendiente(true);
+}
+
 function handleEditarRectificacionActual() {
   const ultimaRectificacion = Array.isArray(historyRows)
     ? historyRows.find(
@@ -3007,6 +3018,58 @@ async function handleGuardarPendiente() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+
+    if (editandoPendiente) {
+  const { data: createdHistory, error: historyError } = await supabase
+    .from("dia_request_prendas_history")
+    .insert({
+      prenda_id: id,
+      tipo_evento: "pendiente_actualizado",
+      titulo: "Pendiente actualizado",
+      detalle: {
+        estado_actual: row?.estado || "Pendiente",
+        fecha_pendiente: fechaPendiente,
+        motivo_pendiente: motivoPendiente.trim(),
+        nota: notaPendiente.trim() || null,
+        ubicacion: "En SAKI",
+      },
+      created_by_name: user?.user_metadata?.full_name || null,
+      created_by_email: user?.email || null,
+      created_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (historyError) throw historyError;
+
+  const { data, error } = await supabase
+    .from("dia_request_prendas")
+    .update({
+      fecha_pendiente: fechaPendiente,
+      motivo_pendiente: motivoPendiente.trim(),
+      nota_pendiente: notaPendiente.trim() || null,
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  if (createdHistory) {
+    setHistoryRows((prev) => [createdHistory, ...prev]);
+  }
+
+  setRow(data);
+
+  setShowMarcarPendiente(false);
+  setEditandoPendiente(false);
+  setFechaPendiente("");
+  setMotivoPendiente("");
+  setNotaPendiente("");
+
+  alert("Pendiente actualizado correctamente.");
+  return;
+}
 
     const { error } = await supabase
       .from("dia_request_prendas")
@@ -4780,6 +4843,7 @@ const titularAdminCasado =
     row={row}
     historyRows={historyRows}
     estadoActual={estadoActual}
+    onEditarPendiente={handleEditarPendienteActual}
     estadoActualKey={estadoActualKey}
     estadoFechaInfo={estadoFechaInfo}
     proximaAccionInfo={proximaAccionInfo}
@@ -13624,6 +13688,7 @@ function FichaEstado({
   isAdmin,
   canOperatePrendas,
   onEditarRectificacion,
+  onEditarPendiente,
   onReprogramarEnvio,
   onRecibirPrenda,
   onAprobarRevision,
@@ -14101,6 +14166,17 @@ const mostrarDetalleRectificacion =
       marginTop: "4px",
     }}
   >
+    <button
+  type="button"
+  onClick={onEditarPendiente}
+  style={{
+    ...caseActionButtonStyle,
+    background: "linear-gradient(180deg, #f59e0b, #d97706)",
+    boxShadow: "0 10px 20px rgba(245,158,11,0.20)",
+  }}
+>
+  Editar pendiente
+</button>
     <button
       type="button"
       onClick={onRetomarGestion}
