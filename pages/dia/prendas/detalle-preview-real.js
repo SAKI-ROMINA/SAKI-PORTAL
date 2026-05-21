@@ -549,6 +549,19 @@ const [savingPendiente, setSavingPendiente] = useState(false);
 
 const [editandoPendiente, setEditandoPendiente] = useState(false);
 
+const [
+  showProgramarRetiroCorreccion,
+  setShowProgramarRetiroCorreccion,
+] = useState(false);
+const [
+  fechaProgramadaRetiroCorreccion,
+  setFechaProgramadaRetiroCorreccion,
+] = useState("");
+const [
+  savingProgramarRetiroCorreccion,
+  setSavingProgramarRetiroCorreccion,
+] = useState(false);
+
 const [showRetomarGestion, setShowRetomarGestion] = useState(false);
 const [fechaRetomarGestion, setFechaRetomarGestion] = useState("");
 const [savingRetomarGestion, setSavingRetomarGestion] = useState(false);
@@ -2951,6 +2964,75 @@ async function handleGuardarDisponibleRetiroCorreccion() {
   }
 }
 
+async function handleGuardarProgramarRetiroCorreccion() {
+  if (!id) return;
+
+  if (!fechaProgramadaRetiroCorreccion) {
+    alert("Seleccioná la fecha programada de retiro.");
+    return;
+  }
+
+  try {
+    setSavingProgramarRetiroCorreccion(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const { error } = await supabase
+      .from("dia_request_prendas")
+      .update({
+        fecha_programada_retiro_correccion:
+          fechaProgramadaRetiroCorreccion,
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    const { data: createdHistory, error: historyError } = await supabase
+      .from("dia_request_prendas_history")
+      .insert({
+        prenda_id: id,
+        tipo_evento: "retiro_correccion_programado",
+        titulo: "Retiro por corrección programado",
+        detalle: {
+          estado_actual: row?.estado || "Rectificación solicitada",
+          fecha_programada_retiro_correccion:
+            fechaProgramadaRetiroCorreccion,
+          nota:
+            "Día informó la fecha prevista para retirar la prenda de SAKI y gestionar la rectificación solicitada.",
+        },
+        created_by_name: user?.user_metadata?.full_name || null,
+        created_by_email: user?.email || null,
+        created_at: new Date().toISOString(),
+      })
+      .select("*")
+      .single();
+
+    if (historyError) throw historyError;
+
+    if (createdHistory) {
+      setHistoryRows((prev) => [createdHistory, ...prev]);
+    }
+
+    setRow((prev) => ({
+      ...prev,
+      fecha_programada_retiro_correccion:
+        fechaProgramadaRetiroCorreccion,
+    }));
+
+    setShowProgramarRetiroCorreccion(false);
+    setFechaProgramadaRetiroCorreccion("");
+
+    alert("Fecha de retiro programada correctamente.");
+  } catch (error) {
+    console.error("Error programando retiro por corrección:", error);
+    alert("No se pudo programar el retiro por corrección.");
+  } finally {
+    setSavingProgramarRetiroCorreccion(false);
+  }
+}
+
 async function handleGuardarRetiroCorreccion() {
   if (!id) return;
 
@@ -5030,6 +5112,12 @@ const titularAdminCasado =
       setFechaDisponibleRetiroCorreccion(hoy);
       setShowDisponibleRetiroCorreccion(true);
     }}
+    onProgramarRetiroCorreccion={() => {
+  setFechaProgramadaRetiroCorreccion(
+    row?.fecha_programada_retiro_correccion || ""
+  );
+  setShowProgramarRetiroCorreccion(true);
+}}
     onRetiroCorreccion={() => {
       const hoy = new Date().toISOString().slice(0, 10);
       setFechaRetiroCorreccion(hoy);
@@ -6069,6 +6157,164 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
           {savingDisponibleRetiroCorreccion
             ? "Guardando..."
             : "Guardar fecha"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{showProgramarRetiroCorreccion && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(2, 8, 18, 0.62)",
+      backdropFilter: "blur(7px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10000,
+      padding: "24px",
+    }}
+    onClick={() => {
+      setShowProgramarRetiroCorreccion(false);
+      setFechaProgramadaRetiroCorreccion("");
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "min(540px, 100%)",
+        borderRadius: "22px",
+        background:
+          "linear-gradient(180deg, rgba(18,52,91,0.98) 0%, rgba(10,31,58,0.98) 100%)",
+        border: "1px solid rgba(148,163,184,0.16)",
+        boxShadow: "0 34px 90px rgba(0,0,0,0.44)",
+        padding: "24px",
+      }}
+    >
+      <div style={{ marginBottom: "20px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#8fb9e8",
+            fontWeight: 800,
+            marginBottom: "7px",
+          }}
+        >
+          Rectificación solicitada
+        </div>
+
+        <h3
+          style={{
+            margin: 0,
+            color: "#ffffff",
+            fontSize: "24px",
+            fontWeight: 750,
+            letterSpacing: "-0.03em",
+          }}
+        >
+          Programar retiro
+        </h3>
+
+        <p
+          style={{
+            margin: "10px 0 0",
+            color: "rgba(214,228,245,0.78)",
+            fontSize: "13px",
+            lineHeight: 1.5,
+          }}
+        >
+          Indicá la fecha en la que Día prevé retirar la prenda de SAKI para gestionar la rectificación solicitada.
+        </p>
+      </div>
+
+      <div
+        style={{
+          borderRadius: "18px",
+          border: "1px solid rgba(148,163,184,0.14)",
+          background: "rgba(3,18,34,0.48)",
+          padding: "16px",
+          marginBottom: "18px",
+        }}
+      >
+        <label
+          style={{
+            display: "block",
+            fontSize: "11px",
+            fontWeight: 800,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#90a7c7",
+            marginBottom: "10px",
+          }}
+        >
+          Fecha programada de retiro
+        </label>
+
+        <input
+          type="date"
+          value={fechaProgramadaRetiroCorreccion}
+          onChange={(e) => setFechaProgramadaRetiroCorreccion(e.target.value)}
+          style={{
+            width: "100%",
+            height: "48px",
+            borderRadius: "14px",
+            border: "1px solid rgba(148, 163, 184, 0.18)",
+            background: "rgba(3, 11, 24, 0.72)",
+            color: "#f8fbff",
+            padding: "0 14px",
+            fontSize: "14px",
+            outline: "none",
+            boxSizing: "border-box",
+            colorScheme: "dark",
+          }}
+        />
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+        <button
+          type="button"
+          onClick={() => {
+            setShowProgramarRetiroCorreccion(false);
+            setFechaProgramadaRetiroCorreccion("");
+          }}
+          style={{
+            height: "42px",
+            padding: "0 15px",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(255,255,255,0.03)",
+            color: "#dbeafe",
+            fontSize: "13px",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          onClick={handleGuardarProgramarRetiroCorreccion}
+          disabled={savingProgramarRetiroCorreccion}
+          style={{
+            height: "42px",
+            padding: "0 17px",
+            borderRadius: "12px",
+            border: "none",
+            background: "linear-gradient(180deg, #f59e0b, #d97706)",
+            color: "#ffffff",
+            fontSize: "13px",
+            fontWeight: 800,
+            cursor: savingProgramarRetiroCorreccion ? "not-allowed" : "pointer",
+            opacity: savingProgramarRetiroCorreccion ? 0.72 : 1,
+            boxShadow: "0 12px 24px rgba(245,158,11,0.24)",
+          }}
+        >
+          {savingProgramarRetiroCorreccion ? "Guardando..." : "Guardar fecha"}
         </button>
       </div>
     </div>
@@ -13849,6 +14095,7 @@ function FichaEstado({
   onAprobarRevision,
   onSolicitarRectificacion,
   onDisponibleRetiroCorreccion,
+  onProgramarRetiroCorreccion,
   onRetiroCorreccion,
   onReprogramacionRectificacion,
   onReingresoCorreccion,
@@ -14185,6 +14432,22 @@ const mostrarDetalleRectificacion =
         Disponible para retiro por corrección
       </button>
     )}
+
+{canOperatePrendas &&
+  row?.fecha_disponible_retiro_correccion &&
+  !row?.fecha_retiro_correccion && (
+    <button
+      type="button"
+      onClick={onProgramarRetiroCorreccion}
+      style={{
+        ...caseActionButtonStyle,
+        background: "linear-gradient(180deg, #f59e0b, #d97706)",
+        boxShadow: "0 10px 20px rgba(245,158,11,0.20)",
+      }}
+    >
+      Programar retiro
+    </button>
+  )}
 
     {isAdmin &&
       row?.fecha_disponible_retiro_correccion &&
