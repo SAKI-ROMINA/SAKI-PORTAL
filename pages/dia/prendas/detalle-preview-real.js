@@ -14459,7 +14459,9 @@ const mostrarDetalleRectificacion =
         boxShadow: "0 10px 20px rgba(245,158,11,0.20)",
       }}
     >
-      Programar retiro
+      {row?.fecha_programada_retiro_correccion
+  ? "Modificar retiro"
+  : "Programar retiro"}
     </button>
   )}
 
