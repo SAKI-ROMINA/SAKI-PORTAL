@@ -82,6 +82,142 @@ function formatCuit(value) {
   return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10, 11)}`;
 }
 
+const normalizarEmailPrenda = (value) => {
+  return String(value || "").trim().toLowerCase();
+};
+
+const separarEmailsPrenda = (value) => {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => separarEmailsPrenda(item));
+  }
+
+  return String(value || "")
+    .split(/[;,\n\s]+/)
+    .map((email) => normalizarEmailPrenda(email))
+    .filter((email) => email && email.includes("@"));
+};
+
+const emailsUnicosPrenda = (values) => {
+  return Array.from(
+    new Set(values.flatMap((value) => separarEmailsPrenda(value)))
+  );
+};
+
+const enviarNotificacionPrendaEstado = async ({
+  prendaId,
+  row,
+  asunto,
+  titulo,
+  descripcion,
+  estadoNuevo,
+  detalleHtml = "",
+}) => {
+  if (!prendaId) return;
+
+  try {
+    const mailAdminSaki = "rominamazzeo@gmail.com";
+    const sectorResponsable = "Créditos y Cobranzas";
+
+    const { data: perfilesSector, error: perfilesError } = await supabase
+      .from("profiles")
+      .select("email, sector, role")
+      .eq("role", "member")
+      .in("sector", ["Créditos y Cobranzas", "Creditos y Cobranzas"]);
+
+    if (perfilesError) {
+      console.error("Error buscando destinatarios de Prendas:", perfilesError);
+    }
+
+    const mailsSector = emailsUnicosPrenda(
+      (perfilesSector || []).map((perfil) => perfil?.email)
+    );
+
+    const destinatariosPrincipales = emailsUnicosPrenda([
+  mailAdminSaki,
+]);
+
+// PRUEBA INTERNA: no enviar todavía a Créditos y Cobranzas.
+// Para activar sector, volver a:
+// const destinatariosPrincipales = emailsUnicosPrenda([
+//   mailAdminSaki,
+//   ...mailsSector,
+// ]);
+
+    if (!destinatariosPrincipales.length) {
+      console.warn("No hay destinatarios para notificar el estado de prenda.");
+      return;
+    }
+
+    const mailRes = await fetch("/api/dia/send-notification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: destinatariosPrincipales.join(","),
+        cc: "",
+        subject: asunto || "SAKI | Actualización de prenda",
+        html: `
+          <div style="font-family: Arial, sans-serif; font-size: 14px; color: #111; line-height: 1.5;">
+            <h2 style="margin: 0 0 16px 0; color: #0f172a;">${titulo || "Actualización de prenda"}</h2>
+
+            <p style="margin: 0 0 16px 0;">
+              ${descripcion || "Se registró una actualización en una prenda del Portal Día."}
+            </p>
+
+            <p style="margin: 0 0 8px 0;"><strong>Legajo:</strong> ${
+              `PR-${String(prendaId || "").slice(0, 8).toUpperCase()}`
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Sector responsable:</strong> ${
+              sectorResponsable
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Tienda:</strong> ${
+              row?.tienda || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Franquiciado:</strong> ${
+              row?.frq || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>CUIT FRQ:</strong> ${
+              row?.frq_cuit || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Dominio:</strong> ${
+              row?.dominio || "-"
+            }</p>
+            <p style="margin: 0 0 8px 0;"><strong>Estado actual:</strong> ${
+              estadoNuevo || row?.estado || "-"
+            }</p>
+
+            ${detalleHtml || ""}
+
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;" />
+
+            <p style="margin: 0; color: #475569;">
+              Este mensaje fue generado automáticamente por SAKI Portal Día. Por favor, no responder a este correo.
+            </p>
+          </div>
+        `,
+        requestId: prendaId,
+        threadId: row?.email_thread_id || null,
+      }),
+    });
+
+    const mailJson = await mailRes.json().catch(() => null);
+
+    if (mailJson?.threadId && !row?.email_thread_id) {
+      await supabase
+        .from("dia_request_prendas")
+        .update({ email_thread_id: mailJson.threadId })
+        .eq("id", prendaId);
+    }
+
+    if (!mailRes.ok) {
+      console.error("Error enviando notificación de estado de prenda:", mailJson);
+    }
+  } catch (mailError) {
+    console.error("Error inesperado notificando estado de prenda:", mailError);
+  }
+};
+
 const CATEGORIAS_ARCHIVOS_PRENDA = [
   { value: "documentacion_inicial", label: "Documentación inicial" },
   { value: "instrumento_prendario", label: "Instrumento prendario" },
@@ -2493,6 +2629,25 @@ async function handleGuardarRecepcionSaki() {
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
+
+    await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    estado: "En revisión",
+    fecha_recepcion_inicial_oficina: fechaRecepcionSaki,
+  },
+  asunto: "SAKI | Prenda recibida en SAKI",
+  titulo: "Prenda recibida en SAKI",
+  descripcion:
+    "SAKI recibió físicamente la prenda y comenzó la revisión documental previa al trámite.",
+  estadoNuevo: "En revisión",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Fecha de recepción:</strong> ${
+      fechaRecepcionSaki || "-"
+    }</p>
+  `,
+});
 
     setRow((prev) => ({
       ...prev,
