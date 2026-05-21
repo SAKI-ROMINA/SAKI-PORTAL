@@ -13908,7 +13908,7 @@ const mostrarDetalleRectificacion =
         </div>
       )}
 
-      {canOperatePrendas && typeof onEditarRectificacion === "function" && (
+      {isAdmin && typeof onEditarRectificacion === "function" && (
   <div
     style={{
       display: "flex",
