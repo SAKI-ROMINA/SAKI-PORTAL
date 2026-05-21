@@ -405,6 +405,16 @@ const [showAnularPrenda, setShowAnularPrenda] = useState(false);
 const [motivoAnulacion, setMotivoAnulacion] = useState("");
 const [savingAnularPrenda, setSavingAnularPrenda] = useState(false);
 
+const [showMarcarPendiente, setShowMarcarPendiente] = useState(false);
+const [fechaPendiente, setFechaPendiente] = useState("");
+const [motivoPendiente, setMotivoPendiente] = useState("");
+const [notaPendiente, setNotaPendiente] = useState("");
+const [savingPendiente, setSavingPendiente] = useState(false);
+
+const [showRetomarGestion, setShowRetomarGestion] = useState(false);
+const [fechaRetomarGestion, setFechaRetomarGestion] = useState("");
+const [savingRetomarGestion, setSavingRetomarGestion] = useState(false);
+
 const [showEliminarLegajo, setShowEliminarLegajo] = useState(false);
 const [confirmacionEliminarLegajo, setConfirmacionEliminarLegajo] = useState("");
 const [savingEliminarLegajo, setSavingEliminarLegajo] = useState(false);
@@ -2976,6 +2986,162 @@ async function handleGuardarReingresoCorreccion() {
   }
 }
 
+async function handleGuardarPendiente() {
+  if (!id) return;
+
+  if (!fechaPendiente) {
+    alert("Seleccioná la fecha del pendiente.");
+    return;
+  }
+
+  if (!motivoPendiente.trim()) {
+    alert("Ingresá el motivo del pendiente.");
+    return;
+  }
+
+  try {
+    setSavingPendiente(true);
+
+    const estadoAnterior = row?.estado || null;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const { error } = await supabase
+      .from("dia_request_prendas")
+      .update({
+        estado: "Pendiente",
+        fecha_pendiente: fechaPendiente,
+        motivo_pendiente: motivoPendiente.trim(),
+        nota_pendiente: notaPendiente.trim() || null,
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    const { data: createdHistory, error: historyError } = await supabase
+      .from("dia_request_prendas_history")
+      .insert({
+        prenda_id: id,
+        tipo_evento: "prenda_pendiente",
+        titulo: "Trámite marcado como pendiente",
+        detalle: {
+          estado_anterior: estadoAnterior,
+          estado_nuevo: "Pendiente",
+          fecha_pendiente: fechaPendiente,
+          motivo_pendiente: motivoPendiente.trim(),
+          nota: notaPendiente.trim() || null,
+          ubicacion: "En SAKI",
+        },
+        created_by_name: user?.user_metadata?.full_name || null,
+        created_by_email: user?.email || null,
+        created_at: new Date().toISOString(),
+      })
+      .select("*")
+      .single();
+
+    if (historyError) throw historyError;
+
+    if (createdHistory) {
+      setHistoryRows((prev) => [createdHistory, ...prev]);
+    }
+
+    setRow((prev) => ({
+      ...prev,
+      estado: "Pendiente",
+      fecha_pendiente: fechaPendiente,
+      motivo_pendiente: motivoPendiente.trim(),
+      nota_pendiente: notaPendiente.trim() || null,
+    }));
+
+    setShowMarcarPendiente(false);
+    setFechaPendiente("");
+    setMotivoPendiente("");
+    setNotaPendiente("");
+
+    alert("Trámite marcado como pendiente correctamente.");
+  } catch (error) {
+    console.error("Error marcando trámite como pendiente:", error);
+    alert("No se pudo marcar el trámite como pendiente.");
+  } finally {
+    setSavingPendiente(false);
+  }
+}
+
+async function handleGuardarRetomarGestion() {
+  if (!id) return;
+
+  if (!fechaRetomarGestion) {
+    alert("Seleccioná la fecha en la que se retoma la gestión.");
+    return;
+  }
+
+  try {
+    setSavingRetomarGestion(true);
+
+    const estadoAnterior = row?.estado || null;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const { error } = await supabase
+      .from("dia_request_prendas")
+      .update({
+        estado: "En curso",
+        fecha_pase_en_curso: fechaRetomarGestion,
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    const { data: createdHistory, error: historyError } = await supabase
+      .from("dia_request_prendas_history")
+      .insert({
+        prenda_id: id,
+        tipo_evento: "gestion_retomada",
+        titulo: "Gestión retomada",
+        detalle: {
+          estado_anterior: estadoAnterior,
+          estado_nuevo: "En curso",
+          fecha_retomar_gestion: fechaRetomarGestion,
+          motivo_pendiente: row?.motivo_pendiente || null,
+          nota_pendiente: row?.nota_pendiente || null,
+          nota:
+            "SAKI retoma la gestión del trámite luego de superado el motivo que lo mantenía pendiente.",
+        },
+        created_by_name: user?.user_metadata?.full_name || null,
+        created_by_email: user?.email || null,
+        created_at: new Date().toISOString(),
+      })
+      .select("*")
+      .single();
+
+    if (historyError) throw historyError;
+
+    if (createdHistory) {
+      setHistoryRows((prev) => [createdHistory, ...prev]);
+    }
+
+    setRow((prev) => ({
+      ...prev,
+      estado: "En curso",
+      fecha_pase_en_curso: fechaRetomarGestion,
+    }));
+
+    setShowRetomarGestion(false);
+    setFechaRetomarGestion("");
+
+    alert("Gestión retomada correctamente.");
+  } catch (error) {
+    console.error("Error retomando gestión:", error);
+    alert("No se pudo retomar la gestión.");
+  } finally {
+    setSavingRetomarGestion(false);
+  }
+}
+
 async function handleGuardarPresentacionRegistro() {
   if (!id) return;
 
@@ -3784,6 +3950,13 @@ const estadoFechaInfo = (() => {
     };
   }
 
+if (estadoActualKey === "PENDIENTE") {
+  return {
+    label: "Pendiente",
+    value: formatDate(row?.fecha_pendiente),
+  };
+}
+
   if (estadoActualKey === "EN CURSO") {
     if (row?.fecha_presentacion_registro) {
       return {
@@ -3893,13 +4066,14 @@ const estadoPillColors = (() => {
   };
 
   if (
-    estadoActualKey === "PENDIENTE DE ENVIO" ||
-    estadoActualKey === "RECTIFICACION SOLICITADA" ||
-    estadoActualKey === "DISPONIBLE PARA RETIRO" ||
-    estadoActualKey === "RETIRADA"
-  ) {
-    return amber;
-  }
+  estadoActualKey === "PENDIENTE DE ENVIO" ||
+  estadoActualKey === "PENDIENTE" ||
+  estadoActualKey === "RECTIFICACION SOLICITADA" ||
+  estadoActualKey === "DISPONIBLE PARA RETIRO" ||
+  estadoActualKey === "RETIRADA"
+) {
+  return amber;
+}
 
   if (estadoActualKey === "EN REVISION") {
   return {
@@ -3987,6 +4161,16 @@ const proximaAccionInfo = (() => {
       boton: "Ver rectificación →",
     };
   }
+
+if (estadoActualKey === "PENDIENTE") {
+  return {
+    titulo: "Aguarda gestión de Día",
+    texto:
+      row?.motivo_pendiente ||
+      "La prenda se encuentra en SAKI y el trámite queda pendiente hasta que Día complete la gestión necesaria para continuar.",
+    boton: "Ver pendiente →",
+  };
+}
 
   if (estadoActualKey === "EN CURSO") {
     if (row?.fecha_presentacion_registro) {
@@ -4646,6 +4830,18 @@ const titularAdminCasado =
       setFechaPresentacionRegistro(hoy);
       setShowPresentacionRegistro(true);
     }}
+    onMarcarPendiente={() => {
+  const hoy = new Date().toISOString().slice(0, 10);
+  setFechaPendiente(hoy);
+  setMotivoPendiente("");
+  setNotaPendiente("");
+  setShowMarcarPendiente(true);
+}}
+onRetomarGestion={() => {
+  const hoy = new Date().toISOString().slice(0, 10);
+  setFechaRetomarGestion(hoy);
+  setShowRetomarGestion(true);
+}}
     onMarcarObservada={() => {
       const hoy = new Date().toISOString().slice(0, 10);
       setFechaObservacion(hoy);
@@ -6134,6 +6330,247 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
           }}
         >
           {savingReingresoCorreccion ? "Guardando..." : "Guardar reingreso"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{showMarcarPendiente && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(2, 8, 18, 0.62)",
+      backdropFilter: "blur(7px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10000,
+      padding: "24px",
+    }}
+    onClick={() => {
+      setShowMarcarPendiente(false);
+      setFechaPendiente("");
+      setMotivoPendiente("");
+      setNotaPendiente("");
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "min(620px, 100%)",
+        borderRadius: "22px",
+        background:
+          "linear-gradient(180deg, rgba(18,52,91,0.98) 0%, rgba(10,31,58,0.98) 100%)",
+        border: "1px solid rgba(148,163,184,0.16)",
+        boxShadow: "0 34px 90px rgba(0,0,0,0.44)",
+        padding: "24px",
+      }}
+    >
+      <div style={{ marginBottom: "20px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#8fb9e8",
+            fontWeight: 800,
+            marginBottom: "7px",
+          }}
+        >
+          Estado del trámite
+        </div>
+
+        <h3
+          style={{
+            margin: 0,
+            color: "#ffffff",
+            fontSize: "24px",
+            fontWeight: 750,
+            letterSpacing: "-0.03em",
+          }}
+        >
+          Pasar a Pendiente
+        </h3>
+
+        <p
+          style={{
+            margin: "10px 0 0",
+            color: "rgba(214,228,245,0.78)",
+            fontSize: "13px",
+            lineHeight: 1.5,
+          }}
+        >
+          Indicá el motivo por el cual la prenda queda pendiente. La prenda permanece en SAKI y esta información quedará registrada en el historial del legajo.
+        </p>
+      </div>
+
+      <div
+        style={{
+          borderRadius: "18px",
+          border: "1px solid rgba(148,163,184,0.14)",
+          background: "rgba(3,18,34,0.48)",
+          padding: "16px",
+          marginBottom: "18px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+        }}
+      >
+        <div>
+          <label
+            style={{
+              display: "block",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "#90a7c7",
+              marginBottom: "10px",
+            }}
+          >
+            Fecha del pendiente
+          </label>
+
+          <input
+            type="date"
+            value={fechaPendiente}
+            onChange={(e) => setFechaPendiente(e.target.value)}
+            style={{
+              width: "100%",
+              height: "48px",
+              borderRadius: "14px",
+              border: "1px solid rgba(148, 163, 184, 0.18)",
+              background: "rgba(3, 11, 24, 0.72)",
+              color: "#f8fbff",
+              padding: "0 14px",
+              fontSize: "14px",
+              outline: "none",
+              boxSizing: "border-box",
+              colorScheme: "dark",
+            }}
+          />
+        </div>
+
+        <div>
+          <label
+            style={{
+              display: "block",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "#90a7c7",
+              marginBottom: "10px",
+            }}
+          >
+            Motivo / detalle para Día
+          </label>
+
+          <textarea
+            value={motivoPendiente}
+            onChange={(e) => setMotivoPendiente(e.target.value)}
+            placeholder="Ej.: La prenda se encuentra en SAKI. El trámite queda pendiente hasta que Día complete la gestión necesaria para continuar."
+            style={{
+              width: "100%",
+              minHeight: "96px",
+              resize: "vertical",
+              borderRadius: "14px",
+              border: "1px solid rgba(148, 163, 184, 0.18)",
+              background: "rgba(3, 11, 24, 0.72)",
+              color: "#f8fbff",
+              padding: "13px 14px",
+              fontSize: "14px",
+              lineHeight: 1.45,
+              outline: "none",
+              boxSizing: "border-box",
+              fontFamily: "inherit",
+            }}
+          />
+        </div>
+
+        <div>
+          <label
+            style={{
+              display: "block",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "#90a7c7",
+              marginBottom: "10px",
+            }}
+          >
+            Nota interna opcional
+          </label>
+
+          <textarea
+            value={notaPendiente}
+            onChange={(e) => setNotaPendiente(e.target.value)}
+            placeholder="Opcional. Información adicional para dejar registrada en el movimiento."
+            style={{
+              width: "100%",
+              minHeight: "76px",
+              resize: "vertical",
+              borderRadius: "14px",
+              border: "1px solid rgba(148, 163, 184, 0.18)",
+              background: "rgba(3, 11, 24, 0.72)",
+              color: "#f8fbff",
+              padding: "13px 14px",
+              fontSize: "14px",
+              lineHeight: 1.45,
+              outline: "none",
+              boxSizing: "border-box",
+              fontFamily: "inherit",
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+        <button
+          type="button"
+          onClick={() => {
+            setShowMarcarPendiente(false);
+            setFechaPendiente("");
+            setMotivoPendiente("");
+            setNotaPendiente("");
+          }}
+          style={{
+            height: "42px",
+            padding: "0 15px",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(255,255,255,0.03)",
+            color: "#dbeafe",
+            fontSize: "13px",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          onClick={handleGuardarPendiente}
+          disabled={savingPendiente}
+          style={{
+            height: "42px",
+            padding: "0 17px",
+            borderRadius: "12px",
+            border: "none",
+            background: "linear-gradient(180deg, #f59e0b, #d97706)",
+            color: "#ffffff",
+            fontSize: "13px",
+            fontWeight: 800,
+            cursor: savingPendiente ? "not-allowed" : "pointer",
+            opacity: savingPendiente ? 0.72 : 1,
+            boxShadow: "0 12px 24px rgba(245,158,11,0.24)",
+          }}
+        >
+          {savingPendiente ? "Guardando..." : "Guardar pendiente"}
         </button>
       </div>
     </div>
@@ -13196,6 +13633,8 @@ function FichaEstado({
   onReprogramacionRectificacion,
   onReingresoCorreccion,
   onPresentacionRegistro,
+  onMarcarPendiente,
+onRetomarGestion,
   onMarcarObservada,
   onRetiroSubsanacion,
   onReingresoSubsanada,
@@ -13609,6 +14048,18 @@ const mostrarDetalleRectificacion =
       Presentar en Registro
     </button>
 
+    <button
+  type="button"
+  onClick={onMarcarPendiente}
+  style={{
+    ...caseActionButtonStyle,
+    background: "linear-gradient(180deg, #f59e0b, #d97706)",
+    boxShadow: "0 10px 20px rgba(245,158,11,0.20)",
+  }}
+>
+  Pasar a Pendiente
+</button>
+
     {row?.fecha_presentacion_registro && (
       <>
         <button
@@ -13636,6 +14087,31 @@ const mostrarDetalleRectificacion =
         </button>
       </>
     )}
+  </div>
+)}
+
+{estadoActualKey === "PENDIENTE" && isAdmin && (
+  <div
+    style={{
+      gridColumn: "1 / -1",
+      display: "flex",
+      justifyContent: "flex-end",
+      gap: "10px",
+      flexWrap: "wrap",
+      marginTop: "4px",
+    }}
+  >
+    <button
+      type="button"
+      onClick={onRetomarGestion}
+      style={{
+        ...caseActionButtonStyle,
+        background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
+        boxShadow: "0 10px 20px rgba(37,99,235,0.20)",
+      }}
+    >
+      Retomar gestión
+    </button>
   </div>
 )}
 
