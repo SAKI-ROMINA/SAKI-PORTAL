@@ -13128,6 +13128,10 @@ function FichaTrazabilidad({ row }) {
           value: fecha(row?.fecha_disponible_retiro_correccion),
         },
         {
+  label: "Retiro programado por Día",
+  value: fecha(row?.fecha_programada_retiro_correccion),
+},
+        {
           label: "Retiro para rectificación",
           value: fecha(row?.fecha_retiro_correccion),
         },
