@@ -79,6 +79,14 @@ function getStatusPillStyle(summary) {
         color: "#fde68a",
       };
 
+      case "Pendiente":
+  return {
+    ...base,
+    background: "rgba(139, 92, 246, 0.16)",
+    border: "1px solid rgba(167, 139, 250, 0.34)",
+    color: "#ddd6fe",
+  };
+
 case "Rectificación solicitada":
 case "Rectificacion solicitada":
   return {
