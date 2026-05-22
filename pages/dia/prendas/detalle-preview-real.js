@@ -3487,15 +3487,42 @@ async function handleGuardarRetomarGestion() {
     if (historyError) throw historyError;
 
     if (createdHistory) {
-      setHistoryRows((prev) => [createdHistory, ...prev]);
+  setHistoryRows((prev) => [createdHistory, ...prev]);
+}
+
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    estado: "En curso",
+    fecha_pase_en_curso: fechaRetomarGestion,
+  },
+  asunto: "SAKI | Gestión retomada",
+  titulo: "Gestión retomada",
+  descripcion:
+    "SAKI retomó la gestión del trámite. La prenda vuelve a estado En curso.",
+  estadoNuevo: "En curso",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Estado anterior:</strong> ${
+      estadoAnterior || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Nuevo estado:</strong> En curso</p>
+    <p style="margin: 0 0 8px 0;"><strong>Fecha de retoma:</strong> ${
+      fechaRetomarGestion || "-"
+    }</p>
+    ${
+      row?.motivo_pendiente
+        ? `<p style="margin: 0 0 8px 0;"><strong>Motivo pendiente anterior:</strong> ${row.motivo_pendiente}</p>`
+        : ""
     }
+  `,
+});
 
-    setRow((prev) => ({
-      ...prev,
-      estado: "En curso",
-      fecha_pase_en_curso: fechaRetomarGestion,
-    }));
-
+setRow((prev) => ({
+  ...prev,
+  estado: "En curso",
+  fecha_pase_en_curso: fechaRetomarGestion,
+}));
     setShowRetomarGestion(false);
     setFechaRetomarGestion("");
 
