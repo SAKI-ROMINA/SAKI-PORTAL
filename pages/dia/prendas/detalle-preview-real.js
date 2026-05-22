@@ -3010,13 +3010,32 @@ async function handleGuardarDisponibleRetiroCorreccion() {
     if (historyError) throw historyError;
 
     if (createdHistory) {
-      setHistoryRows((prev) => [createdHistory, ...prev]);
-    }
+  setHistoryRows((prev) => [createdHistory, ...prev]);
+}
 
-    setRow((prev) => ({
-      ...prev,
-      fecha_disponible_retiro_correccion: fechaDisponibleRetiroCorreccion,
-    }));
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    fecha_disponible_retiro_correccion: fechaDisponibleRetiroCorreccion,
+  },
+  asunto: "SAKI | Prenda disponible para retiro por corrección",
+  titulo: "Prenda disponible para retiro por corrección",
+  descripcion:
+    "SAKI dejó la prenda disponible para que Día la retire y gestione la rectificación solicitada.",
+  estadoNuevo: row?.estado || "Rectificación solicitada",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Fecha disponible para retiro:</strong> ${
+      fechaDisponibleRetiroCorreccion || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Próxima acción:</strong> Día debe programar el retiro de la prenda para gestionar la corrección.</p>
+  `,
+});
+
+setRow((prev) => ({
+  ...prev,
+  fecha_disponible_retiro_correccion: fechaDisponibleRetiroCorreccion,
+}));
 
     setShowDisponibleRetiroCorreccion(false);
     setFechaDisponibleRetiroCorreccion("");
@@ -3080,6 +3099,26 @@ async function handleGuardarProgramarRetiroCorreccion() {
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
+
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    fecha_programada_retiro_correccion:
+      fechaProgramadaRetiroCorreccion,
+  },
+  asunto: "SAKI | Retiro por corrección programado",
+  titulo: "Retiro por corrección programado",
+  descripcion:
+    "Día informó la fecha prevista para retirar la prenda de SAKI y gestionar la rectificación solicitada.",
+  estadoNuevo: row?.estado || "Rectificación solicitada",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Fecha programada de retiro:</strong> ${
+      fechaProgramadaRetiroCorreccion || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Próxima acción:</strong> SAKI debe registrar el retiro real cuando Día retire la documentación.</p>
+  `,
+});
 
     setRow((prev) => ({
       ...prev,
@@ -3147,6 +3186,25 @@ async function handleGuardarRetiroCorreccion() {
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
+
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    fecha_retiro_correccion: fechaRetiroCorreccion,
+  },
+  asunto: "SAKI | Retiro para rectificación registrado",
+  titulo: "Retiro para rectificación registrado",
+  descripcion:
+    "SAKI registró que Día retiró la prenda para gestionar la rectificación solicitada.",
+  estadoNuevo: row?.estado || "Rectificación solicitada",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Fecha de retiro:</strong> ${
+      fechaRetiroCorreccion || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Próxima acción:</strong> Día debe reprogramar el envío de la prenda rectificada.</p>
+  `,
+});
 
     setRow((prev) => ({
       ...prev,
@@ -3217,6 +3275,28 @@ async function handleGuardarReprogramacionRectificacion() {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
 
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    fecha_reenvio_oficina: fechaReenvioOficina,
+  },
+  asunto: "SAKI | Envío rectificado reprogramado",
+  titulo: "Envío rectificado reprogramado",
+  descripcion:
+    "Día informó una nueva fecha de envío de la prenda rectificada.",
+  estadoNuevo: row?.estado || "Rectificación solicitada",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Fecha anterior:</strong> ${
+      fechaAnterior || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Nueva fecha de envío rectificado:</strong> ${
+      fechaReenvioOficina || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Próxima acción:</strong> SAKI debe registrar el reingreso de la prenda rectificada.</p>
+  `,
+});
+
     setRow((prev) => ({
       ...prev,
       fecha_reenvio_oficina: fechaReenvioOficina,
@@ -3282,6 +3362,25 @@ async function handleGuardarReingresoCorreccion() {
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
+
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    fecha_reingreso_correccion: fechaReingresoCorreccion,
+  },
+  asunto: "SAKI | Reingreso de prenda rectificada",
+  titulo: "Reingreso de prenda rectificada",
+  descripcion:
+    "SAKI registró el reingreso de la prenda luego de la rectificación solicitada.",
+  estadoNuevo: row?.estado || "Rectificación solicitada",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Fecha de reingreso:</strong> ${
+      fechaReingresoCorreccion || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Próxima acción:</strong> SAKI debe revisar la documentación rectificada y definir si pasa a En curso.</p>
+  `,
+});
 
     setRow((prev) => ({
       ...prev,
@@ -14809,6 +14908,7 @@ const mostrarDetalleRectificacion =
     )}
 
 {canOperatePrendas &&
+  !isAdmin &&
   row?.fecha_disponible_retiro_correccion &&
   !row?.fecha_retiro_correccion && (
     <button
@@ -14842,20 +14942,22 @@ const mostrarDetalleRectificacion =
         </button>
       )}
 
-    {row?.fecha_retiro_correccion &&
-      !row?.fecha_reenvio_oficina && (
-        <button
-          type="button"
-          onClick={onReprogramacionRectificacion}
-          style={{
-            ...caseActionButtonStyle,
-            background: "linear-gradient(180deg, #f59e0b, #d97706)",
-            boxShadow: "0 10px 20px rgba(245,158,11,0.20)",
-          }}
-        >
-          Reprogramar envío rectificado
-        </button>
-      )}
+    {canOperatePrendas &&
+  !isAdmin &&
+  row?.fecha_retiro_correccion &&
+  !row?.fecha_reenvio_oficina && (
+    <button
+      type="button"
+      onClick={onReprogramacionRectificacion}
+      style={{
+        ...caseActionButtonStyle,
+        background: "linear-gradient(180deg, #f59e0b, #d97706)",
+        boxShadow: "0 10px 20px rgba(245,158,11,0.20)",
+      }}
+    >
+      Reprogramar envío rectificado
+    </button>
+  )}
 
     {isAdmin &&
       row?.fecha_reenvio_oficina &&
