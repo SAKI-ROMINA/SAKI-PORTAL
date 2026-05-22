@@ -2573,6 +2573,27 @@ if (createdHistory) {
   setHistoryRows((prev) => [createdHistory, ...prev]);
 }
 
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    fecha_envio_oficina: nuevaFechaEnvio,
+  },
+  asunto: "SAKI | Envío de prenda reprogramado",
+  titulo: "Envío de prenda reprogramado",
+  descripcion:
+    "Día reprogramó la fecha de envío de una prenda pendiente de envío.",
+  estadoNuevo: row?.estado || "Pendiente de envío",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Fecha anterior:</strong> ${
+      fechaAnteriorEnvio || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Nueva fecha de envío:</strong> ${
+      nuevaFechaEnvio || "-"
+    }</p>
+  `,
+});
+
 setRow((prev) => ({
   ...prev,
   fecha_envio_oficina: nuevaFechaEnvio,
@@ -5302,7 +5323,9 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
 {activeFicha === "historial" && (
   <FichaHistorial row={row} historyRows={historyRows} />
 )}
-{activeFicha === "trazabilidad" && <FichaTrazabilidad row={row} />}
+{activeFicha === "trazabilidad" && (
+  <FichaTrazabilidad row={row} historyRows={historyRows} />
+)}
 {activeFicha === "avisos" && <FichaAvisos />}
 {activeFicha === "reporte" && <FichaReporte />}
           </div>
@@ -13135,13 +13158,32 @@ historyRows.map((item) => (
   );
 }
 
-function FichaTrazabilidad({ row }) {
+function FichaTrazabilidad({ row, historyRows = [] }) {
   const fecha = (value) => {
     if (!value) return null;
     return formatDate(value);
   };
 
   const limpiarItems = (items) => items.filter((item) => item?.value);
+
+  const reprogramacionesEnvio = Array.isArray(historyRows)
+  ? historyRows
+      .filter((item) => item?.tipo_evento === "reprogramacion_envio")
+      .slice()
+      .reverse()
+      .map((item) => {
+        const detalle = item?.detalle || {};
+        const fechaAnterior = fecha(detalle?.fecha_anterior);
+        const fechaNueva = fecha(detalle?.fecha_nueva);
+
+        return {
+          label: `Reprogramación de envío${
+            fechaAnterior ? `: ${fechaAnterior} → ${fechaNueva || "—"}` : ""
+          }`,
+          value: fechaNueva || fecha(item?.created_at),
+        };
+      })
+  : [];
 
   const etapas = [
     {
@@ -13150,13 +13192,14 @@ function FichaTrazabilidad({ row }) {
       tone: "blue",
       items: limpiarItems([
         {
-          label: "Envío inicial programado",
-          value: fecha(row?.fecha_envio_oficina),
-        },
-        {
-          label: "Recepción inicial en SAKI",
-          value: fecha(row?.fecha_recepcion_inicial_oficina),
-        },
+  label: "Envío inicial programado",
+  value: fecha(row?.fecha_envio_oficina),
+},
+...reprogramacionesEnvio,
+{
+  label: "Recepción inicial en SAKI",
+  value: fecha(row?.fecha_recepcion_inicial_oficina),
+},
         {
           label: "Pase a En curso",
           value: fecha(row?.fecha_pase_en_curso),
