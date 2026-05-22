@@ -2733,6 +2733,25 @@ async function handleGuardarAprobarRevision() {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
 
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    estado: "En curso",
+    fecha_pase_en_curso: fechaAprobacionRevision,
+  },
+  asunto: "SAKI | Prenda en curso",
+  titulo: "Prenda en curso",
+  descripcion:
+    "SAKI aprobó la revisión documental de la prenda y el trámite continúa en curso.",
+  estadoNuevo: "En curso",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Fecha de pase a En curso:</strong> ${
+      fechaAprobacionRevision || "-"
+    }</p>
+  `,
+});
+
     setRow((prev) => ({
       ...prev,
       estado: "En curso",
