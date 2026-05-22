@@ -13151,6 +13151,40 @@ if (item?.tipo_evento === "archivo_eliminado" && detalle) {
     return `Prenda anulada. Fecha de anulación: ${fechaAnulacion}. Motivo: ${motivo}. El trámite fue anulado y no continuará su circuito operativo.`;
   }
 
+if (item?.tipo_evento === "prenda_pendiente" && detalle) {
+  const fechaPendiente = detalle?.fecha_pendiente
+    ? formatDate(detalle.fecha_pendiente)
+    : "fecha por completar";
+
+  const motivo = detalle?.motivo_pendiente || "motivo por completar";
+  const nota = detalle?.nota ? ` Nota: ${detalle.nota}` : "";
+
+  return `Trámite marcado como pendiente. Fecha: ${fechaPendiente}. Motivo: ${motivo}.${nota}`;
+}
+
+if (item?.tipo_evento === "pendiente_actualizado" && detalle) {
+  const fechaPendiente = detalle?.fecha_pendiente
+    ? formatDate(detalle.fecha_pendiente)
+    : "fecha por completar";
+
+  const motivo = detalle?.motivo_pendiente || "motivo por completar";
+  const nota = detalle?.nota ? ` Nota: ${detalle.nota}` : "";
+
+  return `Pendiente actualizado. Fecha: ${fechaPendiente}. Motivo: ${motivo}.${nota}`;
+}
+
+if (item?.tipo_evento === "gestion_retomada" && detalle) {
+  const fechaRetoma = detalle?.fecha_retomar_gestion
+    ? formatDate(detalle.fecha_retomar_gestion)
+    : "fecha por completar";
+
+  const motivoAnterior = detalle?.motivo_pendiente
+    ? ` Motivo pendiente anterior: ${detalle.motivo_pendiente}.`
+    : "";
+
+  return `Gestión retomada. Fecha: ${fechaRetoma}. El trámite volvió a estado En curso.${motivoAnterior}`;
+}
+
   if (typeof detalle === "string" && detalle.trim()) {
     return detalle;
   }
@@ -13371,6 +13405,54 @@ function FichaTrazabilidad({ row, historyRows = [] }) {
       })
   : [];
 
+  const movimientosPendiente = Array.isArray(historyRows)
+  ? historyRows
+      .filter((item) =>
+        ["prenda_pendiente", "pendiente_actualizado", "gestion_retomada"].includes(
+          item?.tipo_evento
+        )
+      )
+      .slice()
+      .reverse()
+      .map((item) => {
+        const detalle = item?.detalle || {};
+
+        if (item?.tipo_evento === "prenda_pendiente") {
+          return {
+            label: `Trámite marcado como pendiente${
+              detalle?.motivo_pendiente ? `: ${detalle.motivo_pendiente}` : ""
+            }`,
+            value:
+              fecha(detalle?.fecha_pendiente) ||
+              fecha(item?.created_at),
+          };
+        }
+
+        if (item?.tipo_evento === "pendiente_actualizado") {
+          return {
+            label: `Pendiente actualizado${
+              detalle?.motivo_pendiente ? `: ${detalle.motivo_pendiente}` : ""
+            }`,
+            value:
+              fecha(detalle?.fecha_pendiente) ||
+              fecha(item?.created_at),
+          };
+        }
+
+        if (item?.tipo_evento === "gestion_retomada") {
+          return {
+            label: "Gestión retomada: el trámite vuelve a En curso",
+            value:
+              fecha(detalle?.fecha_retomar_gestion) ||
+              fecha(item?.created_at),
+          };
+        }
+
+        return null;
+      })
+      .filter(Boolean)
+  : [];
+
   const etapas = [
     {
       titulo: "Ingreso y revisión SAKI",
@@ -13386,10 +13468,11 @@ function FichaTrazabilidad({ row, historyRows = [] }) {
   label: "Recepción inicial en SAKI",
   value: fecha(row?.fecha_recepcion_inicial_oficina),
 },
-        {
-          label: "Pase a En curso",
-          value: fecha(row?.fecha_pase_en_curso),
-        },
+...movimientosPendiente,
+{
+  label: "Pase a En curso",
+  value: fecha(row?.fecha_pase_en_curso),
+},
       ]),
     },
     {
