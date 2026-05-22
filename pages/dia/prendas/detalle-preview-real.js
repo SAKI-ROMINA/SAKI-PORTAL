@@ -529,6 +529,10 @@ const [showDisponibleRetiroFinal, setShowDisponibleRetiroFinal] = useState(false
 const [fechaDisponibleRetiroFinal, setFechaDisponibleRetiroFinal] = useState("");
 const [savingDisponibleRetiroFinal, setSavingDisponibleRetiroFinal] = useState(false);
 
+const [showProgramarRetiroFinal, setShowProgramarRetiroFinal] = useState(false);
+const [fechaProgramadaRetiroFinal, setFechaProgramadaRetiroFinal] = useState("");
+const [savingProgramarRetiroFinal, setSavingProgramarRetiroFinal] = useState(false);
+
 const [showRetiradaFinal, setShowRetiradaFinal] = useState(false);
 const [fechaRetiradaFinal, setFechaRetiradaFinal] = useState("");
 const [savingRetiradaFinal, setSavingRetiradaFinal] = useState(false);
@@ -4055,6 +4059,28 @@ async function handleGuardarDisponibleRetiroFinal() {
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    estado: "Disponible para retiro",
+    fecha_disponible_retiro_final: fechaDisponibleRetiroFinal,
+  },
+  asunto: "SAKI | Prenda inscripta y disponible para retiro",
+  titulo: "Prenda inscripta y disponible para retiro",
+  descripcion:
+    "SAKI informa que la prenda fue inscripta correctamente y ya se encuentra disponible para retiro.",
+  estadoNuevo: "Disponible para retiro",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Fecha de inscripción:</strong> ${
+      row?.fecha_inscripcion || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Fecha disponible para retiro:</strong> ${
+      fechaDisponibleRetiroFinal || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Próxima acción:</strong> Día debe informar la fecha prevista para retirar la prenda inscripta.</p>
+  `,
+});
 
     setRow((prev) => ({
       ...prev,
@@ -4071,6 +4097,96 @@ async function handleGuardarDisponibleRetiroFinal() {
     alert("No se pudo guardar la disponibilidad para retiro.");
   } finally {
     setSavingDisponibleRetiroFinal(false);
+  }
+}
+
+async function handleGuardarProgramarRetiroFinal() {
+  if (!id) return;
+
+  if (!canOperatePrendas || isAdmin) {
+    alert("Solo un usuario de Créditos y Cobranzas puede programar el retiro final.");
+    return;
+  }
+
+  if (!fechaProgramadaRetiroFinal) {
+    alert("Seleccioná la fecha programada de retiro final.");
+    return;
+  }
+
+  try {
+    setSavingProgramarRetiroFinal(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const { error } = await supabase
+      .from("dia_request_prendas")
+      .update({
+        fecha_programada_retiro_final: fechaProgramadaRetiroFinal,
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    const { data: createdHistory, error: historyError } = await supabase
+      .from("dia_request_prendas_history")
+      .insert({
+        prenda_id: id,
+        tipo_evento: "retiro_final_programado",
+        titulo: "Retiro final programado por Día",
+        detalle: {
+          estado_actual: row?.estado || "Disponible para retiro",
+          fecha_programada_retiro_final: fechaProgramadaRetiroFinal,
+          nota:
+            "Día informó la fecha prevista para retirar la prenda inscripta de SAKI.",
+        },
+        created_by_name: user?.user_metadata?.full_name || null,
+        created_by_email: user?.email || null,
+        created_at: new Date().toISOString(),
+      })
+      .select("*")
+      .single();
+
+    if (historyError) throw historyError;
+
+    if (createdHistory) {
+      setHistoryRows((prev) => [createdHistory, ...prev]);
+    }
+
+    await enviarNotificacionPrendaEstado({
+      prendaId: id,
+      row: {
+        ...row,
+        fecha_programada_retiro_final: fechaProgramadaRetiroFinal,
+      },
+      asunto: "SAKI | Retiro final programado por Día",
+      titulo: "Retiro final programado por Día",
+      descripcion:
+        "Día informó la fecha prevista para retirar la prenda inscripta.",
+      estadoNuevo: row?.estado || "Disponible para retiro",
+      detalleHtml: `
+        <p style="margin: 16px 0 8px 0;"><strong>Fecha programada de retiro final:</strong> ${
+          fechaProgramadaRetiroFinal || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Próxima acción:</strong> SAKI debe registrar el retiro real cuando Día retire la prenda.</p>
+      `,
+    });
+
+    setRow((prev) => ({
+      ...prev,
+      fecha_programada_retiro_final: fechaProgramadaRetiroFinal,
+    }));
+
+    setShowProgramarRetiroFinal(false);
+    setFechaProgramadaRetiroFinal("");
+
+    alert("Retiro final programado correctamente.");
+  } catch (error) {
+    console.error("Error programando retiro final:", error);
+    alert("No se pudo programar el retiro final.");
+  } finally {
+    setSavingProgramarRetiroFinal(false);
   }
 }
 
@@ -4196,6 +4312,29 @@ async function handleGuardarCerrarLegajo() {
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
+
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    estado: "Legajo cerrado",
+    fecha_cierre_legajo: fechaCierreLegajo,
+  },
+  asunto: "SAKI | Prenda retirada y legajo cerrado",
+  titulo: "Prenda retirada y legajo cerrado",
+  descripcion:
+    "SAKI registró el retiro final de la prenda inscripta y el legajo quedó cerrado administrativamente.",
+  estadoNuevo: "Legajo cerrado",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Fecha de retiro final:</strong> ${
+      row?.fecha_real_retiro_final || row?.fecha_retiro_final_real || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Fecha de cierre del legajo:</strong> ${
+      fechaCierreLegajo || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Resultado:</strong> La prenda fue retirada y el trámite quedó finalizado.</p>
+  `,
+});
 
     setRow((prev) => ({
       ...prev,
@@ -4727,12 +4866,22 @@ if (estadoActualKey === "PENDIENTE") {
   }
 
   if (estadoActualKey === "DISPONIBLE PARA RETIRO") {
+  if (row?.fecha_programada_retiro_final) {
     return {
-      titulo: "Lista para retiro",
-      texto: "Día debe retirar la prenda inscripta de SAKI.",
+      titulo: "Retiro final programado por Día",
+      texto: `Día informó fecha de retiro final para el ${formatDate(
+        row.fecha_programada_retiro_final
+      )}.`,
       boton: "Ver retiro final →",
     };
   }
+
+  return {
+    titulo: "Lista para retiro",
+    texto: "Día debe informar la fecha prevista para retirar la prenda inscripta de SAKI.",
+    boton: "Ver retiro final →",
+  };
+}
 
   if (estadoActualKey === "RETIRADA") {
     return {
@@ -5383,6 +5532,10 @@ onRetomarGestion={() => {
       setFechaDisponibleRetiroFinal(hoy);
       setShowDisponibleRetiroFinal(true);
     }}
+    onProgramarRetiroFinal={() => {
+  setFechaProgramadaRetiroFinal(row?.fecha_programada_retiro_final || "");
+  setShowProgramarRetiroFinal(true);
+}}
     onRetiradaFinal={() => {
       const hoy = new Date().toISOString().slice(0, 10);
       setFechaRetiradaFinal(hoy);
@@ -8476,6 +8629,164 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
           }}
         >
           {savingDisponibleRetiroFinal ? "Guardando..." : "Guardar disponibilidad"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{showProgramarRetiroFinal && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(2, 8, 18, 0.62)",
+      backdropFilter: "blur(7px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10000,
+      padding: "24px",
+    }}
+    onClick={() => {
+      setShowProgramarRetiroFinal(false);
+      setFechaProgramadaRetiroFinal("");
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "min(540px, 100%)",
+        borderRadius: "22px",
+        background:
+          "linear-gradient(180deg, rgba(18,52,91,0.98) 0%, rgba(10,31,58,0.98) 100%)",
+        border: "1px solid rgba(148,163,184,0.16)",
+        boxShadow: "0 34px 90px rgba(0,0,0,0.44)",
+        padding: "24px",
+      }}
+    >
+      <div style={{ marginBottom: "20px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#8fb9e8",
+            fontWeight: 800,
+            marginBottom: "7px",
+          }}
+        >
+          Retiro final
+        </div>
+
+        <h3
+          style={{
+            margin: 0,
+            color: "#ffffff",
+            fontSize: "24px",
+            fontWeight: 750,
+            letterSpacing: "-0.03em",
+          }}
+        >
+          Programar retiro final
+        </h3>
+
+        <p
+          style={{
+            margin: "10px 0 0",
+            color: "rgba(214,228,245,0.78)",
+            fontSize: "13px",
+            lineHeight: 1.5,
+          }}
+        >
+          Indicá la fecha en la que Día prevé retirar la prenda inscripta de SAKI.
+        </p>
+      </div>
+
+      <div
+        style={{
+          borderRadius: "18px",
+          border: "1px solid rgba(148,163,184,0.14)",
+          background: "rgba(3,18,34,0.48)",
+          padding: "16px",
+          marginBottom: "18px",
+        }}
+      >
+        <label
+          style={{
+            display: "block",
+            fontSize: "11px",
+            fontWeight: 800,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#90a7c7",
+            marginBottom: "10px",
+          }}
+        >
+          Fecha programada de retiro final
+        </label>
+
+        <input
+          type="date"
+          value={fechaProgramadaRetiroFinal}
+          onChange={(e) => setFechaProgramadaRetiroFinal(e.target.value)}
+          style={{
+            width: "100%",
+            height: "48px",
+            borderRadius: "14px",
+            border: "1px solid rgba(148, 163, 184, 0.18)",
+            background: "rgba(3, 11, 24, 0.72)",
+            color: "#f8fbff",
+            padding: "0 14px",
+            fontSize: "14px",
+            outline: "none",
+            boxSizing: "border-box",
+            colorScheme: "dark",
+          }}
+        />
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+        <button
+          type="button"
+          onClick={() => {
+            setShowProgramarRetiroFinal(false);
+            setFechaProgramadaRetiroFinal("");
+          }}
+          style={{
+            height: "42px",
+            padding: "0 15px",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(255,255,255,0.03)",
+            color: "#dbeafe",
+            fontSize: "13px",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          onClick={handleGuardarProgramarRetiroFinal}
+          disabled={savingProgramarRetiroFinal}
+          style={{
+            height: "42px",
+            padding: "0 17px",
+            borderRadius: "12px",
+            border: "none",
+            background: "linear-gradient(180deg, #f59e0b, #d97706)",
+            color: "#ffffff",
+            fontSize: "13px",
+            fontWeight: 800,
+            cursor: savingProgramarRetiroFinal ? "not-allowed" : "pointer",
+            opacity: savingProgramarRetiroFinal ? 0.72 : 1,
+            boxShadow: "0 12px 24px rgba(245,158,11,0.24)",
+          }}
+        >
+          {savingProgramarRetiroFinal ? "Guardando..." : "Guardar fecha"}
         </button>
       </div>
     </div>
@@ -13284,6 +13595,14 @@ if (item?.tipo_evento === "gestion_retomada" && detalle) {
   return `Gestión retomada. Fecha: ${fechaRetoma}. El trámite volvió a estado En curso.${motivoAnterior}`;
 }
 
+if (item?.tipo_evento === "retiro_final_programado" && detalle) {
+  const fechaProgramada = detalle?.fecha_programada_retiro_final
+    ? formatDate(detalle.fecha_programada_retiro_final)
+    : "fecha por completar";
+
+  return `Retiro final programado por Día. Fecha prevista: ${fechaProgramada}. Día informó cuándo retirará la prenda inscripta de SAKI.`;
+}
+
   if (typeof detalle === "string" && detalle.trim()) {
     return detalle;
   }
@@ -13646,13 +13965,17 @@ function FichaTrazabilidad({ row, historyRows = [] }) {
           value: fecha(row?.fecha_vencimiento),
         },
         {
-          label: "Disponible para retiro final",
-          value: fecha(row?.fecha_disponible_retiro_final),
-        },
-        {
-          label: "Retiro final",
-          value: fecha(row?.fecha_real_retiro_final),
-        },
+  label: "Disponible para retiro final",
+  value: fecha(row?.fecha_disponible_retiro_final),
+},
+{
+  label: "Retiro final programado por Día",
+  value: fecha(row?.fecha_programada_retiro_final),
+},
+{
+  label: "Retiro final",
+  value: fecha(row?.fecha_real_retiro_final),
+},
       ]),
     },
     {
@@ -14581,6 +14904,7 @@ onRetomarGestion,
   onReingresoSubsanada,
   onMarcarInscripta,
   onDisponibleRetiroFinal,
+    onProgramarRetiroFinal,
   onRetiradaFinal,
   onCerrarLegajo,
   onAnularPrenda,
@@ -15181,7 +15505,7 @@ const mostrarDetalleRectificacion =
   </div>
 )}
 
-{estadoActualKey === "DISPONIBLE PARA RETIRO" && isAdmin && (
+{estadoActualKey === "DISPONIBLE PARA RETIRO" && (
   <div
     style={{
       ...fichaDatoWideStyle,
@@ -15190,17 +15514,35 @@ const mostrarDetalleRectificacion =
       flexWrap: "wrap",
     }}
   >
-    <button
-      type="button"
-      onClick={onRetiradaFinal}
-      style={{
-        ...caseActionButtonStyle,
-        background: "linear-gradient(180deg, #f59e0b, #d97706)",
-        boxShadow: "0 10px 20px rgba(245,158,11,0.20)",
-      }}
-    >
-      Registrar retiro final
-    </button>
+    {canOperatePrendas && !isAdmin && (
+      <button
+        type="button"
+        onClick={onProgramarRetiroFinal}
+        style={{
+          ...caseActionButtonStyle,
+          background: "linear-gradient(180deg, #f59e0b, #d97706)",
+          boxShadow: "0 10px 20px rgba(245,158,11,0.20)",
+        }}
+      >
+        {row?.fecha_programada_retiro_final
+          ? "Modificar retiro final"
+          : "Programar retiro final"}
+      </button>
+    )}
+
+    {isAdmin && row?.fecha_programada_retiro_final && (
+      <button
+        type="button"
+        onClick={onRetiradaFinal}
+        style={{
+          ...caseActionButtonStyle,
+          background: "linear-gradient(180deg, #f59e0b, #d97706)",
+          boxShadow: "0 10px 20px rgba(245,158,11,0.20)",
+        }}
+      >
+        Registrar retiro final
+      </button>
+    )}
   </div>
 )}
 
