@@ -13450,6 +13450,14 @@ if (item?.tipo_evento === "archivo_eliminado" && detalle) {
     return `Disponible para retiro por corrección. Fecha disponible para retiro: ${fechaDisponible}. SAKI dejó la prenda disponible para que Día la retire y gestione la corrección correspondiente.`;
   }
 
+if (item?.tipo_evento === "retiro_correccion_programado" && detalle) {
+  const fechaProgramada = detalle?.fecha_programada_retiro_correccion
+    ? formatDate(detalle.fecha_programada_retiro_correccion)
+    : "fecha por completar";
+
+  return `Retiro por corrección programado. Fecha programada: ${fechaProgramada}. Día informó la fecha prevista para retirar la prenda de SAKI y gestionar la rectificación solicitada.`;
+}
+
   if (item?.tipo_evento === "retiro_correccion" && detalle) {
     const fechaRetiro = detalle?.fecha_retiro_correccion
       ? formatDate(detalle.fecha_retiro_correccion)
