@@ -7124,6 +7124,165 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
   </div>
 )}
 
+{showRetomarGestion && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(2, 8, 18, 0.62)",
+      backdropFilter: "blur(7px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10000,
+      padding: "24px",
+    }}
+    onClick={() => {
+      setShowRetomarGestion(false);
+      setFechaRetomarGestion("");
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "min(540px, 100%)",
+        borderRadius: "22px",
+        background:
+          "linear-gradient(180deg, rgba(18,52,91,0.98) 0%, rgba(10,31,58,0.98) 100%)",
+        border: "1px solid rgba(148,163,184,0.16)",
+        boxShadow: "0 34px 90px rgba(0,0,0,0.44)",
+        padding: "24px",
+      }}
+    >
+      <div style={{ marginBottom: "20px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#8fb9e8",
+            fontWeight: 800,
+            marginBottom: "7px",
+          }}
+        >
+          Estado pendiente
+        </div>
+
+        <h3
+          style={{
+            margin: 0,
+            color: "#ffffff",
+            fontSize: "24px",
+            fontWeight: 750,
+            letterSpacing: "-0.03em",
+          }}
+        >
+          Retomar gestión
+        </h3>
+
+        <p
+          style={{
+            margin: "10px 0 0",
+            color: "rgba(214,228,245,0.78)",
+            fontSize: "13px",
+            lineHeight: 1.5,
+          }}
+        >
+          Confirmá la fecha en la que SAKI retoma la gestión del trámite.
+          Al guardar, la prenda pasará nuevamente a estado En curso.
+        </p>
+      </div>
+
+      <div
+        style={{
+          borderRadius: "18px",
+          border: "1px solid rgba(148,163,184,0.14)",
+          background: "rgba(3,18,34,0.48)",
+          padding: "16px",
+          marginBottom: "18px",
+        }}
+      >
+        <label
+          style={{
+            display: "block",
+            fontSize: "11px",
+            fontWeight: 800,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#90a7c7",
+            marginBottom: "10px",
+          }}
+        >
+          Fecha de retoma de gestión
+        </label>
+
+        <input
+          type="date"
+          value={fechaRetomarGestion}
+          onChange={(e) => setFechaRetomarGestion(e.target.value)}
+          style={{
+            width: "100%",
+            height: "48px",
+            borderRadius: "14px",
+            border: "1px solid rgba(148, 163, 184, 0.18)",
+            background: "rgba(3, 11, 24, 0.72)",
+            color: "#f8fbff",
+            padding: "0 14px",
+            fontSize: "14px",
+            outline: "none",
+            boxSizing: "border-box",
+            colorScheme: "dark",
+          }}
+        />
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+        <button
+          type="button"
+          onClick={() => {
+            setShowRetomarGestion(false);
+            setFechaRetomarGestion("");
+          }}
+          style={{
+            height: "42px",
+            padding: "0 15px",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.18)",
+            background: "rgba(255,255,255,0.03)",
+            color: "#dbeafe",
+            fontSize: "13px",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          onClick={handleGuardarRetomarGestion}
+          disabled={savingRetomarGestion}
+          style={{
+            height: "42px",
+            padding: "0 17px",
+            borderRadius: "12px",
+            border: "none",
+            background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
+            color: "#ffffff",
+            fontSize: "13px",
+            fontWeight: 800,
+            cursor: savingRetomarGestion ? "not-allowed" : "pointer",
+            opacity: savingRetomarGestion ? 0.72 : 1,
+            boxShadow: "0 12px 24px rgba(37,99,235,0.24)",
+          }}
+        >
+          {savingRetomarGestion ? "Guardando..." : "Retomar gestión"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 {showPresentacionRegistro && (
   <div
     style={{
