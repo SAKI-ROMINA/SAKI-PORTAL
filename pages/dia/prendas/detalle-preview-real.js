@@ -2738,7 +2738,7 @@ await enviarNotificacionPrendaEstado({
   row: {
     ...row,
     estado: "En curso",
-    fecha_pase_en_curso: fechaAprobacionRevision,
+    fecha_pase_en_curso: fechaPaseEnCurso,
   },
   asunto: "SAKI | Prenda en curso",
   titulo: "Prenda en curso",
@@ -2747,7 +2747,7 @@ await enviarNotificacionPrendaEstado({
   estadoNuevo: "En curso",
   detalleHtml: `
     <p style="margin: 16px 0 8px 0;"><strong>Fecha de pase a En curso:</strong> ${
-      fechaAprobacionRevision || "-"
+      fechaPaseEnCurso || "-"
     }</p>
   `,
 });
@@ -2895,6 +2895,32 @@ async function handleGuardarSolicitarRectificacion() {
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
+
+await enviarNotificacionPrendaEstado({
+  prendaId: id,
+  row: {
+    ...row,
+    estado: "Rectificación solicitada",
+  },
+  asunto: "SAKI | Rectificación solicitada",
+  titulo: "Rectificación solicitada",
+  descripcion:
+    "SAKI solicitó una rectificación sobre la prenda antes de continuar el trámite.",
+  estadoNuevo: "Rectificación solicitada",
+  detalleHtml: `
+    <p style="margin: 16px 0 8px 0;"><strong>Tipo de rectificación:</strong> ${
+      rectificacionTipo || "-"
+    }</p>
+    <p style="margin: 0 0 8px 0;"><strong>Motivo:</strong> ${
+      rectificacionMotivo || "-"
+    }</p>
+    ${
+      rectificacionNota
+        ? `<p style="margin: 0 0 8px 0;"><strong>Indicación para Día:</strong> ${rectificacionNota}</p>`
+        : ""
+    }
+  `,
+});
 
     setRow((prev) => ({
       ...prev,
