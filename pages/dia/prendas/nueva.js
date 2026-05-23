@@ -104,7 +104,7 @@ const destinatariosPrincipales = emailsUnicosPrenda([
       },
       body: JSON.stringify({
         to: destinatariosPrincipales.join(","),
-        cc: "",
+        cc: payload?.cc_email || "",
         subject: "SAKI | Nueva prenda cargada",
         html: `
           <div style="font-family: Arial, sans-serif; font-size: 14px; color: #111; line-height: 1.5;">
@@ -189,6 +189,7 @@ const [tipoCarga, setTipoCarga] = useState("nueva");
   titular_nombre: "",
   titular_cuit: "",
   fecha_envio_oficina: "",
+  cc_email: "",
 });
 
   const todayStr = useMemo(() => getTodayLocalDateString(), []);
@@ -282,6 +283,7 @@ const frqNombre = form.frq_nombre.trim();
 const frqCuit = onlyDigits(form.frq_cuit);
 const fechaOperacion = form.fecha_envio_oficina;
 const esCargaHistorica = isAdmin && tipoCarga === "historica";
+const ccEmailLimpio = emailsUnicosPrenda([form.cc_email]).join(",");
 
 const camposFaltantes = [];
 
@@ -307,6 +309,16 @@ if (frqCuit.length !== 11) {
 if (!esCargaHistorica && fechaOperacion < todayStr) {
   setErrorMsg("La Fecha de envío no puede ser anterior al día de hoy.");
   return;
+}
+
+if (!esCargaHistorica && !ccEmailLimpio) {
+  const continuarSinCopia = window.confirm(
+    "No agregaste destinatarios en copia.\n\nEl sector Créditos y Cobranzas recibirá las notificaciones automáticamente.\n\n¿Querés continuar sin agregar destinatarios en copia?"
+  );
+
+  if (!continuarSinCopia) {
+    return;
+  }
 }
 
     const titularApellido = form.titular_apellido.trim();
@@ -351,6 +363,8 @@ if (hayTitularCuit && titularCuit.length !== 11) {
   frq_cuit: frqCuit || null,
   titular_dominio: cleanUpper(titularCompuesto),
   titular_cuit: titularCuit || null,
+
+  cc_email: ccEmailLimpio || null,
 
   fecha_envio_oficina: fechaOperacion || null,
   fecha_retiro_final_real: null,
@@ -616,7 +630,41 @@ router.push("/dia/prendas");
   : "No permite elegir una fecha anterior a hoy."}
   </span>
 </div>
+<div style={groupSectionStyle}>
+  <label style={labelStyle}>¿Querés agregar destinatarios en copia?</label>
 
+  <div
+    style={{
+      ...sectionSubtitleStyle,
+      maxWidth: "820px",
+    }}
+  >
+    El sector Créditos y Cobranzas recibirá las notificaciones automáticamente.
+    Si necesitás sumar destinatarios adicionales, agregá sus correos en este campo.
+    <br />
+    <strong style={{ color: "#dbeafe" }}>Importante:</strong>{" "}
+    los destinatarios en copia recibirán las notificaciones futuras vinculadas a este legajo.
+  </div>
+
+  <textarea
+    value={form.cc_email}
+    onChange={(e) => setField("cc_email", e.target.value)}
+    placeholder="Ej.: nombre@empresa.com otro@empresa.com"
+    style={{
+      ...inputStyle,
+      height: "auto",
+      minHeight: "92px",
+      padding: "14px 18px",
+      resize: "vertical",
+      lineHeight: 1.45,
+      fontFamily: "inherit",
+    }}
+  />
+
+  <span style={helperTextStyle}>
+    Podés agregar uno o varios destinatarios.
+  </span>
+</div>
             <div style={footerBarStyle}>
               <div style={footerTextStyle}>
                 Alta inicial · luego continúa en el listado y detalle de la prenda
