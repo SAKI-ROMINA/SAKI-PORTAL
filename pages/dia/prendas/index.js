@@ -321,8 +321,15 @@ const matchesObservadasGrupo =
     ? summary === "Observada" || summary === "Rectificación solicitada"
     : false;
 
+const matchesEnCursoGrupo =
+  q === "en curso" || q === "en proceso"
+    ? summary === "En curso" ||
+      summary === "Pendiente" ||
+      summary === "Rectificación solicitada"
+    : false;
+
 const matchesSearch = q || qDigits
-  ? matchesText || matchesDigits || matchesObservadasGrupo
+  ? matchesText || matchesDigits || matchesObservadasGrupo || matchesEnCursoGrupo
   : true;
 
     const matchesDesde = fechaDesde ? fechaBase >= fechaDesde : true;
@@ -356,7 +363,12 @@ const noSearchResults =
 
 const totalEnCurso = rows.filter((row) => {
   const summary = getStatusSummary(row.estado);
-  return summary === "En curso";
+
+  return (
+    summary === "En curso" ||
+    summary === "Pendiente" ||
+    summary === "Rectificación solicitada"
+  );
 }).length;
 
 const totalObservadas = rows.filter((row) => {
