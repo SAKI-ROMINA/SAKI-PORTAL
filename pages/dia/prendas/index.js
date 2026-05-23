@@ -324,8 +324,7 @@ const matchesObservadasGrupo =
 const matchesEnCursoGrupo =
   q === "en curso" || q === "en proceso"
     ? summary === "En curso" ||
-      summary === "Pendiente" ||
-      summary === "Rectificación solicitada"
+      summary === "Pendiente"
     : false;
 
 const matchesSearch = q || qDigits
@@ -366,8 +365,7 @@ const totalEnCurso = rows.filter((row) => {
 
   return (
     summary === "En curso" ||
-    summary === "Pendiente" ||
-    summary === "Rectificación solicitada"
+    summary === "Pendiente"
   );
 }).length;
 
