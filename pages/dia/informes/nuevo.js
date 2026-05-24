@@ -895,62 +895,6 @@ const dominioPlaceholder = esAnotaciones
   )}
 </div>
 
-<div
-  style={{
-    marginTop: "18px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    padding: "18px",
-    borderRadius: "18px",
-    border: "1px solid rgba(148, 163, 184, 0.14)",
-    background: "rgba(3, 18, 34, 0.38)",
-  }}
->
-  <label style={labelStyle}>
-    ¿Querés agregar destinatarios en copia?
-  </label>
-
-  <div
-    style={{
-      ...sectionTextStyle,
-      maxWidth: "820px",
-      margin: 0,
-    }}
-  >
-    El sector responsable recibirá las notificaciones automáticamente.
-    Si necesitás sumar destinatarios adicionales, agregá sus correos en este campo.
-    <br />
-    <strong style={{ color: "#dbeafe" }}>Importante:</strong>{" "}
-    los destinatarios en copia recibirán las notificaciones futuras vinculadas a este legajo.
-  </div>
-
-  <textarea
-    value={form.cc_email}
-    onChange={handleChange("cc_email")}
-    placeholder="Ej.: nombre@empresa.com otro@empresa.com"
-    style={{
-      ...inputStyle,
-      height: "auto",
-      minHeight: "92px",
-      padding: "14px 18px",
-      resize: "vertical",
-      lineHeight: 1.45,
-      fontFamily: "inherit",
-      textTransform: "none",
-    }}
-  />
-
-  <span
-    style={{
-      color: "#8da0be",
-      fontSize: "13px",
-    }}
-  >
-    Podés agregar uno o varios destinatarios.
-  </span>
-</div>
-
       {isAdmin &&
   (tipoInforme === "informe_dominio" ||
     tipoInforme === "certificado_dominio") &&
@@ -1202,6 +1146,61 @@ const dominioPlaceholder = esAnotaciones
           </div>
         </>
       )}
+<div
+  style={{
+    marginTop: "18px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    padding: "18px",
+    borderRadius: "18px",
+    border: "1px solid rgba(148, 163, 184, 0.14)",
+    background: "rgba(3, 18, 34, 0.38)",
+  }}
+>
+  <label style={labelStyle}>
+    ¿Querés agregar destinatarios en copia?
+  </label>
+
+  <div
+    style={{
+      ...sectionTextStyle,
+      maxWidth: "820px",
+      margin: 0,
+    }}
+  >
+    El sector responsable recibirá las notificaciones automáticamente.
+    Si necesitás sumar destinatarios adicionales, agregá sus correos en este campo.
+    <br />
+    <strong style={{ color: "#dbeafe" }}>Importante:</strong>{" "}
+    los destinatarios en copia recibirán las notificaciones futuras vinculadas a este legajo.
+  </div>
+
+  <textarea
+    value={form.cc_email}
+    onChange={handleChange("cc_email")}
+    placeholder="Ej.: nombre@empresa.com otro@empresa.com"
+    style={{
+      ...inputStyle,
+      height: "auto",
+      minHeight: "92px",
+      padding: "14px 18px",
+      resize: "vertical",
+      lineHeight: 1.45,
+      fontFamily: "inherit",
+      textTransform: "none",
+    }}
+  />
+
+  <span
+    style={{
+      color: "#8da0be",
+      fontSize: "13px",
+    }}
+  >
+    Podés agregar uno o varios destinatarios.
+  </span>
+</div>
 
 {error && (
   <div style={errorNoticeStyle}>
