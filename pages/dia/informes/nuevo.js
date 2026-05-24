@@ -867,7 +867,7 @@ const dominioPlaceholder = esAnotaciones
   </div>
 )}
 
-<div style={gridThreeStyle}>
+<div style={muestraBloqueExtra ? gridTwoStyle : gridThreeStyle}>
   <Field
     label="Tienda *"
     placeholder="Ejemplo: 10020"
@@ -884,13 +884,15 @@ const dominioPlaceholder = esAnotaciones
     onChange={handleChange("franquiciado")}
   />
 
-  <Field
-    label={dominioLabel}
-    placeholder={dominioPlaceholder}
-    icon={<Car size={18} />}
-    value={form.dominio}
-    onChange={handleDominioChange}
-  />
+  {!muestraBloqueExtra && (
+    <Field
+      label={dominioLabel}
+      placeholder={dominioPlaceholder}
+      icon={<Car size={18} />}
+      value={form.dominio}
+      onChange={handleDominioChange}
+    />
+  )}
 </div>
 
 <div
