@@ -688,6 +688,29 @@ router.push("/dia/prendas");
                 </button>
               </div>
             </div>
+            <div style={pedidoHelpBoxStyle}>
+  <div>
+    <div style={pedidoHelpTitleStyle}>Ayuda SAKI</div>
+
+    <div style={pedidoHelpTextStyle}>
+      ¿Necesitás asistencia sobre la carga de esta prenda? Podés contactar al
+      equipo SAKI por WhatsApp para consultas operativas rápidas.
+    </div>
+
+    <div style={pedidoHelpDisclaimerStyle}>
+      Las definiciones formales deben quedar registradas en el legajo.
+    </div>
+  </div>
+
+  <a
+    href="https://wa.me/5491157714212?text=Hola%20SAKI%2C%20necesito%20asistencia%20con%20la%20carga%20de%20una%20prenda%20en%20el%20Portal%20D%C3%ADa."
+    target="_blank"
+    rel="noreferrer"
+    style={pedidoWhatsappButtonStyle}
+  >
+    WhatsApp SAKI
+  </a>
+</div>
           </form>
         </div>
       </div>
@@ -938,6 +961,51 @@ const secondaryButtonStyle = {
   color: "#dbeafe",
   background: "rgba(59,130,246,0.10)",
   border: "1px solid rgba(59,130,246,0.18)",
+};
+
+const pedidoHelpBoxStyle = {
+  marginTop: "18px",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: "18px",
+  padding: "16px 18px",
+  borderRadius: "16px",
+  border: "1px solid rgba(34,197,94,0.18)",
+  background:
+    "linear-gradient(180deg, rgba(22,101,52,0.14), rgba(7,30,55,0.42))",
+};
+
+const pedidoHelpTitleStyle = {
+  fontSize: "13px",
+  fontWeight: 700,
+  color: "#bbf7d0",
+  marginBottom: "5px",
+};
+
+const pedidoHelpTextStyle = {
+  fontSize: "13px",
+  lineHeight: 1.45,
+  color: "rgba(226,237,249,0.9)",
+  maxWidth: "560px",
+};
+
+const pedidoHelpDisclaimerStyle = {
+  marginTop: "7px",
+  fontSize: "11px",
+  color: "rgba(187,247,208,0.72)",
+};
+
+const pedidoWhatsappButtonStyle = {
+  flexShrink: 0,
+  textDecoration: "none",
+  borderRadius: "10px",
+  padding: "11px 14px",
+  background: "linear-gradient(180deg, #22c55e, #16a34a)",
+  color: "#ffffff",
+  fontSize: "13px",
+  fontWeight: 700,
+  boxShadow: "0 14px 28px rgba(22,163,74,0.20)",
 };
 
 const errorBoxStyle = {
