@@ -309,8 +309,13 @@ const obtenerAliasesSectorInforme = (sector) => {
   }
 
   if (texto.includes("jurid")) {
-    return ["Asuntos Jurídicos", "Asuntos Juridicos"];
-  }
+  return [
+    "Asuntos Jurídicos",
+    "Asuntos Juridicos",
+    "asuntos juridicos",
+    "asuntos jurídicos",
+  ];
+}
 
   return sector ? [sector] : [];
 };
