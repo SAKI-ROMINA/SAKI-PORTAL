@@ -1421,96 +1421,6 @@ async function handleCompartirLegajo() {
   }
 }
 
-async function handleCambiarEstadoInforme({
-  nuevoStatus,
-  nuevoResult,
-  tipoEvento,
-  tituloHistorial,
-  detalleHistorial = {},
-  extraPayload = {},
-}) {
-  if (!id || !isAdmin || savingEstadoInforme) return;
-
-  try {
-    setSavingEstadoInforme(true);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    const payload = {
-      status: nuevoStatus,
-      datos_legajo_actualizado_en: new Date().toISOString(),
-      ...extraPayload,
-    };
-
-    if (nuevoResult !== undefined) {
-      payload.result = nuevoResult;
-    }
-
-    const { data, error } = await supabase
-      .from("dia_requests")
-      .update(payload)
-      .eq("id", id)
-      .select("*")
-      .single();
-
-    if (error) throw error;
-
-    const { data: createdHistory, error: historyError } = await supabase
-      .from("dia_requests_history")
-      .insert({
-        request_id: id,
-        tipo_evento: tipoEvento,
-        titulo: tituloHistorial,
-        detalle: {
-          status: nuevoStatus,
-          result: nuevoResult || null,
-          ...detalleHistorial,
-        },
-        created_by_name: user?.user_metadata?.full_name || null,
-        created_by_email: user?.email || null,
-        created_at: new Date().toISOString(),
-      })
-      .select("*")
-      .single();
-
-    if (historyError) throw historyError;
-
-    setRow((prev) => ({
-  ...prev,
-  ...(data || {}),
-  status: nuevoStatus,
-  result: nuevoResult,
-  datos_legajo_actualizado_en:
-    data?.datos_legajo_actualizado_en ||
-    payload?.datos_legajo_actualizado_en ||
-    prev?.datos_legajo_actualizado_en,
-}));
-
-    if (createdHistory) {
-      setHistoryRows((prev) => [createdHistory, ...prev]);
-    }
-  } catch (error) {
-    console.error("Error cambiando estado del informe:", error);
-    alert(error?.message || "No se pudo cambiar el estado del informe.");
-  } finally {
-    setSavingEstadoInforme(false);
-  }
-}
-
-async function handleTomarGestionInforme() {
-  await handleCambiarEstadoInforme({
-    nuevoStatus: "EN CURSO",
-    nuevoResult: "PENDIENTE",
-    tipoEvento: "informe_en_curso",
-    tituloHistorial: "Informe en gestión",
-    detalleHistorial: {
-      accion: "SAKI tomó intervención y el informe pasó a estar en gestión.",
-    },
-  });
-}
-
 function handleOpenObservacionInformeModal() {
   setObservacionInformeMsg("");
   setObservacionesForm([createEmptyInformeObservacion()]);
@@ -1743,77 +1653,6 @@ async function handleGuardarObservacionInforme() {
   }
 }
 
-async function handleEntregarInformeAprobado() {
-  const confirmar = window.confirm(
-    "¿Confirmás que el informe fue entregado sin observaciones?"
-  );
-
-  if (!confirmar) return;
-
-  await handleCambiarEstadoInforme({
-    nuevoStatus: "ENTREGADO",
-    nuevoResult: "APROBADO",
-    tipoEvento: "informe_entregado",
-    tituloHistorial: "Informe entregado",
-    detalleHistorial: {
-      resultado: "APROBADO",
-      accion: "El informe fue entregado sin observaciones.",
-    },
-    extraPayload: {
-      observed_status: null,
-      observed_date: null,
-      observed_amount: null,
-      observed_other: null,
-    },
-  });
-}
-
-async function handleEntregarInformeObservado() {
-  const detalle = window.prompt(
-    "Detalle de la observación del informe:"
-  );
-
-  if (detalle === null) return;
-
-  const monto = window.prompt(
-    "Monto observado, si corresponde. Si no corresponde, dejalo vacío:"
-  );
-
-  await handleCambiarEstadoInforme({
-    nuevoStatus: "ENTREGADO",
-    nuevoResult: "OBSERVADO",
-    tipoEvento: "informe_observado",
-    tituloHistorial: "Informe observado",
-    detalleHistorial: {
-      resultado: "OBSERVADO",
-      observacion: detalle || "Sin detalle adicional cargado.",
-      monto_observado: monto || null,
-    },
-    extraPayload: {
-      observed_status: "OBSERVADO",
-      observed_date: new Date().toISOString(),
-      observed_amount: monto || null,
-      observed_other: detalle || null,
-    },
-  });
-}
-
-async function handleAnularInforme() {
-  const motivo = window.prompt("Motivo de anulación del informe:");
-
-  if (!motivo) return;
-
-  await handleCambiarEstadoInforme({
-    nuevoStatus: "ANULADO",
-    nuevoResult: undefined,
-    tipoEvento: "informe_anulado",
-    tituloHistorial: "Informe anulado",
-    detalleHistorial: {
-      motivo,
-    },
-  });
-}
-
 function normalizarEmailInforme(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -2038,10 +1877,13 @@ async function handleCambiarEstadoInforme({
 
     const payload = {
   status: nuevoStatus,
-  result: nuevoResult ?? null,
   datos_legajo_actualizado_en: new Date().toISOString(),
   ...extraPayload,
 };
+
+if (nuevoResult !== undefined) {
+  payload.result = nuevoResult;
+}
 
     const { data, error } = await supabase
       .from("dia_requests")
