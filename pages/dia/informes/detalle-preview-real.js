@@ -1477,7 +1477,16 @@ async function handleCambiarEstadoInforme({
 
     if (historyError) throw historyError;
 
-    setRow(data);
+    setRow((prev) => ({
+  ...prev,
+  ...(data || {}),
+  status: nuevoStatus,
+  result: nuevoResult,
+  datos_legajo_actualizado_en:
+    data?.datos_legajo_actualizado_en ||
+    payload?.datos_legajo_actualizado_en ||
+    prev?.datos_legajo_actualizado_en,
+}));
 
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
