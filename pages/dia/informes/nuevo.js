@@ -301,12 +301,32 @@ const obtenerAliasesSectorInforme = (sector) => {
     .replace(/[\u0300-\u036f]/g, "");
 
   if (texto.includes("franqu")) {
-    return ["Franquicias", "Administración Franquicias", "Administracion Franquicias"];
-  }
+  return [
+    "Franquicias",
+    "franquicias",
+    "Administración Franquicias",
+    "Administracion Franquicias",
+    "administración franquicias",
+    "administracion franquicias",
+  ];
+}
+
+if (texto.includes("prueba")) {
+  return [
+    "prueba interna",
+    "Prueba interna",
+    "Prueba Interna",
+  ];
+}
 
   if (texto.includes("credito") || texto.includes("cobranza")) {
-    return ["Créditos y Cobranzas", "Creditos y Cobranzas"];
-  }
+  return [
+    "Créditos y Cobranzas",
+    "Creditos y Cobranzas",
+    "créditos y cobranzas",
+    "creditos y cobranzas",
+  ];
+}
 
   if (texto.includes("jurid")) {
   return [
