@@ -1689,6 +1689,10 @@ function obtenerAliasesSectorInforme(sector) {
   ];
 }
 
+if (texto.includes("prueba")) {
+  return ["prueba interna", "Prueba interna", "Prueba Interna"];
+}
+
   if (texto.includes("credito") || texto.includes("cobranza")) {
   return [
     "Créditos y Cobranzas",
