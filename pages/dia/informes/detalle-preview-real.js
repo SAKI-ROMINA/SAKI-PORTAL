@@ -2037,14 +2037,11 @@ async function handleCambiarEstadoInforme({
     } = await supabase.auth.getUser();
 
     const payload = {
-      status: nuevoStatus,
-      datos_legajo_actualizado_en: new Date().toISOString(),
-      ...extraPayload,
-    };
-
-    if (nuevoResult !== undefined) {
-      payload.result = nuevoResult;
-    }
+  status: nuevoStatus,
+  result: nuevoResult ?? null,
+  datos_legajo_actualizado_en: new Date().toISOString(),
+  ...extraPayload,
+};
 
     const { data, error } = await supabase
       .from("dia_requests")
