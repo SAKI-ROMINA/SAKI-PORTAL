@@ -410,6 +410,149 @@ function handleQuitarItemLiquidacion(item) {
   }
 }
 
+async function handleGuardarLiquidacion() {
+  if (savingLiquidacion) return;
+
+  const itemsConConceptos = items
+    .map((item, itemIndex) => {
+      const key = getItemKey(item);
+
+      const conceptos = (conceptosPorItem[key] || []).filter(
+        (concepto) =>
+          concepto.concepto &&
+          String(concepto.concepto).trim() &&
+          parseImporte(concepto.importe) > 0
+      );
+
+      const subtotal = conceptos.reduce(
+        (total, concepto) => total + parseImporte(concepto.importe),
+        0
+      );
+
+      return {
+        item,
+        itemIndex,
+        conceptos,
+        subtotal,
+      };
+    })
+    .filter((row) => row.conceptos.length > 0);
+
+  if (itemsConConceptos.length === 0) {
+    alert("Cargá al menos un concepto con importe para guardar la liquidación.");
+    return;
+  }
+
+  if (!desde || !hasta) {
+    alert("Seleccioná período desde y hasta.");
+    return;
+  }
+
+  try {
+    setSavingLiquidacion(true);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id || null;
+
+    const totalAGuardar = itemsConConceptos.reduce(
+      (total, row) => total + row.subtotal,
+      0
+    );
+
+    const { data: liquidacion, error: liquidacionError } = await supabase
+      .from("dia_liquidaciones")
+      .insert({
+        periodo_desde: desde,
+        periodo_hasta: hasta,
+        fecha_emision: new Date().toISOString().slice(0, 10),
+        titulo: "Detalle de trabajos realizados - Día Argentina",
+        estado: "BORRADOR",
+        total_general: totalAGuardar,
+        created_by: userId,
+        updated_by: userId,
+      })
+      .select("id")
+      .single();
+
+    if (liquidacionError) {
+      console.error("Error al crear liquidación:", liquidacionError);
+      alert(`No se pudo crear la liquidación: ${liquidacionError.message}`);
+      return;
+    }
+
+    const itemsPayload = itemsConConceptos.map((row, index) => ({
+      liquidacion_id: liquidacion.id,
+      origen: row.item.origen_interno || "informe",
+      origen_id: row.item.origen_id || null,
+      fecha_pedido: row.item.fecha_pedido || null,
+      fecha_entrega: row.item.fecha_entrega || null,
+      tienda: row.item.tienda || "",
+      dominio: row.item.dominio || "",
+      sector: row.item.sector || "",
+      analista: row.item.analista || "",
+      frq: row.item.frq || "",
+      garante: row.item.garante || "",
+      tramite: row.item.tramite || "",
+      subtotal: row.subtotal,
+      orden: index,
+      created_by: userId,
+      updated_by: userId,
+    }));
+
+    const { data: itemsInsertados, error: itemsError } = await supabase
+      .from("dia_liquidaciones_items")
+      .insert(itemsPayload)
+      .select("id, orden");
+
+    if (itemsError) {
+      console.error("Error al guardar ítems:", itemsError);
+      alert(`No se pudieron guardar los dominios: ${itemsError.message}`);
+      return;
+    }
+
+    const conceptosPayload = [];
+
+    itemsConConceptos.forEach((row, rowIndex) => {
+      const itemInsertado = itemsInsertados.find(
+        (insertado) => insertado.orden === rowIndex
+      );
+
+      if (!itemInsertado?.id) return;
+
+      row.conceptos.forEach((concepto, conceptoIndex) => {
+        conceptosPayload.push({
+          item_id: itemInsertado.id,
+          concepto: concepto.concepto,
+          importe: parseImporte(concepto.importe),
+          orden: conceptoIndex,
+          created_by: userId,
+          updated_by: userId,
+        });
+      });
+    });
+
+    if (conceptosPayload.length > 0) {
+      const { error: conceptosError } = await supabase
+        .from("dia_liquidaciones_conceptos")
+        .insert(conceptosPayload);
+
+      if (conceptosError) {
+        console.error("Error al guardar conceptos:", conceptosError);
+        alert(`No se pudieron guardar los conceptos: ${conceptosError.message}`);
+        return;
+      }
+    }
+
+    setLiquidacionGuardadaId(liquidacion.id);
+    alert("Liquidación guardada correctamente.");
+  } catch (err) {
+    console.error("Error inesperado al guardar liquidación:", err);
+    alert("Ocurrió un error inesperado al guardar la liquidación.");
+  } finally {
+    setSavingLiquidacion(false);
+  }
+}
+
   const resumen = useMemo(() => {
     return {
       total: items.length,
