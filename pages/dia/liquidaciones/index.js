@@ -377,7 +377,7 @@ function handleToggleItem(item) {
               <h2>Trabajos entregados</h2>
               <p>
                 Vista tipo planilla: tienda, dominio, sector, analista, FRQ,
-                garante y trámite. No se muestra módulo en impresión.
+                y trámite. No se muestra módulo en impresión.
               </p>
             </div>
           </div>
@@ -420,12 +420,7 @@ function handleToggleItem(item) {
                       <span>FRQ</span>
                       <strong>{item.frq || "SIN INFORMAR"}</strong>
                     </div>
-
-                    <div>
-                      <span>GARANTE</span>
-                      <strong>{item.garante || "SIN INFORMAR"}</strong>
-                    </div>
-
+                    
                     <div>
                       <span>TRÁMITE</span>
                       <strong>{formatTramite(item.tramite)}</strong>
@@ -778,12 +773,12 @@ const styles = `
     padding: 16px;
   }
 
-  .itemMainLine {
-    display: grid;
-    grid-template-columns: 0.7fr 0.9fr 1.2fr 1.3fr 1.3fr 1.5fr 1.5fr;
-    gap: 12px;
-    align-items: start;
-  }
+.itemMainLine {
+  display: grid;
+  grid-template-columns: 0.7fr 0.9fr 1.2fr 1.3fr 1.3fr 1.5fr;
+  gap: 12px;
+  align-items: start;
+}
 
   .itemMainLine strong {
     color: rgba(241, 245, 249, 0.94);
