@@ -732,6 +732,16 @@ if (checkingSession) {
               href="/dia/prendas"
               action="Entrar a prendas"
             />
+
+            {isAdmin && (
+  <ModuleCard
+    icon={<FileText size={30} />}
+    title="Liquidaciones"
+    description="Armado, edición e impresión del detalle mensual de trabajos entregados para facturación."
+    href="/dia/liquidaciones"
+    action="Entrar a liquidaciones"
+  />
+)}
           </section>
 
           <section style={dashboardGridStyle}>
