@@ -1262,20 +1262,26 @@ async function handleGuardarLiquidacion() {
                         ))}
                       </select>
 
-                      <input
-                        className="conceptoImporte"
-                        inputMode="decimal"
-                        value={concepto.importe}
-                        onChange={(event) =>
-                          handleCambiarConcepto(
-                            item,
-                            index,
-                            "importe",
-                            event.currentTarget.value
-                          )
-                        }
-                        placeholder="Importe"
-                      />
+                      <div className="importeConceptoWrap">
+  <input
+    className="conceptoImporte"
+    inputMode="decimal"
+    value={concepto.importe}
+    onChange={(event) =>
+      handleCambiarConcepto(
+        item,
+        index,
+        "importe",
+        event.currentTarget.value
+      )
+    }
+    placeholder="Importe"
+  />
+
+  <span className="conceptoImportePrint">
+    {formatMoney(parseImporte(concepto.importe))}
+  </span>
+</div>
 
                       <button
                         type="button"
@@ -1912,6 +1918,14 @@ const styles = `
     }
   }
 
+  .importeConceptoWrap {
+  width: 100%;
+}
+
+.conceptoImportePrint {
+  display: none;
+}
+
   @media print {
     .page {
       background: #ffffff !important;
@@ -2029,17 +2043,29 @@ const styles = `
       margin-bottom: 4px !important;
     }
 
-    .conceptoRow select,
-    .conceptoRow input {
-      border: none !important;
-      background: transparent !important;
-      color: #111827 !important;
-      min-height: auto !important;
-      padding: 0 !important;
-      font-size: 10px !important;
-      font-weight: 500 !important;
-      appearance: none !important;
-    }
+.conceptoRow select {
+  border: none !important;
+  background: transparent !important;
+  color: #111827 !important;
+  min-height: auto !important;
+  padding: 0 !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  appearance: none !important;
+}
+
+.conceptoRow input {
+  display: none !important;
+}
+
+.conceptoImportePrint {
+  display: block !important;
+  color: #111827 !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+}
 
     .conceptoImporte {
       text-align: right !important;
