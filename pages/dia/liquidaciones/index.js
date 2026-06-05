@@ -1058,18 +1058,24 @@ const styles = `
 
 .itemMainLine {
   display: grid;
-  grid-template-columns: 0.7fr 0.9fr 1.2fr 1.3fr 1.3fr 1.5fr;
-  gap: 12px;
+  grid-template-columns: 115px 120px 170px 185px minmax(230px, 1fr) 210px;
+  gap: 14px;
   align-items: start;
 }
 
-  .itemMainLine strong {
-    color: rgba(241, 245, 249, 0.94);
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.3;
-    text-transform: uppercase;
-  }
+  .itemMainLine > div {
+  min-width: 0;
+}
+
+.itemMainLine strong {
+  display: block;
+  color: rgba(241, 245, 249, 0.94);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
 
   .itemMeta {
     margin-top: 14px;
