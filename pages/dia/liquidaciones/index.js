@@ -809,7 +809,7 @@ async function handleGuardarLiquidacion() {
             <h1>Acceso restringido</h1>
             <p>Este módulo está disponible únicamente para usuarios administradores.</p>
 
-            <Link href="/dia/workspace" className="secondaryButton">
+            <Link href="/dia" className="secondaryButton">
               Volver al Workspace
             </Link>
           </div>
@@ -829,7 +829,7 @@ async function handleGuardarLiquidacion() {
             <div className="brandSub">Liquidaciones Día</div>
           </div>
 
-          <Link href="/dia/workspace" className="backLink">
+          <Link href="/dia" className="backLink">
             Volver al Workspace
           </Link>
         </header>
