@@ -400,22 +400,7 @@ function handleToggleItem(item) {
                       <span>TIENDA</span>
                       <strong>{item.tienda || "SIN INFORMAR"}</strong>
                     </div>
-
-                    <div className="itemToggleLine">
-  <button
-    type="button"
-    className="toggleItemButton"
-    onClick={() => handleToggleItem(item)}
-  >
-    {itemEstaAbierto(item) ? "Ocultar conceptos" : "Ver conceptos"}
-  </button>
-
-  <div className="subtotalPreview">
-    <span>Subtotal dominio</span>
-    <strong>{formatMoney(getSubtotalItem(item))}</strong>
-  </div>
-</div>
-
+                    
                     <div>
                       <span>DOMINIO</span>
                       <strong>{item.dominio || "SIN DOMINIO"}</strong>
@@ -446,6 +431,21 @@ function handleToggleItem(item) {
                       <strong>{formatTramite(item.tramite)}</strong>
                     </div>
                   </div>
+
+                  <div className="itemToggleLine">
+  <button
+    type="button"
+    className="toggleItemButton"
+    onClick={() => handleToggleItem(item)}
+  >
+    {itemEstaAbierto(item) ? "Ocultar conceptos" : "Ver conceptos"}
+  </button>
+
+  <div className="subtotalPreview">
+    <span>Subtotal dominio</span>
+    <strong>{formatMoney(getSubtotalItem(item))}</strong>
+  </div>
+</div>
 
                   <div className="itemMeta">
   <span>Fecha entrega: {formatFecha(item.fecha_entrega)}</span>
