@@ -435,6 +435,15 @@ function handleQuitarItemLiquidacion(item) {
   }
 }
 
+function handleImprimirLiquidacion() {
+  if (items.length === 0) {
+    alert("No hay datos para imprimir.");
+    return;
+  }
+
+  window.print();
+}
+
 async function handleAbrirLiquidacionGuardada(liquidacionId) {
   try {
     setLoading(true);
@@ -822,6 +831,15 @@ async function handleGuardarLiquidacion() {
 >
   {savingLiquidacion ? "Guardando..." : "Guardar liquidación"}
 </button>
+
+<button
+  type="button"
+  className="primaryButton printButton"
+  onClick={handleImprimirLiquidacion}
+  disabled={items.length === 0}
+>
+  Imprimir detalle
+</button>
         </section>
 
         <section className="savedBox">
@@ -886,6 +904,19 @@ async function handleGuardarLiquidacion() {
       ))}
     </div>
   )}
+</section>
+
+<section className="printHeader">
+  <div>
+    <h1>SAKI</h1>
+    <h2>Detalle mensual de trabajos realizados — Día Argentina</h2>
+    <p>
+      Período: {formatFecha(desde)} al {formatFecha(hasta)}
+    </p>
+    <p>
+      Fecha de emisión: {formatFecha(new Date().toISOString().slice(0, 10))}
+    </p>
+  </div>
 </section>
 
         <section className="tableBox">
@@ -1760,6 +1791,15 @@ const styles = `
   font-weight: 700;
 }
 
+.printButton {
+  background: linear-gradient(135deg, #1e40af, #1d4ed8);
+  box-shadow: 0 14px 28px rgba(30, 64, 175, 0.22);
+}
+
+.printHeader {
+  display: none;
+}
+
   @media (max-width: 900px) {
     .hero,
     .filtersBox,
@@ -1770,5 +1810,170 @@ const styles = `
     .summaryGrid {
       grid-template-columns: repeat(3, 1fr);
     }
+
+    @media print {
+  .page {
+    background: #ffffff !important;
+    color: #111827 !important;
+    padding: 0 !important;
+    font-family: Arial, sans-serif !important;
+  }
+
+  .shell {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .topbar,
+  .hero,
+  .filtersBox,
+  .savedBox,
+  .tableHeader,
+  .itemToggleLine,
+  .conceptosHeader button,
+  .deleteConceptoButton,
+  .totalGeneralBox span,
+  .backLink,
+  .primaryButton,
+  .smallButton,
+  .miniDangerButton {
+    display: none !important;
+  }
+
+  .printHeader {
+    display: block !important;
+    margin-bottom: 18px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 2px solid #111827 !important;
+  }
+
+  .printHeader h1 {
+    margin: 0 0 4px !important;
+    font-size: 24px !important;
+    letter-spacing: 0.18em !important;
+    color: #111827 !important;
+  }
+
+  .printHeader h2 {
+    margin: 0 0 8px !important;
+    font-size: 15px !important;
+    color: #111827 !important;
+  }
+
+  .printHeader p {
+    margin: 2px 0 !important;
+    font-size: 11px !important;
+    color: #374151 !important;
+  }
+
+  .tableBox {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .liquidacionList {
+    display: block !important;
+  }
+
+  .liquidacionItem {
+    border: 1px solid #d1d5db !important;
+    background: #ffffff !important;
+    border-radius: 0 !important;
+    padding: 10px 12px !important;
+    margin-bottom: 12px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .itemMainLine {
+    display: grid !important;
+    grid-template-columns: 70px 85px 120px 125px 1fr 140px !important;
+    gap: 8px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .itemMainLine span,
+  .savedRow span,
+  .summaryGrid span {
+    color: #374151 !important;
+    font-size: 8px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  .itemMainLine strong {
+    color: #111827 !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+  }
+
+  .conceptosBox,
+  .conceptosBox.closed {
+    display: block !important;
+    border-top: none !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .emptyConceptos {
+    display: none !important;
+  }
+
+  .conceptoRow {
+    display: grid !important;
+    grid-template-columns: 1fr 110px !important;
+    gap: 8px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .conceptoRow select,
+  .conceptoRow input {
+    border: none !important;
+    background: transparent !important;
+    color: #111827 !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    font-weight: 500 !important;
+    appearance: none !important;
+  }
+
+  .conceptoImporte {
+    text-align: right !important;
+  }
+
+  .subtotalLine {
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+    border-top: 1px solid #e5e7eb !important;
+    margin-top: 6px !important;
+    padding-top: 6px !important;
+  }
+
+  .subtotalLine span,
+  .subtotalLine strong {
+    color: #111827 !important;
+    font-size: 10px !important;
+  }
+
+  .totalGeneralBox {
+    display: flex !important;
+    justify-content: flex-end !important;
+    border-top: 2px solid #111827 !important;
+    margin-top: 16px !important;
+    padding-top: 10px !important;
+  }
+
+  .totalGeneralBox strong {
+    color: #111827 !important;
+    font-size: 15px !important;
+  }
+}
   }
 `;
