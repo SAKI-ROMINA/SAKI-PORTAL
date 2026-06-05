@@ -991,7 +991,7 @@ async function handleGuardarLiquidacion() {
 <section className="printHeader">
   <div>
     <h1>SAKI</h1>
-    <h2>Detalle mensual de trabajos realizados — Día Argentina</h2>
+    <h2>Detalle Facturacion Mensual — Día Argentina</h2>
     <p>
       Período: {formatFecha(desde)} al {formatFecha(hasta)}
     </p>
