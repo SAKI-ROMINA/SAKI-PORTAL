@@ -26,6 +26,7 @@ export default function LiquidacionesDia() {
   const [items, setItems] = useState([]);
 
   const [conceptosPorItem, setConceptosPorItem] = useState({});
+  const [itemsAbiertos, setItemsAbiertos] = useState({});
 
   useEffect(() => {
     verificarUsuario();
@@ -115,6 +116,16 @@ setConceptosPorItem((prev) => {
 
   return next;
 });
+setItemsAbiertos((prev) => {
+  const next = {};
+
+  rows.forEach((item) => {
+    const key = getItemKey(item);
+    next[key] = prev[key] || false;
+  });
+
+  return next;
+});
     } finally {
       setLoading(false);
     }
@@ -170,6 +181,11 @@ function handleAgregarConcepto(item) {
       },
     ],
   }));
+
+  setItemsAbiertos((prev) => ({
+  ...prev,
+  [key]: true,
+}));
 }
 
 function handleCambiarConcepto(item, index, field, value) {
@@ -205,6 +221,19 @@ function getSubtotalItem(item) {
   return (conceptosPorItem[key] || []).reduce((total, concepto) => {
     return total + parseImporte(concepto.importe);
   }, 0);
+}
+
+function itemEstaAbierto(item) {
+  return Boolean(itemsAbiertos[getItemKey(item)]);
+}
+
+function handleToggleItem(item) {
+  const key = getItemKey(item);
+
+  setItemsAbiertos((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }));
 }
 
   const resumen = useMemo(() => {
@@ -372,6 +401,21 @@ function getSubtotalItem(item) {
                       <strong>{item.tienda || "SIN INFORMAR"}</strong>
                     </div>
 
+                    <div className="itemToggleLine">
+  <button
+    type="button"
+    className="toggleItemButton"
+    onClick={() => handleToggleItem(item)}
+  >
+    {itemEstaAbierto(item) ? "Ocultar conceptos" : "Ver conceptos"}
+  </button>
+
+  <div className="subtotalPreview">
+    <span>Subtotal dominio</span>
+    <strong>{formatMoney(getSubtotalItem(item))}</strong>
+  </div>
+</div>
+
                     <div>
                       <span>DOMINIO</span>
                       <strong>{item.dominio || "SIN DOMINIO"}</strong>
@@ -407,7 +451,7 @@ function getSubtotalItem(item) {
   <span>Fecha entrega: {formatFecha(item.fecha_entrega)}</span>
 </div>
 
-<div className="conceptosBox">
+<div className={`conceptosBox ${itemEstaAbierto(item) ? "open" : "closed"}`}>
   <div className="conceptosHeader">
     <strong>Conceptos</strong>
 
@@ -849,6 +893,52 @@ const styles = `
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.itemToggleLine {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.toggleItemButton {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  background: rgba(30, 64, 175, 0.22);
+  color: rgba(219, 234, 254, 0.95);
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.subtotalPreview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.subtotalPreview span {
+  color: rgba(147, 197, 253, 0.72);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.subtotalPreview strong {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.conceptosBox.closed {
+  display: none;
 }
 
   @media (max-width: 900px) {
