@@ -34,6 +34,9 @@ export default function LiquidacionesDia() {
   const [savingLiquidacion, setSavingLiquidacion] = useState(false);
 const [liquidacionGuardadaId, setLiquidacionGuardadaId] = useState(null);
 
+const [liquidacionesGuardadas, setLiquidacionesGuardadas] = useState([]);
+const [loadingGuardadas, setLoadingGuardadas] = useState(false);
+
   const [conceptosPorItem, setConceptosPorItem] = useState({});
   const [itemsAbiertos, setItemsAbiertos] = useState({});
 
@@ -43,6 +46,7 @@ const [analistasOptions, setAnalistasOptions] = useState([]);
 useEffect(() => {
   verificarUsuario();
   cargarAnalistas();
+  cargarLiquidacionesGuardadas();
   setFechasMesActual();
 }, []);
 
@@ -109,6 +113,27 @@ async function cargarAnalistas() {
     .filter((user) => user.nombre);
 
   setAnalistasOptions(opciones);
+}
+
+async function cargarLiquidacionesGuardadas() {
+  try {
+    setLoadingGuardadas(true);
+
+    const { data, error } = await supabase
+      .from("dia_liquidaciones")
+      .select("id, periodo_desde, periodo_hasta, fecha_emision, estado, total_general, created_at")
+      .order("created_at", { ascending: false })
+      .limit(12);
+
+    if (error) {
+      console.error("Error al cargar liquidaciones guardadas:", error);
+      return;
+    }
+
+    setLiquidacionesGuardadas(data || []);
+  } finally {
+    setLoadingGuardadas(false);
+  }
 }
 
   async function buscarLiquidables() {
@@ -410,6 +435,109 @@ function handleQuitarItemLiquidacion(item) {
   }
 }
 
+async function handleAbrirLiquidacionGuardada(liquidacionId) {
+  try {
+    setLoading(true);
+
+    const { data: liquidacion, error: liquidacionError } = await supabase
+      .from("dia_liquidaciones")
+      .select("id, periodo_desde, periodo_hasta, fecha_emision, estado, total_general")
+      .eq("id", liquidacionId)
+      .single();
+
+    if (liquidacionError) {
+      console.error("Error al abrir liquidación:", liquidacionError);
+      alert(`No se pudo abrir la liquidación: ${liquidacionError.message}`);
+      return;
+    }
+
+    const { data: itemsGuardados, error: itemsError } = await supabase
+      .from("dia_liquidaciones_items")
+      .select("*")
+      .eq("liquidacion_id", liquidacionId)
+      .order("orden", { ascending: true });
+
+    if (itemsError) {
+      console.error("Error al cargar ítems de liquidación:", itemsError);
+      alert(`No se pudieron cargar los dominios: ${itemsError.message}`);
+      return;
+    }
+
+    const itemIds = (itemsGuardados || []).map((item) => item.id);
+
+    let conceptosGuardados = [];
+
+    if (itemIds.length > 0) {
+      const { data: conceptosData, error: conceptosError } = await supabase
+        .from("dia_liquidaciones_conceptos")
+        .select("*")
+        .in("item_id", itemIds)
+        .order("orden", { ascending: true });
+
+      if (conceptosError) {
+        console.error("Error al cargar conceptos:", conceptosError);
+        alert(`No se pudieron cargar los conceptos: ${conceptosError.message}`);
+        return;
+      }
+
+      conceptosGuardados = conceptosData || [];
+    }
+
+    const itemsNormalizados = (itemsGuardados || []).map((item) => ({
+      local_id: `liquidacion-item-${item.id}`,
+      liquidacion_item_id: item.id,
+      origen_interno: item.origen,
+      origen_id: item.origen_id,
+      fecha_pedido: item.fecha_pedido || "",
+      fecha_entrega: item.fecha_entrega || "",
+      tienda: item.tienda || "",
+      dominio: item.dominio || "",
+      sector: item.sector || "",
+      analista: item.analista || "",
+      frq: item.frq || "",
+      garante: item.garante || "",
+      tramite: item.tramite || "",
+      is_manual: !item.origen_id,
+      is_guardado: true,
+    }));
+
+    const conceptosNormalizados = {};
+
+    itemsNormalizados.forEach((item) => {
+      const key = getItemKey(item);
+
+      conceptosNormalizados[key] = conceptosGuardados
+        .filter((concepto) => concepto.item_id === item.liquidacion_item_id)
+        .map((concepto) => ({
+          id: concepto.id,
+          concepto: concepto.concepto,
+          importe: String(concepto.importe || ""),
+        }));
+    });
+
+    const abiertosNormalizados = {};
+
+    itemsNormalizados.forEach((item) => {
+      abiertosNormalizados[getItemKey(item)] = false;
+    });
+
+    setLiquidacionGuardadaId(liquidacion.id);
+    setDesde(liquidacion.periodo_desde || "");
+    setHasta(liquidacion.periodo_hasta || "");
+    setItems(itemsNormalizados);
+    setConceptosPorItem(conceptosNormalizados);
+    setItemsAbiertos(abiertosNormalizados);
+    setEditingItemKey(null);
+
+    alert("Liquidación abierta para editar.");
+  } catch (err) {
+    console.error("Error inesperado al abrir liquidación:", err);
+    alert("Ocurrió un error inesperado al abrir la liquidación.");
+  } finally {
+    setLoading(false);
+  }
+}
+
 async function handleGuardarLiquidacion() {
   if (savingLiquidacion) return;
 
@@ -695,6 +823,70 @@ async function handleGuardarLiquidacion() {
   {savingLiquidacion ? "Guardando..." : "Guardar liquidación"}
 </button>
         </section>
+
+        <section className="savedBox">
+  <div className="savedHeader">
+    <div>
+      <h2>Liquidaciones guardadas</h2>
+      <p>
+        Abrí una liquidación ya guardada para revisarla, agregar conceptos o corregir datos antes de imprimir.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      className="smallButton"
+      onClick={cargarLiquidacionesGuardadas}
+      disabled={loadingGuardadas}
+    >
+      {loadingGuardadas ? "Actualizando..." : "Actualizar"}
+    </button>
+  </div>
+
+  {liquidacionesGuardadas.length === 0 && (
+    <div className="emptyBox">
+      Todavía no hay liquidaciones guardadas.
+    </div>
+  )}
+
+  {liquidacionesGuardadas.length > 0 && (
+    <div className="savedList">
+      {liquidacionesGuardadas.map((liq) => (
+        <div key={liq.id} className="savedRow">
+          <div>
+            <span>PERÍODO</span>
+            <strong>
+              {formatFecha(liq.periodo_desde)} al {formatFecha(liq.periodo_hasta)}
+            </strong>
+          </div>
+
+          <div>
+            <span>EMISIÓN</span>
+            <strong>{formatFecha(liq.fecha_emision)}</strong>
+          </div>
+
+          <div>
+            <span>ESTADO</span>
+            <strong>{liq.estado || "BORRADOR"}</strong>
+          </div>
+
+          <div>
+            <span>TOTAL</span>
+            <strong>{formatMoney(liq.total_general)}</strong>
+          </div>
+
+          <button
+            type="button"
+            className="smallButton"
+            onClick={() => handleAbrirLiquidacionGuardada(liq.id)}
+          >
+            Abrir / editar
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+</section>
 
         <section className="tableBox">
           <div className="tableHeader">
@@ -1505,6 +1697,67 @@ const styles = `
   font-size: 11px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.savedBox {
+  margin-top: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(3, 18, 34, 0.42);
+  padding: 18px;
+}
+
+.savedHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.savedHeader h2 {
+  margin: 0 0 6px;
+  color: #ffffff;
+  font-size: 20px;
+}
+
+.savedHeader p {
+  margin: 0;
+  color: rgba(191, 219, 254, 0.70);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.savedList {
+  display: grid;
+  gap: 10px;
+}
+
+.savedRow {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr 0.75fr 0.85fr auto;
+  gap: 12px;
+  align-items: center;
+  border-radius: 18px;
+  border: 1px solid rgba(96, 165, 250, 0.13);
+  background: rgba(2, 8, 23, 0.34);
+  padding: 14px;
+}
+
+.savedRow span {
+  display: block;
+  color: rgba(147, 197, 253, 0.76);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.savedRow strong {
+  color: rgba(241, 245, 249, 0.94);
+  font-size: 13px;
+  font-weight: 700;
 }
 
   @media (max-width: 900px) {
