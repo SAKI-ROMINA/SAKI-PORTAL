@@ -441,7 +441,17 @@ function handleImprimirLiquidacion() {
     return;
   }
 
-  window.print();
+  const abiertos = {};
+
+  items.forEach((item) => {
+    abiertos[getItemKey(item)] = true;
+  });
+
+  setItemsAbiertos(abiertos);
+
+  setTimeout(() => {
+    window.print();
+  }, 150);
 }
 
 async function handleAbrirLiquidacionGuardada(liquidacionId) {
@@ -596,29 +606,91 @@ async function handleGuardarLiquidacion() {
       0
     );
 
-    const { data: liquidacion, error: liquidacionError } = await supabase
-      .from("dia_liquidaciones")
-      .insert({
-        periodo_desde: desde,
-        periodo_hasta: hasta,
-        fecha_emision: new Date().toISOString().slice(0, 10),
-        titulo: "Detalle de trabajos realizados - Día Argentina",
-        estado: "BORRADOR",
-        total_general: totalAGuardar,
-        created_by: userId,
-        updated_by: userId,
-      })
-      .select("id")
-      .single();
+    let liquidacionId = liquidacionGuardadaId;
 
-    if (liquidacionError) {
-      console.error("Error al crear liquidación:", liquidacionError);
-      alert(`No se pudo crear la liquidación: ${liquidacionError.message}`);
-      return;
+    if (liquidacionId) {
+      const { error: updateError } = await supabase
+        .from("dia_liquidaciones")
+        .update({
+          periodo_desde: desde,
+          periodo_hasta: hasta,
+          fecha_emision: new Date().toISOString().slice(0, 10),
+          titulo: "Detalle de trabajos realizados - Día Argentina",
+          estado: "BORRADOR",
+          total_general: totalAGuardar,
+          updated_by: userId,
+        })
+        .eq("id", liquidacionId);
+
+      if (updateError) {
+        console.error("Error al actualizar liquidación:", updateError);
+        alert(`No se pudo actualizar la liquidación: ${updateError.message}`);
+        return;
+      }
+
+      const { data: itemsActuales, error: itemsActualesError } = await supabase
+        .from("dia_liquidaciones_items")
+        .select("id")
+        .eq("liquidacion_id", liquidacionId);
+
+      if (itemsActualesError) {
+        console.error("Error al buscar ítems anteriores:", itemsActualesError);
+        alert(`No se pudieron revisar los ítems anteriores: ${itemsActualesError.message}`);
+        return;
+      }
+
+      const itemIdsActuales = (itemsActuales || []).map((item) => item.id);
+
+      if (itemIdsActuales.length > 0) {
+        const { error: conceptosDeleteError } = await supabase
+          .from("dia_liquidaciones_conceptos")
+          .delete()
+          .in("item_id", itemIdsActuales);
+
+        if (conceptosDeleteError) {
+          console.error("Error al borrar conceptos anteriores:", conceptosDeleteError);
+          alert(`No se pudieron reemplazar los conceptos anteriores: ${conceptosDeleteError.message}`);
+          return;
+        }
+      }
+
+      const { error: itemsDeleteError } = await supabase
+        .from("dia_liquidaciones_items")
+        .delete()
+        .eq("liquidacion_id", liquidacionId);
+
+      if (itemsDeleteError) {
+        console.error("Error al borrar ítems anteriores:", itemsDeleteError);
+        alert(`No se pudieron reemplazar los dominios anteriores: ${itemsDeleteError.message}`);
+        return;
+      }
+    } else {
+      const { data: liquidacionNueva, error: liquidacionError } = await supabase
+        .from("dia_liquidaciones")
+        .insert({
+          periodo_desde: desde,
+          periodo_hasta: hasta,
+          fecha_emision: new Date().toISOString().slice(0, 10),
+          titulo: "Detalle de trabajos realizados - Día Argentina",
+          estado: "BORRADOR",
+          total_general: totalAGuardar,
+          created_by: userId,
+          updated_by: userId,
+        })
+        .select("id")
+        .single();
+
+      if (liquidacionError) {
+        console.error("Error al crear liquidación:", liquidacionError);
+        alert(`No se pudo crear la liquidación: ${liquidacionError.message}`);
+        return;
+      }
+
+      liquidacionId = liquidacionNueva.id;
     }
 
     const itemsPayload = itemsConConceptos.map((row, index) => ({
-      liquidacion_id: liquidacion.id,
+      liquidacion_id: liquidacionId,
       origen: row.item.origen_interno || "informe",
       origen_id: row.item.origen_id || null,
       fecha_pedido: row.item.fecha_pedido || null,
@@ -680,8 +752,14 @@ async function handleGuardarLiquidacion() {
       }
     }
 
-    setLiquidacionGuardadaId(liquidacion.id);
-    alert("Liquidación guardada correctamente.");
+    setLiquidacionGuardadaId(liquidacionId);
+    await cargarLiquidacionesGuardadas();
+
+    alert(
+      liquidacionGuardadaId
+        ? "Liquidación actualizada correctamente."
+        : "Liquidación guardada correctamente."
+    );
   } catch (err) {
     console.error("Error inesperado al guardar liquidación:", err);
     alert("Ocurrió un error inesperado al guardar la liquidación.");
@@ -829,7 +907,11 @@ async function handleGuardarLiquidacion() {
   onClick={handleGuardarLiquidacion}
   disabled={savingLiquidacion || items.length === 0}
 >
-  {savingLiquidacion ? "Guardando..." : "Guardar liquidación"}
+  {savingLiquidacion
+  ? "Guardando..."
+  : liquidacionGuardadaId
+    ? "Actualizar liquidación"
+    : "Guardar liquidación"}
 </button>
 
 <button
@@ -1373,9 +1455,15 @@ const styles = `
   background: rgba(3, 18, 34, 0.42);
   padding: 18px;
   display: grid;
-  grid-template-columns: 170px 170px 170px minmax(180px, 1fr) minmax(190px, 1fr);
-  gap: 14px;
+  grid-template-columns: 145px 145px 135px 1fr 1fr 160px;
+  gap: 12px;
   align-items: end;
+}
+
+.filtersBox .primaryButton {
+  width: 100%;
+  padding: 0 14px;
+  white-space: nowrap;
 }
 
   .field {
@@ -1479,9 +1567,10 @@ const styles = `
 
 .itemMainLine {
   display: grid;
-  grid-template-columns: 105px 115px 165px 165px 175px minmax(220px, 1fr) 190px;
-  gap: 14px;
+  grid-template-columns: 0.75fr 0.75fr 1.1fr 1fr 1.05fr 0.9fr 1.25fr;
+  gap: 10px;
   align-items: start;
+  width: 100%;
 }
 
   .itemMainLine > div {
@@ -1800,7 +1889,7 @@ const styles = `
   display: none;
 }
 
-  @media (max-width: 900px) {
+    @media (max-width: 900px) {
     .hero,
     .filtersBox,
     .itemMainLine {
@@ -1811,169 +1900,181 @@ const styles = `
       grid-template-columns: repeat(3, 1fr);
     }
 
-    @media print {
-  .page {
-    background: #ffffff !important;
-    color: #111827 !important;
-    padding: 0 !important;
-    font-family: Arial, sans-serif !important;
+    .savedRow {
+      grid-template-columns: 1fr;
+    }
+
+    .tableHeader,
+    .savedHeader,
+    .itemToggleLine {
+      flex-direction: column;
+      align-items: stretch;
+    }
   }
 
-  .shell {
-    max-width: none !important;
-    width: 100% !important;
-    margin: 0 !important;
-  }
+  @media print {
+    .page {
+      background: #ffffff !important;
+      color: #111827 !important;
+      padding: 0 !important;
+      font-family: Arial, sans-serif !important;
+    }
 
-  .topbar,
-  .hero,
-  .filtersBox,
-  .savedBox,
-  .tableHeader,
-  .itemToggleLine,
-  .conceptosHeader button,
-  .deleteConceptoButton,
-  .totalGeneralBox span,
-  .backLink,
-  .primaryButton,
-  .smallButton,
-  .miniDangerButton {
-    display: none !important;
-  }
+    .shell {
+      max-width: none !important;
+      width: 100% !important;
+      margin: 0 !important;
+    }
 
-  .printHeader {
-    display: block !important;
-    margin-bottom: 18px !important;
-    padding-bottom: 12px !important;
-    border-bottom: 2px solid #111827 !important;
-  }
+    .topbar,
+    .hero,
+    .filtersBox,
+    .savedBox,
+    .tableHeader,
+    .itemToggleLine,
+    .conceptosHeader button,
+    .deleteConceptoButton,
+    .backLink,
+    .primaryButton,
+    .smallButton,
+    .miniDangerButton {
+      display: none !important;
+    }
 
-  .printHeader h1 {
-    margin: 0 0 4px !important;
-    font-size: 24px !important;
-    letter-spacing: 0.18em !important;
-    color: #111827 !important;
-  }
+    .printHeader {
+      display: block !important;
+      margin-bottom: 18px !important;
+      padding-bottom: 12px !important;
+      border-bottom: 2px solid #111827 !important;
+    }
 
-  .printHeader h2 {
-    margin: 0 0 8px !important;
-    font-size: 15px !important;
-    color: #111827 !important;
-  }
+    .printHeader h1 {
+      margin: 0 0 4px !important;
+      font-size: 24px !important;
+      letter-spacing: 0.18em !important;
+      color: #111827 !important;
+    }
 
-  .printHeader p {
-    margin: 2px 0 !important;
-    font-size: 11px !important;
-    color: #374151 !important;
-  }
+    .printHeader h2 {
+      margin: 0 0 8px !important;
+      font-size: 15px !important;
+      color: #111827 !important;
+    }
 
-  .tableBox {
-    border: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
+    .printHeader p {
+      margin: 2px 0 !important;
+      font-size: 11px !important;
+      color: #374151 !important;
+    }
 
-  .liquidacionList {
-    display: block !important;
-  }
+    .tableBox {
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
 
-  .liquidacionItem {
-    border: 1px solid #d1d5db !important;
-    background: #ffffff !important;
-    border-radius: 0 !important;
-    padding: 10px 12px !important;
-    margin-bottom: 12px !important;
-    page-break-inside: avoid !important;
-  }
+    .liquidacionList {
+      display: block !important;
+    }
 
-  .itemMainLine {
-    display: grid !important;
-    grid-template-columns: 70px 85px 120px 125px 1fr 140px !important;
-    gap: 8px !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    padding-bottom: 8px !important;
-    margin-bottom: 8px !important;
-  }
+    .liquidacionItem {
+      border: 1px solid #d1d5db !important;
+      background: #ffffff !important;
+      border-radius: 0 !important;
+      padding: 10px 12px !important;
+      margin-bottom: 12px !important;
+      page-break-inside: avoid !important;
+    }
 
-  .itemMainLine span,
-  .savedRow span,
-  .summaryGrid span {
-    color: #374151 !important;
-    font-size: 8px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.04em !important;
-  }
+    .itemMainLine {
+      display: grid !important;
+      grid-template-columns: 60px 72px 118px 105px 110px 70px 1fr !important;
+      gap: 7px !important;
+      border-bottom: 1px solid #e5e7eb !important;
+      padding-bottom: 8px !important;
+      margin-bottom: 8px !important;
+    }
 
-  .itemMainLine strong {
-    color: #111827 !important;
-    font-size: 10px !important;
-    font-weight: 600 !important;
-    line-height: 1.25 !important;
-  }
+    .itemMainLine span {
+      color: #374151 !important;
+      font-size: 8px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.04em !important;
+    }
 
-  .conceptosBox,
-  .conceptosBox.closed {
-    display: block !important;
-    border-top: none !important;
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-  }
+    .itemMainLine strong {
+      color: #111827 !important;
+      font-size: 9.5px !important;
+      font-weight: 600 !important;
+      line-height: 1.25 !important;
+    }
 
-  .emptyConceptos {
-    display: none !important;
-  }
+    .conceptosBox,
+    .conceptosBox.closed {
+      display: block !important;
+      border-top: none !important;
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
 
-  .conceptoRow {
-    display: grid !important;
-    grid-template-columns: 1fr 110px !important;
-    gap: 8px !important;
-    margin-bottom: 4px !important;
-  }
+    .emptyConceptos {
+      display: none !important;
+    }
 
-  .conceptoRow select,
-  .conceptoRow input {
-    border: none !important;
-    background: transparent !important;
-    color: #111827 !important;
-    min-height: auto !important;
-    padding: 0 !important;
-    font-size: 10px !important;
-    font-weight: 500 !important;
-    appearance: none !important;
-  }
+    .conceptoRow {
+      display: grid !important;
+      grid-template-columns: 1fr 110px !important;
+      gap: 8px !important;
+      margin-bottom: 4px !important;
+    }
 
-  .conceptoImporte {
-    text-align: right !important;
-  }
+    .conceptoRow select,
+    .conceptoRow input {
+      border: none !important;
+      background: transparent !important;
+      color: #111827 !important;
+      min-height: auto !important;
+      padding: 0 !important;
+      font-size: 10px !important;
+      font-weight: 500 !important;
+      appearance: none !important;
+    }
 
-  .subtotalLine {
-    display: flex !important;
-    justify-content: flex-end !important;
-    gap: 12px !important;
-    border-top: 1px solid #e5e7eb !important;
-    margin-top: 6px !important;
-    padding-top: 6px !important;
-  }
+    .conceptoImporte {
+      text-align: right !important;
+    }
 
-  .subtotalLine span,
-  .subtotalLine strong {
-    color: #111827 !important;
-    font-size: 10px !important;
-  }
+    .subtotalLine {
+      display: flex !important;
+      justify-content: flex-end !important;
+      gap: 12px !important;
+      border-top: 1px solid #e5e7eb !important;
+      margin-top: 6px !important;
+      padding-top: 6px !important;
+    }
 
-  .totalGeneralBox {
-    display: flex !important;
-    justify-content: flex-end !important;
-    border-top: 2px solid #111827 !important;
-    margin-top: 16px !important;
-    padding-top: 10px !important;
-  }
+    .subtotalLine span,
+    .subtotalLine strong {
+      color: #111827 !important;
+      font-size: 10px !important;
+    }
 
-  .totalGeneralBox strong {
-    color: #111827 !important;
-    font-size: 15px !important;
-  }
-}
+    .totalGeneralBox {
+      display: flex !important;
+      justify-content: flex-end !important;
+      border-top: 2px solid #111827 !important;
+      margin-top: 16px !important;
+      padding-top: 10px !important;
+    }
+
+    .totalGeneralBox span,
+    .totalGeneralBox strong {
+      color: #111827 !important;
+    }
+
+    .totalGeneralBox strong {
+      font-size: 15px !important;
+    }
   }
 `;
