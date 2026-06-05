@@ -516,14 +516,32 @@ function handleEliminarItemManual(item) {
 
         <section className="tableBox">
           <div className="tableHeader">
-            <div>
-              <h2>Trabajos entregados</h2>
-              <p>
-                Vista tipo planilla: tienda, dominio, sector, analista, FRQ,
-                y trámite. No se muestra módulo en impresión.
-              </p>
-            </div>
-          </div>
+  <div>
+    <h2>Trabajos entregados</h2>
+    <p>
+      Vista tipo planilla: tienda, dominio, sector, analista, FRQ y trámite.
+      No se muestra módulo en impresión.
+    </p>
+  </div>
+
+  <div className="tableActions">
+    <button
+      type="button"
+      className="smallButton"
+      onClick={() => handleAgregarItemManual("informe")}
+    >
+      + Agregar informe manual
+    </button>
+
+    <button
+      type="button"
+      className="smallButton"
+      onClick={() => handleAgregarItemManual("prenda")}
+    >
+      + Agregar prenda manual
+    </button>
+  </div>
+</div>
 
           {items.length === 0 && (
             <div className="emptyBox">
@@ -532,136 +550,258 @@ function handleEliminarItemManual(item) {
           )}
 
           {items.length > 0 && (
-            <div className="liquidacionList">
-              {items.map((item) => (
-                <article
-                  key={`${item.origen_interno}-${item.origen_id}`}
-                  className="liquidacionItem"
-                >
-                  <div className="itemMainLine">
-                    <div>
-                      <span>TIENDA</span>
-                      <strong>{item.tienda || "SIN INFORMAR"}</strong>
-                    </div>
-                    
-                    <div>
-                      <span>DOMINIO</span>
-                      <strong>{item.dominio || "SIN DOMINIO"}</strong>
-                    </div>
+  <div className="liquidacionList">
+    {items.map((item) => {
+      const editando = itemEstaEditando(item);
 
-                    <div>
-                      <span>SECTOR</span>
-                      <strong>{item.sector || "SIN INFORMAR"}</strong>
-                    </div>
-
-                    <div>
-                      <span>ANALISTA</span>
-                      <strong>{item.analista || "SIN INFORMAR"}</strong>
-                    </div>
-
-                    <div>
-                      <span>FRQ</span>
-                      <strong>{item.frq || "SIN INFORMAR"}</strong>
-                    </div>
-                    
-                    <div>
-                      <span>TRÁMITE</span>
-                      <strong>{formatTramite(item.tramite)}</strong>
-                    </div>
-                  </div>
-
-                  <div className="itemToggleLine">
-  <button
-    type="button"
-    className="toggleItemButton"
-    onClick={() => handleToggleItem(item)}
-  >
-    {itemEstaAbierto(item) ? "Ocultar conceptos" : "Ver conceptos"}
-  </button>
-
-  <div className="subtotalPreview">
-    <span>Subtotal dominio</span>
-    <strong>{formatMoney(getSubtotalItem(item))}</strong>
-  </div>
-</div>
-
-                  <div className="itemMeta">
-  <span>Fecha entrega: {formatFecha(item.fecha_entrega)}</span>
-</div>
-
-<div className={`conceptosBox ${itemEstaAbierto(item) ? "open" : "closed"}`}>
-  <div className="conceptosHeader">
-    <strong>Conceptos</strong>
-
-    <button
-      type="button"
-      className="smallButton"
-      onClick={() => handleAgregarConcepto(item)}
-    >
-      + Agregar concepto
-    </button>
-  </div>
-
-  {(conceptosPorItem[getItemKey(item)] || []).length === 0 && (
-    <p className="emptyConceptos">
-      Todavía no hay conceptos cargados para este dominio.
-    </p>
-  )}
-
-  {(conceptosPorItem[getItemKey(item)] || []).map((concepto, index) => (
-    <div key={concepto.id || index} className="conceptoRow">
-      <select
-        value={concepto.concepto}
-        onChange={(event) =>
-          handleCambiarConcepto(
-            item,
-            index,
-            "concepto",
-            event.currentTarget.value
-          )
-        }
-      >
-        {CONCEPTOS_LIQUIDACION_DIA.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-
-      <input
-        className="conceptoImporte"
-        inputMode="decimal"
-        value={concepto.importe}
-        onChange={(event) =>
-          handleCambiarConcepto(
-            item,
-            index,
-            "importe",
-            event.currentTarget.value
-          )
-        }
-        placeholder="Importe"
-      />
-
-      <button
-        type="button"
-        className="deleteConceptoButton"
-        onClick={() => handleEliminarConcepto(item, index)}
-      >
-        Eliminar
-      </button>
-    </div>
-  ))}
-
-  <div className="subtotalLine">
-    <span>Subtotal dominio</span>
-    <strong>{formatMoney(getSubtotalItem(item))}</strong>
-  </div>
-</div>
-                </article>
-              ))}
+      return (
+        <article
+          key={getItemKey(item)}
+          className="liquidacionItem"
+        >
+          <div className="itemMainLine">
+            <div>
+              <span>TIENDA</span>
+              {editando ? (
+                <input
+                  className="itemInlineInput"
+                  value={item.tienda || ""}
+                  onChange={(event) =>
+                    handleCambiarItemDato(item, "tienda", event.currentTarget.value)
+                  }
+                  placeholder="SIN INFORMAR"
+                />
+              ) : (
+                <strong>{item.tienda || "SIN INFORMAR"}</strong>
+              )}
             </div>
+
+            <div>
+              <span>DOMINIO</span>
+              {editando ? (
+                <input
+                  className="itemInlineInput"
+                  value={item.dominio || ""}
+                  onChange={(event) =>
+                    handleCambiarItemDato(item, "dominio", event.currentTarget.value)
+                  }
+                  placeholder="SIN DOMINIO"
+                />
+              ) : (
+                <strong>{item.dominio || "SIN DOMINIO"}</strong>
+              )}
+            </div>
+
+            <div>
+              <span>SECTOR</span>
+              {editando ? (
+                <select
+                  className="itemInlineSelect"
+                  value={item.sector || ""}
+                  onChange={(event) =>
+                    handleCambiarItemDato(item, "sector", event.currentTarget.value)
+                  }
+                >
+                  <option value="">SIN INFORMAR</option>
+                  {SECTORES_DIA_LIQUIDACION.map((sector) => (
+                    <option key={sector} value={sector}>
+                      {sector}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <strong>{item.sector || "SIN INFORMAR"}</strong>
+              )}
+            </div>
+
+            <div>
+              <span>ANALISTA</span>
+              {editando ? (
+                <select
+                  className="itemInlineSelect"
+                  value={item.analista || ""}
+                  onChange={(event) =>
+                    handleCambiarAnalistaItem(item, event.currentTarget.value)
+                  }
+                >
+                  <option value="">SIN INFORMAR</option>
+                  {analistasOptions.map((user) => (
+                    <option key={user.id} value={user.nombre}>
+                      {user.nombre}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <strong>{item.analista || "SIN INFORMAR"}</strong>
+              )}
+            </div>
+
+            <div>
+              <span>FRQ</span>
+              {editando ? (
+                <input
+                  className="itemInlineInput"
+                  value={item.frq || ""}
+                  onChange={(event) =>
+                    handleCambiarItemDato(item, "frq", event.currentTarget.value)
+                  }
+                  placeholder="SIN INFORMAR"
+                />
+              ) : (
+                <strong>{item.frq || "SIN INFORMAR"}</strong>
+              )}
+            </div>
+
+            <div>
+              <span>TRÁMITE</span>
+              {editando ? (
+                <input
+                  className="itemInlineInput"
+                  value={item.tramite || ""}
+                  onChange={(event) =>
+                    handleCambiarItemDato(item, "tramite", event.currentTarget.value)
+                  }
+                  placeholder="SIN INFORMAR"
+                />
+              ) : (
+                <strong>{formatTramite(item.tramite)}</strong>
+              )}
+            </div>
+          </div>
+
+          <div className="itemToggleLine">
+            <div className="itemActionGroup">
+              <button
+                type="button"
+                className="toggleItemButton"
+                onClick={() => handleToggleItem(item)}
+              >
+                {itemEstaAbierto(item) ? "Ocultar conceptos" : "Ver conceptos"}
+              </button>
+
+              <button
+                type="button"
+                className="toggleItemButton"
+                onClick={() => handleToggleEditarItem(item)}
+              >
+                {editando ? "Cerrar edición" : "Editar"}
+              </button>
+
+              {item.is_manual && (
+                <button
+                  type="button"
+                  className="miniDangerButton"
+                  onClick={() => handleEliminarItemManual(item)}
+                >
+                  Quitar manual
+                </button>
+              )}
+            </div>
+
+            <div className="subtotalPreview">
+              <span>Subtotal dominio</span>
+              <strong>{formatMoney(getSubtotalItem(item))}</strong>
+            </div>
+          </div>
+
+          {itemEstaAbierto(item) && (
+            <>
+              <div className="itemMeta">
+                <label className="fechaEntregaField">
+                  <span>Fecha entrega</span>
+                  <input
+                    type="date"
+                    value={item.fecha_entrega || ""}
+                    disabled={!editando}
+                    onChange={(event) =>
+                      handleCambiarItemDato(
+                        item,
+                        "fecha_entrega",
+                        event.currentTarget.value
+                      )
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="conceptosBox open">
+                <div className="conceptosHeader">
+                  <strong>Conceptos</strong>
+
+                  <button
+                    type="button"
+                    className="smallButton"
+                    onClick={() => handleAgregarConcepto(item)}
+                  >
+                    + Agregar concepto
+                  </button>
+                </div>
+
+                {(conceptosPorItem[getItemKey(item)] || []).length === 0 && (
+                  <p className="emptyConceptos">
+                    Todavía no hay conceptos cargados para este dominio.
+                  </p>
+                )}
+
+                {(conceptosPorItem[getItemKey(item)] || []).map(
+                  (concepto, index) => (
+                    <div key={concepto.id || index} className="conceptoRow">
+                      <select
+                        value={concepto.concepto}
+                        onChange={(event) =>
+                          handleCambiarConcepto(
+                            item,
+                            index,
+                            "concepto",
+                            event.currentTarget.value
+                          )
+                        }
+                      >
+                        {CONCEPTOS_LIQUIDACION_DIA.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+
+                      <input
+                        className="conceptoImporte"
+                        inputMode="decimal"
+                        value={concepto.importe}
+                        onChange={(event) =>
+                          handleCambiarConcepto(
+                            item,
+                            index,
+                            "importe",
+                            event.currentTarget.value
+                          )
+                        }
+                        placeholder="Importe"
+                      />
+
+                      <button
+                        type="button"
+                        className="deleteConceptoButton"
+                        onClick={() => handleEliminarConcepto(item, index)}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  )
+                )}
+
+                <div className="subtotalLine">
+                  <span>Subtotal dominio</span>
+                  <strong>{formatMoney(getSubtotalItem(item))}</strong>
+                </div>
+              </div>
+            </>
           )}
+        </article>
+      );
+    })}
+  </div>
+)}
           {items.length > 0 && (
   <div className="totalGeneralBox">
     <span>Total general liquidación</span>
@@ -1077,6 +1217,73 @@ const styles = `
 
 .conceptosBox.closed {
   display: none;
+}
+
+.tableActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.itemActionGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.itemInlineInput,
+.itemInlineSelect {
+  min-height: 34px !important;
+  border-radius: 12px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  background: rgba(2, 8, 23, 0.46) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  color: rgba(241, 245, 249, 0.94) !important;
+}
+
+.itemInlineInput::placeholder {
+  color: rgba(148, 163, 184, 0.58);
+}
+
+.fechaEntregaField {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fechaEntregaField span {
+  color: rgba(147, 197, 253, 0.72);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fechaEntregaField input {
+  width: 150px;
+  min-height: 34px;
+  border-radius: 12px;
+}
+
+.fechaEntregaField input:disabled {
+  opacity: 0.70;
+  cursor: not-allowed;
+}
+
+.miniDangerButton {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.22);
+  background: rgba(69, 10, 10, 0.24);
+  color: rgba(254, 202, 202, 0.95);
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
   @media (max-width: 900px) {
