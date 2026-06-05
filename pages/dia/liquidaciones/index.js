@@ -31,6 +31,9 @@ export default function LiquidacionesDia() {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
 
+  const [savingLiquidacion, setSavingLiquidacion] = useState(false);
+const [liquidacionGuardadaId, setLiquidacionGuardadaId] = useState(null);
+
   const [conceptosPorItem, setConceptosPorItem] = useState({});
   const [itemsAbiertos, setItemsAbiertos] = useState({});
 
@@ -379,6 +382,34 @@ function handleEliminarItemManual(item) {
   }
 }
 
+function handleQuitarItemLiquidacion(item) {
+  const key = getItemKey(item);
+
+  const confirmar = window.confirm(
+    "¿Querés quitar este renglón de la liquidación? No se borra el informe ni la prenda original."
+  );
+
+  if (!confirmar) return;
+
+  setItems((prev) => prev.filter((row) => getItemKey(row) !== key));
+
+  setConceptosPorItem((prev) => {
+    const next = { ...prev };
+    delete next[key];
+    return next;
+  });
+
+  setItemsAbiertos((prev) => {
+    const next = { ...prev };
+    delete next[key];
+    return next;
+  });
+
+  if (editingItemKey === key) {
+    setEditingItemKey(null);
+  }
+}
+
   const resumen = useMemo(() => {
     return {
       total: items.length,
@@ -512,6 +543,14 @@ function handleEliminarItemManual(item) {
           >
             {loading ? "Buscando..." : "Buscar entregados"}
           </button>
+          <button
+  type="button"
+  className="primaryButton saveButton"
+  onClick={handleGuardarLiquidacion}
+  disabled={savingLiquidacion || items.length === 0}
+>
+  {savingLiquidacion ? "Guardando..." : "Guardar liquidación"}
+</button>
         </section>
 
         <section className="tableBox">
@@ -591,6 +630,35 @@ function handleEliminarItemManual(item) {
                 <strong>{item.dominio || "SIN DOMINIO"}</strong>
               )}
             </div>
+
+            <div>
+  <span>PEDIDO / ENTREGA</span>
+  {editando ? (
+    <div className="pedidoEntregaEdit">
+      <input
+        type="date"
+        className="itemInlineInput"
+        value={item.fecha_pedido || ""}
+        onChange={(event) =>
+          handleCambiarItemDato(item, "fecha_pedido", event.currentTarget.value)
+        }
+      />
+
+      <input
+        type="date"
+        className="itemInlineInput"
+        value={item.fecha_entrega || ""}
+        onChange={(event) =>
+          handleCambiarItemDato(item, "fecha_entrega", event.currentTarget.value)
+        }
+      />
+    </div>
+  ) : (
+    <strong className="pedidoEntregaText">
+      P: {formatFecha(item.fecha_pedido)} · E: {formatFecha(item.fecha_entrega)}
+    </strong>
+  )}
+</div>
 
             <div>
               <span>SECTOR</span>
@@ -687,15 +755,14 @@ function handleEliminarItemManual(item) {
                 {editando ? "Cerrar edición" : "Editar"}
               </button>
 
-              {item.is_manual && (
-                <button
-                  type="button"
-                  className="miniDangerButton"
-                  onClick={() => handleEliminarItemManual(item)}
-                >
-                  Quitar manual
-                </button>
-              )}
+              <button
+  type="button"
+  className="miniDangerButton"
+  onClick={() => handleQuitarItemLiquidacion(item)}
+>
+  Quitar
+</button>
+
             </div>
 
             <div className="subtotalPreview">
@@ -706,24 +773,7 @@ function handleEliminarItemManual(item) {
 
           {itemEstaAbierto(item) && (
             <>
-              <div className="itemMeta">
-                <label className="fechaEntregaField">
-                  <span>Fecha entrega</span>
-                  <input
-                    type="date"
-                    value={item.fecha_entrega || ""}
-                    disabled={!editando}
-                    onChange={(event) =>
-                      handleCambiarItemDato(
-                        item,
-                        "fecha_entrega",
-                        event.currentTarget.value
-                      )
-                    }
-                  />
-                </label>
-              </div>
-
+              
               <div className="conceptosBox open">
                 <div className="conceptosHeader">
                   <strong>Conceptos</strong>
@@ -950,17 +1000,17 @@ const styles = `
     font-size: 24px;
   }
 
-  .filtersBox {
-    margin-top: 18px;
-    border-radius: 24px;
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    background: rgba(3, 18, 34, 0.42);
-    padding: 18px;
-    display: grid;
-    grid-template-columns: 180px 180px 180px auto;
-    gap: 14px;
-    align-items: end;
-  }
+.filtersBox {
+  margin-top: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(3, 18, 34, 0.42);
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 170px 170px 170px minmax(180px, 1fr) minmax(190px, 1fr);
+  gap: 14px;
+  align-items: end;
+}
 
   .field {
     display: grid;
@@ -1003,6 +1053,11 @@ const styles = `
     opacity: 0.55;
     cursor: not-allowed;
   }
+
+  .saveButton {
+  background: linear-gradient(135deg, #0f766e, #115e59);
+  box-shadow: 0 14px 28px rgba(15, 118, 110, 0.22);
+}
 
   .tableBox {
     margin-top: 18px;
@@ -1058,7 +1113,7 @@ const styles = `
 
 .itemMainLine {
   display: grid;
-  grid-template-columns: 115px 120px 170px 185px minmax(230px, 1fr) 210px;
+  grid-template-columns: 105px 115px 165px 165px 175px minmax(220px, 1fr) 190px;
   gap: 14px;
   align-items: start;
 }
@@ -1251,6 +1306,23 @@ const styles = `
   background: rgba(2, 8, 23, 0.46) !important;
   border: 1px solid rgba(148, 163, 184, 0.14) !important;
   color: rgba(241, 245, 249, 0.94) !important;
+}
+
+.pedidoEntregaText {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0.02em;
+}
+
+.pedidoEntregaEdit {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.pedidoEntregaEdit input {
+  min-height: 32px !important;
+  font-size: 11px !important;
 }
 
 .itemInlineInput::placeholder {
