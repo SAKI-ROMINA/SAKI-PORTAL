@@ -2,6 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabaseClient";
 
+const CONCEPTOS_LIQUIDACION_DIA = [
+  "ARANCELES REGISTRO",
+  "CORREO",
+  "HONORARIOS",
+  "HONORARIOS ADICIONALES POR OBSERVACIÓN",
+  "HONORARIOS ADICIONALES POR JURISDICCIÓN INTERIOR DE LA PROV. DE BS. AS. (EXCLUYE CONURBANO BONAERENSE)",
+  "HONORARIOS ADICIONALES POR JURISDICCIÓN RESTO DE LAS PROVINCIAS",
+  "FORMULARIO N° 03",
+  "FORMULARIO N° 02",
+  "FORMULARIO 59",
+];
+
 export default function LiquidacionesDia() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -12,6 +24,8 @@ export default function LiquidacionesDia() {
 
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
+
+  const [conceptosPorItem, setConceptosPorItem] = useState({});
 
   useEffect(() => {
     verificarUsuario();
@@ -87,7 +101,20 @@ export default function LiquidacionesDia() {
         return;
       }
 
-      setItems(data || []);
+      const rows = data || [];
+
+setItems(rows);
+
+setConceptosPorItem((prev) => {
+  const next = {};
+
+  rows.forEach((item) => {
+    const key = `${item.origen_interno}-${item.origen_id}`;
+    next[key] = prev[key] || [];
+  });
+
+  return next;
+});
     } finally {
       setLoading(false);
     }
@@ -113,6 +140,73 @@ export default function LiquidacionesDia() {
     return labels[raw] || raw.replaceAll("_", " ").toLocaleUpperCase("es-AR") || "SIN INFORMAR";
   }
 
+  function getItemKey(item) {
+  return `${item.origen_interno}-${item.origen_id}`;
+}
+
+function parseImporte(value) {
+  return Number(String(value || "").replace(/\./g, "").replace(",", ".")) || 0;
+}
+
+function formatMoney(value) {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    minimumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
+function handleAgregarConcepto(item) {
+  const key = getItemKey(item);
+
+  setConceptosPorItem((prev) => ({
+    ...prev,
+    [key]: [
+      ...(prev[key] || []),
+      {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        concepto: "HONORARIOS",
+        importe: "",
+      },
+    ],
+  }));
+}
+
+function handleCambiarConcepto(item, index, field, value) {
+  const key = getItemKey(item);
+
+  setConceptosPorItem((prev) => {
+    const rows = [...(prev[key] || [])];
+
+    rows[index] = {
+      ...rows[index],
+      [field]: value,
+    };
+
+    return {
+      ...prev,
+      [key]: rows,
+    };
+  });
+}
+
+function handleEliminarConcepto(item, index) {
+  const key = getItemKey(item);
+
+  setConceptosPorItem((prev) => ({
+    ...prev,
+    [key]: (prev[key] || []).filter((_, rowIndex) => rowIndex !== index),
+  }));
+}
+
+function getSubtotalItem(item) {
+  const key = getItemKey(item);
+
+  return (conceptosPorItem[key] || []).reduce((total, concepto) => {
+    return total + parseImporte(concepto.importe);
+  }, 0);
+}
+
   const resumen = useMemo(() => {
     return {
       total: items.length,
@@ -120,6 +214,19 @@ export default function LiquidacionesDia() {
       prendas: items.filter((item) => item.origen_interno === "prenda").length,
     };
   }, [items]);
+
+  const totalGeneral = useMemo(() => {
+  return items.reduce((total, item) => {
+    const key = `${item.origen_interno}-${item.origen_id}`;
+
+    return (
+      total +
+      (conceptosPorItem[key] || []).reduce((subtotal, concepto) => {
+        return subtotal + parseImporte(concepto.importe);
+      }, 0)
+    );
+  }, 0);
+}, [items, conceptosPorItem]);
 
   if (loadingUser) {
     return (
@@ -297,12 +404,88 @@ export default function LiquidacionesDia() {
                   </div>
 
                   <div className="itemMeta">
-                    <span>Fecha entrega: {formatFecha(item.fecha_entrega)}</span>
-                  </div>
+  <span>Fecha entrega: {formatFecha(item.fecha_entrega)}</span>
+</div>
+
+<div className="conceptosBox">
+  <div className="conceptosHeader">
+    <strong>Conceptos</strong>
+
+    <button
+      type="button"
+      className="smallButton"
+      onClick={() => handleAgregarConcepto(item)}
+    >
+      + Agregar concepto
+    </button>
+  </div>
+
+  {(conceptosPorItem[getItemKey(item)] || []).length === 0 && (
+    <p className="emptyConceptos">
+      Todavía no hay conceptos cargados para este dominio.
+    </p>
+  )}
+
+  {(conceptosPorItem[getItemKey(item)] || []).map((concepto, index) => (
+    <div key={concepto.id || index} className="conceptoRow">
+      <select
+        value={concepto.concepto}
+        onChange={(event) =>
+          handleCambiarConcepto(
+            item,
+            index,
+            "concepto",
+            event.currentTarget.value
+          )
+        }
+      >
+        {CONCEPTOS_LIQUIDACION_DIA.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+
+      <input
+        className="conceptoImporte"
+        inputMode="decimal"
+        value={concepto.importe}
+        onChange={(event) =>
+          handleCambiarConcepto(
+            item,
+            index,
+            "importe",
+            event.currentTarget.value
+          )
+        }
+        placeholder="Importe"
+      />
+
+      <button
+        type="button"
+        className="deleteConceptoButton"
+        onClick={() => handleEliminarConcepto(item, index)}
+      >
+        Eliminar
+      </button>
+    </div>
+  ))}
+
+  <div className="subtotalLine">
+    <span>Subtotal dominio</span>
+    <strong>{formatMoney(getSubtotalItem(item))}</strong>
+  </div>
+</div>
                 </article>
               ))}
             </div>
           )}
+          {items.length > 0 && (
+  <div className="totalGeneralBox">
+    <span>Total general liquidación</span>
+    <strong>{formatMoney(totalGeneral)}</strong>
+  </div>
+)}
         </section>
       </section>
 
@@ -574,6 +757,99 @@ const styles = `
     font-size: 12px;
     font-weight: 600;
   }
+
+  .conceptosBox {
+  margin-top: 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  padding-top: 14px;
+}
+
+.conceptosHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.conceptosHeader strong {
+  color: rgba(226, 237, 249, 0.92);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.smallButton {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  background: rgba(30, 64, 175, 0.26);
+  color: rgba(219, 234, 254, 0.95);
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.emptyConceptos {
+  margin: 0 0 12px;
+  color: rgba(191, 219, 254, 0.62);
+  font-size: 13px;
+}
+
+.conceptoRow {
+  display: grid;
+  grid-template-columns: 1fr 160px 90px;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.conceptoImporte {
+  text-align: right;
+}
+
+.deleteConceptoButton {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.22);
+  background: rgba(69, 10, 10, 0.24);
+  color: rgba(254, 202, 202, 0.95);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.subtotalLine,
+.totalGeneralBox {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 18px;
+  margin-top: 12px;
+  color: rgba(219, 234, 254, 0.90);
+}
+
+.subtotalLine span,
+.totalGeneralBox span {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(147, 197, 253, 0.78);
+}
+
+.subtotalLine strong,
+.totalGeneralBox strong {
+  color: #ffffff;
+  font-size: 17px;
+}
+
+.totalGeneralBox {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
 
   @media (max-width: 900px) {
     .hero,
