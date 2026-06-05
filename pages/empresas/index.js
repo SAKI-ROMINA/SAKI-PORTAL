@@ -94,26 +94,23 @@ export default function PortalEmpresas() {
 
       <style jsx>{`
         .page {
-          min-height: 100vh;
-          background:
-            radial-gradient(circle at 12% 10%, rgba(37, 99, 235, 0.2), transparent 32%),
-            radial-gradient(circle at 88% 4%, rgba(14, 165, 233, 0.16), transparent 30%),
-            linear-gradient(180deg, #031225 0%, #06172e 54%, #07111f 100%);
-          color: #e5eefc;
-          font-family:
-            Inter,
-            system-ui,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            sans-serif;
-        }
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(26, 78, 154, 0.20), transparent 28%),
+    linear-gradient(180deg, #03122c 0%, #05152f 45%, #071327 100%);
+  color: #e5eefc;
+  font-family: Aptos, "Segoe UI", Roboto, Arial, sans-serif;
+  padding: 24px 20px 40px;
+  box-sizing: border-box;
+}
 
         .shell {
-          width: min(1160px, calc(100% - 40px));
-          margin: 0 auto;
-          padding: 28px 0 42px;
-        }
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 .topbar {
   min-height: 56px;
