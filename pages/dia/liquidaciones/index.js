@@ -14,6 +14,12 @@ const CONCEPTOS_LIQUIDACION_DIA = [
   "FORMULARIO 59",
 ];
 
+const SECTORES_DIA_LIQUIDACION = [
+  "Adm. Franquicias",
+  "Asuntos Jurídicos",
+  "Cobranzas y Créditos",
+];
+
 export default function LiquidacionesDia() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -28,10 +34,14 @@ export default function LiquidacionesDia() {
   const [conceptosPorItem, setConceptosPorItem] = useState({});
   const [itemsAbiertos, setItemsAbiertos] = useState({});
 
-  useEffect(() => {
-    verificarUsuario();
-    setFechasMesActual();
-  }, []);
+  const [editingItemKey, setEditingItemKey] = useState(null);
+const [analistasOptions, setAnalistasOptions] = useState([]);
+
+useEffect(() => {
+  verificarUsuario();
+  cargarAnalistas();
+  setFechasMesActual();
+}, []);
 
   function setFechasMesActual() {
     const hoy = new Date();
@@ -72,6 +82,32 @@ export default function LiquidacionesDia() {
     }
   }
 
+async function cargarAnalistas() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, name, email, sector, role")
+    .order("full_name", { ascending: true });
+
+  if (error) {
+    console.error("Error al cargar analistas:", error);
+    return;
+  }
+
+  const opciones = (data || [])
+    .map((user) => ({
+      id: user.id,
+      nombre:
+        user.full_name ||
+        user.name ||
+        user.email ||
+        "SIN NOMBRE",
+      sector: user.sector || "",
+    }))
+    .filter((user) => user.nombre);
+
+  setAnalistasOptions(opciones);
+}
+
   async function buscarLiquidables() {
     if (!desde || !hasta) {
       alert("Seleccioná fecha desde y fecha hasta.");
@@ -110,7 +146,7 @@ setConceptosPorItem((prev) => {
   const next = {};
 
   rows.forEach((item) => {
-    const key = `${item.origen_interno}-${item.origen_id}`;
+    const key = getItemKey(item);
     next[key] = prev[key] || [];
   });
 
@@ -151,8 +187,8 @@ setItemsAbiertos((prev) => {
     return labels[raw] || raw.replaceAll("_", " ").toLocaleUpperCase("es-AR") || "SIN INFORMAR";
   }
 
-  function getItemKey(item) {
-  return `${item.origen_interno}-${item.origen_id}`;
+function getItemKey(item) {
+  return item.local_id || `${item.origen_interno}-${item.origen_id}`;
 }
 
 function parseImporte(value) {
@@ -236,6 +272,113 @@ function handleToggleItem(item) {
   }));
 }
 
+function itemEstaEditando(item) {
+  return editingItemKey === getItemKey(item);
+}
+
+function handleToggleEditarItem(item) {
+  const key = getItemKey(item);
+
+  setEditingItemKey((prev) => (prev === key ? null : key));
+}
+
+function handleCambiarItemDato(item, field, value) {
+  const key = getItemKey(item);
+
+  setItems((prev) =>
+    prev.map((row) =>
+      getItemKey(row) === key
+        ? {
+            ...row,
+            [field]:
+              field === "fecha_entrega"
+                ? value
+                : value.toLocaleUpperCase("es-AR"),
+          }
+        : row
+    )
+  );
+}
+
+function handleCambiarAnalistaItem(item, value) {
+  const key = getItemKey(item);
+  const analistaSeleccionado = analistasOptions.find(
+    (user) => user.nombre === value
+  );
+
+  setItems((prev) =>
+    prev.map((row) =>
+      getItemKey(row) === key
+        ? {
+            ...row,
+            analista: value,
+            sector: row.sector || analistaSeleccionado?.sector || row.sector,
+          }
+        : row
+    )
+  );
+}
+
+function handleAgregarItemManual(origen) {
+  const localId = `manual-${origen}-${Date.now()}-${Math.random()
+    .toString(16)
+    .slice(2)}`;
+
+  const nuevoItem = {
+    local_id: localId,
+    origen_interno: origen,
+    origen_id: null,
+    fecha_entrega: hasta || new Date().toISOString().slice(0, 10),
+    tienda: "",
+    dominio: "",
+    sector: origen === "prenda" ? "Cobranzas y Créditos" : "",
+    analista: "",
+    frq: "",
+    garante: "",
+    tramite:
+      origen === "prenda"
+        ? "INSCRIPCIÓN DE PRENDA"
+        : "INFORME DE DOMINIO",
+    is_manual: true,
+  };
+
+  setItems((prev) => [nuevoItem, ...prev]);
+
+  setConceptosPorItem((prev) => ({
+    ...prev,
+    [localId]: [],
+  }));
+
+  setItemsAbiertos((prev) => ({
+    ...prev,
+    [localId]: true,
+  }));
+
+  setEditingItemKey(localId);
+}
+
+function handleEliminarItemManual(item) {
+  const key = getItemKey(item);
+
+  setItems((prev) => prev.filter((row) => getItemKey(row) !== key));
+
+  setConceptosPorItem((prev) => {
+    const next = { ...prev };
+    delete next[key];
+    return next;
+  });
+
+  setItemsAbiertos((prev) => {
+    const next = { ...prev };
+    delete next[key];
+    return next;
+  });
+
+  if (editingItemKey === key) {
+    setEditingItemKey(null);
+  }
+}
+
   const resumen = useMemo(() => {
     return {
       total: items.length,
@@ -246,7 +389,7 @@ function handleToggleItem(item) {
 
   const totalGeneral = useMemo(() => {
   return items.reduce((total, item) => {
-    const key = `${item.origen_interno}-${item.origen_id}`;
+    const key = getItemKey(item);
 
     return (
       total +
