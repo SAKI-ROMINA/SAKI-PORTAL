@@ -176,9 +176,11 @@ export default function DiaPrendasNueva() {
   const dateInputRef = useRef(null);
 
   const [saving, setSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+const [errorMsg, setErrorMsg] = useState("");
+const [isAdmin, setIsAdmin] = useState(false);
 const [tipoCarga, setTipoCarga] = useState("nueva");
+const [fechaNoAplica, setFechaNoAplica] = useState(false);
+
   const [form, setForm] = useState({
   tienda: "",
   dominio: "",
@@ -226,9 +228,10 @@ const [tipoCarga, setTipoCarga] = useState("nueva");
 
       setIsAdmin(userIsAdmin);
 
-      if (!userIsAdmin) {
-        setTipoCarga("nueva");
-      }
+if (!userIsAdmin) {
+  setTipoCarga("nueva");
+  setFechaNoAplica(false);
+}
     } catch (error) {
       console.error("Error verificando usuario:", error);
       setIsAdmin(false);
@@ -283,6 +286,7 @@ const frqNombre = form.frq_nombre.trim();
 const frqCuit = onlyDigits(form.frq_cuit);
 const fechaOperacion = form.fecha_envio_oficina;
 const esCargaHistorica = isAdmin && tipoCarga === "historica";
+const fechaNoAplicaAdmin = isAdmin && fechaNoAplica;
 const ccEmailLimpio = emailsUnicosPrenda([form.cc_email]).join(",");
 
 const camposFaltantes = [];
@@ -292,7 +296,7 @@ if (!dominio) camposFaltantes.push("Dominio");
 if (!frqApellido) camposFaltantes.push("Apellido FRQ");
 if (!frqNombre) camposFaltantes.push("Nombre FRQ");
 if (!frqCuit) camposFaltantes.push("CUIT FRQ");
-if (!fechaOperacion) {
+if (!fechaOperacion && !fechaNoAplicaAdmin) {
   camposFaltantes.push(esCargaHistorica ? "Fecha de retiro" : "Fecha de envío");
 }
 
@@ -306,7 +310,7 @@ if (frqCuit.length !== 11) {
   return;
 }
 
-if (!esCargaHistorica && fechaOperacion < todayStr) {
+if (!fechaNoAplicaAdmin && !esCargaHistorica && fechaOperacion < todayStr) {
   setErrorMsg("La Fecha de envío no puede ser anterior al día de hoy.");
   return;
 }
@@ -366,7 +370,7 @@ if (hayTitularCuit && titularCuit.length !== 11) {
 
   cc_email: ccEmailLimpio || null,
 
-  fecha_envio_oficina: fechaOperacion || null,
+  fecha_envio_oficina: fechaNoAplicaAdmin ? null : fechaOperacion || null,
   fecha_retiro_final_real: null,
 
 estado: "Pendiente de envío",
@@ -393,12 +397,14 @@ const { error: historyError } = await supabase
       ? "Carga histórica del legajo"
       : "Carga inicial de nueva prenda",
     detalle: {
-  fecha_envio_inicial: fechaOperacion || null,
+  fecha_envio_inicial: fechaNoAplicaAdmin ? null : fechaOperacion || null,
   estado: "Pendiente de envío",
   tienda: cleanUpper(form.tienda),
   dominio: cleanUpper(form.dominio),
   frq: cleanUpper(frqCompuesto),
-  nota: esCargaHistorica
+nota: fechaNoAplicaAdmin
+  ? "Carga administrativa: fecha no aplica. Legajo incorporado para gestión de observación o regularización sin fecha de envío/retiro disponible."
+  : esCargaHistorica
     ? "Legajo cargado administrativamente como carga histórica. Continúa el mismo circuito operativo que una prenda nueva."
     : null,
 },
@@ -598,28 +604,59 @@ router.push("/dia/prendas");
       {tipoCarga === "historica" ? "Fecha de retiro" : "Fecha de envío"}
     </label>
 
-    <div style={dateInputWrapStyle}>
-      <input
-        ref={dateInputRef}
-        type="date"
-        value={form.fecha_envio_oficina}
-        min={tipoCarga === "historica" ? undefined : todayStr}
-        onChange={(e) =>
-          setField("fecha_envio_oficina", e.target.value)
-        }
-        style={dateInputStyle}
-      />
+<div style={dateInputWrapStyle}>
+  <input
+    ref={dateInputRef}
+    type="date"
+    value={form.fecha_envio_oficina}
+    min={tipoCarga === "historica" ? undefined : todayStr}
+    disabled={isAdmin && fechaNoAplica}
+    onChange={(e) =>
+      setField("fecha_envio_oficina", e.target.value)
+    }
+    style={{
+      ...dateInputStyle,
+      opacity: isAdmin && fechaNoAplica ? 0.55 : 1,
+      cursor: isAdmin && fechaNoAplica ? "not-allowed" : "auto",
+    }}
+  />
 
-      <button
-        type="button"
-        onClick={openDatePicker}
-        style={calendarButtonStyle}
-        aria-label="Abrir calendario"
-        title="Abrir calendario"
-      >
-        📅
-      </button>
-    </div>
+  <button
+    type="button"
+    onClick={openDatePicker}
+    disabled={isAdmin && fechaNoAplica}
+    style={{
+      ...calendarButtonStyle,
+      opacity: isAdmin && fechaNoAplica ? 0.45 : 1,
+      cursor: isAdmin && fechaNoAplica ? "not-allowed" : "pointer",
+    }}
+    aria-label="Abrir calendario"
+    title="Abrir calendario"
+  >
+    📅
+  </button>
+</div>
+
+{isAdmin && (
+  <label style={fechaNoAplicaBoxStyle}>
+    <input
+      type="checkbox"
+      checked={fechaNoAplica}
+      onChange={(e) => {
+        const checked = e.target.checked;
+        setFechaNoAplica(checked);
+
+        if (checked) {
+          setField("fecha_envio_oficina", "");
+        }
+      }}
+      style={fechaNoAplicaCheckboxStyle}
+    />
+    <span>
+      Fecha no aplica / carga administrativa
+    </span>
+  </label>
+)}
   </div>
 </div>
 
@@ -1059,4 +1096,22 @@ const tipoCargaButtonActiveStyle = {
   background: "rgba(59,130,246,0.18)",
   border: "1px solid rgba(96,165,250,0.32)",
   color: "#dbeafe",
+};
+
+const fechaNoAplicaBoxStyle = {
+  marginTop: "10px",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "9px",
+  color: "#cfe7ff",
+  fontSize: "13px",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const fechaNoAplicaCheckboxStyle = {
+  width: "16px",
+  height: "16px",
+  accentColor: "#2563eb",
+  cursor: "pointer",
 };
