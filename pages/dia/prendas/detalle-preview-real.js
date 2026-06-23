@@ -133,15 +133,9 @@ const enviarNotificacionPrendaEstado = async ({
     );
 
     const destinatariosPrincipales = emailsUnicosPrenda([
-  mailAdminSaki,
-]);
-
-// PRUEBA INTERNA: no enviar todavía a Créditos y Cobranzas.
-// Para activar sector, volver a:
-// const destinatariosPrincipales = emailsUnicosPrenda([
-//   mailAdminSaki,
-//   ...mailsSector,
-// ]);
+      mailAdminSaki,
+      ...mailsSector,
+    ]);
 
     if (!destinatariosPrincipales.length) {
       console.warn("No hay destinatarios para notificar el estado de prenda.");
@@ -3516,6 +3510,33 @@ async function handleGuardarPendiente() {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
 
+    await enviarNotificacionPrendaEstado({
+      prendaId: id,
+      row: {
+        ...row,
+        estado: "Pendiente",
+        fecha_pendiente: fechaPendiente,
+        motivo_pendiente: motivoPendiente.trim(),
+        nota_pendiente: notaPendiente.trim() || null,
+      },
+      asunto: "SAKI | Prenda marcada como pendiente",
+      titulo: "Prenda marcada como pendiente",
+      descripcion:
+        "SAKI marcó la prenda como pendiente dentro del circuito operativo.",
+      estadoNuevo: "Pendiente",
+      detalleHtml: `
+        <p style="margin: 16px 0 8px 0;"><strong>Estado anterior:</strong> ${
+          estadoAnterior || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Fecha del pendiente:</strong> ${
+          fechaPendiente || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Motivo:</strong> ${
+          motivoPendiente || "-"
+        }</p>
+      `,
+    });
+
     setRow((prev) => ({
       ...prev,
       estado: "Pendiente",
@@ -3770,6 +3791,41 @@ async function handleGuardarMarcarObservada() {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
 
+    await enviarNotificacionPrendaEstado({
+      prendaId: id,
+      row: {
+        ...row,
+        estado: "Observada",
+        fecha_observacion: fechaObservacion,
+        incidencia_tipo: observacionTipo,
+        motivo_incidencia: observacionMotivo.trim(),
+      },
+      asunto: "SAKI | Prenda observada",
+      titulo: "Prenda observada",
+      descripcion:
+        "SAKI registró una observación sobre la prenda dentro del trámite.",
+      estadoNuevo: "Observada",
+      detalleHtml: `
+        <p style="margin: 16px 0 8px 0;"><strong>Estado anterior:</strong> ${
+          estadoAnterior || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Fecha de observación:</strong> ${
+          fechaObservacion || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Tipo de observación:</strong> ${
+          observacionTipo || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Motivo:</strong> ${
+          observacionMotivo || "-"
+        }</p>
+        ${
+          observacionNota
+            ? `<p style="margin: 0 0 8px 0;"><strong>Nota:</strong> ${observacionNota}</p>`
+            : ""
+        }
+      `,
+    });
+
     setRow((prev) => ({
       ...prev,
       estado: "Observada",
@@ -3987,6 +4043,32 @@ async function handleGuardarMarcarInscripta() {
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
+
+    await enviarNotificacionPrendaEstado({
+      prendaId: id,
+      row: {
+        ...row,
+        estado: "Inscripta",
+        fecha_inscripcion: fechaInscripcion,
+        fecha_vencimiento: fechaVencimientoCalculada,
+      },
+      asunto: "SAKI | Prenda inscripta",
+      titulo: "Prenda inscripta",
+      descripcion:
+        "SAKI registró que la prenda fue inscripta correctamente en el Registro.",
+      estadoNuevo: "Inscripta",
+      detalleHtml: `
+        <p style="margin: 16px 0 8px 0;"><strong>Estado anterior:</strong> ${
+          estadoAnterior || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Fecha de inscripción:</strong> ${
+          fechaInscripcion || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Fecha de vencimiento:</strong> ${
+          fechaVencimientoCalculada || "-"
+        }</p>
+      `,
+    });
 
     setRow((prev) => ({
       ...prev,
@@ -4242,6 +4324,28 @@ async function handleGuardarRetiradaFinal() {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
 
+    await enviarNotificacionPrendaEstado({
+      prendaId: id,
+      row: {
+        ...row,
+        estado: "Retirada",
+        fecha_real_retiro_final: fechaRetiradaFinal,
+      },
+      asunto: "SAKI | Prenda retirada",
+      titulo: "Prenda retirada",
+      descripcion:
+        "SAKI registró que Día retiró la prenda inscripta.",
+      estadoNuevo: "Retirada",
+      detalleHtml: `
+        <p style="margin: 16px 0 8px 0;"><strong>Estado anterior:</strong> ${
+          estadoAnterior || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Fecha de retiro final:</strong> ${
+          fechaRetiradaFinal || "-"
+        }</p>
+      `,
+    });
+
     setRow((prev) => ({
       ...prev,
       estado: "Retirada",
@@ -4415,6 +4519,33 @@ const anuladaPorTexto =
     if (createdHistory) {
       setHistoryRows((prev) => [createdHistory, ...prev]);
     }
+
+    await enviarNotificacionPrendaEstado({
+      prendaId: id,
+      row: {
+        ...row,
+        estado: "Anulada",
+        anulada_en: anuladaEn,
+        anulada_por: anuladaPor,
+        motivo_anulacion: motivoAnulacion.trim(),
+      },
+      asunto: "SAKI | Prenda anulada",
+      titulo: "Prenda anulada",
+      descripcion:
+        "SAKI registró la anulación de la prenda. El trámite no continuará su circuito operativo.",
+      estadoNuevo: "Anulada",
+      detalleHtml: `
+        <p style="margin: 16px 0 8px 0;"><strong>Estado anterior:</strong> ${
+          estadoAnterior || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Anulada por:</strong> ${
+          anuladaPorTexto || "-"
+        }</p>
+        <p style="margin: 0 0 8px 0;"><strong>Motivo:</strong> ${
+          motivoAnulacion || "-"
+        }</p>
+      `,
+    });
 
     setRow((prev) => ({
       ...prev,

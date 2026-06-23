@@ -84,13 +84,10 @@ const enviarNotificacionNuevaPrenda = async ({
       (perfilesSector || []).map((perfil) => perfil?.email)
     );
 
-const destinatariosPrincipales = emailsUnicosPrenda([
-  mailAdminSaki,
-]);
-
-// PRUEBA INTERNA: por ahora no se envía a miembros de Créditos y Cobranzas.
-// Cuando validemos el mail, volvemos a agregar:
-// ...mailsSector,
+    const destinatariosPrincipales = emailsUnicosPrenda([
+      mailAdminSaki,
+      ...mailsSector,
+    ]);
 
     if (!destinatariosPrincipales.length) {
       console.warn("No hay destinatarios para notificar la nueva prenda.");
