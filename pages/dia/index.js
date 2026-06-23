@@ -584,6 +584,9 @@ const novedadesFiltradas =
     ? novedadesPortal
     : novedadesPortal.filter((item) => item.tipo === novedadFiltro);
 
+    const sectorNormalizado = normalizeSearchText(userProfile?.sector);
+const canVerLiquidaciones = isAdmin || sectorNormalizado.includes("franquicias");
+
     const displayName =
   userProfile?.full_name ||
   userProfile?.name ||
@@ -733,11 +736,11 @@ if (checkingSession) {
               action="Entrar a prendas"
             />
 
-            {isAdmin && (
+            {canVerLiquidaciones && (
   <ModuleCard
     icon={<FileText size={30} />}
     title="Liquidaciones"
-    description="Armado, edición e impresión del detalle mensual de trabajos entregados para facturación."
+    description="Consulta de liquidaciones emitidas, facturación, pagos y fondos a rendir."
     href="/dia/liquidaciones"
     action="Entrar a liquidaciones"
   />
