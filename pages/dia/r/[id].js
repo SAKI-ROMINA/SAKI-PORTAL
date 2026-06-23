@@ -85,20 +85,31 @@ export default function DiaResultado() {
     cc = "",
   }) {
     try {
-const mailRes = await fetch("/api/dia/send-notification", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    to,
-    cc,
-    subject,
-    html,
-    requestId: rowData?.id,
-    threadId: rowData?.email_thread_id || null,
-  }),
-});
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (!accessToken) {
+        return {
+          ok: false,
+          error: "Falta sesión para enviar la notificación.",
+        };
+      }
+
+      const mailRes = await fetch("/api/dia/send-notification", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          to,
+          cc,
+          subject,
+          html,
+          requestId: rowData?.id,
+          threadId: rowData?.email_thread_id || null,
+        }),
+      });
 
       const mailJson = await mailRes.json();
 

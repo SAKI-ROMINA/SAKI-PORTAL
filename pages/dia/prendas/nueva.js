@@ -94,10 +94,19 @@ const enviarNotificacionNuevaPrenda = async ({
       return;
     }
 
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+
+    if (!accessToken) {
+      console.warn("No hay sesión para enviar la notificación de nueva prenda.");
+      return;
+    }
+
     const mailRes = await fetch("/api/dia/send-notification", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         to: destinatariosPrincipales.join(","),
