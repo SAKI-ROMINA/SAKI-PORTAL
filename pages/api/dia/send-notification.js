@@ -48,6 +48,15 @@ function emailsUnicos(values) {
   return Array.from(new Set(values.flatMap((value) => separarEmails(value))));
 }
 
+function escaparHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function sectorAutorizado(sector) {
   const sectorNormalizado = normalizarTexto(sector);
 
@@ -93,19 +102,16 @@ async function obtenerCopiasAsociadas({ supabaseAdmin, requestId }) {
 
   const copias = [];
 
-  const { data: informe } = await supabaseAdmin
+  const { data: informe, error: informeError } = await supabaseAdmin
     .from("dia_requests")
-    .select("cc_email, cc_emails, emails_copia, mail_copia")
+    .select("cc_email")
     .eq("id", requestId)
     .maybeSingle();
 
+  if (informeError) throw informeError;
+
   if (informe) {
-    copias.push(
-      informe.cc_email,
-      informe.cc_emails,
-      informe.emails_copia,
-      informe.mail_copia
-    );
+    copias.push(informe.cc_email);
   }
 
   const { data: prenda } = await supabaseAdmin
@@ -249,6 +255,31 @@ export default async function handler(req, res) {
       });
     }
 
+    const modoPrueba =
+      process.env.DIA_MAIL_TEST_MODE === "true" &&
+      Boolean(process.env.DIA_MAIL_TEST_TO?.trim());
+    const destinatariosPrueba = modoPrueba
+      ? emailsUnicos([process.env.DIA_MAIL_TEST_TO])
+      : [];
+
+    if (modoPrueba && !destinatariosPrueba.length) {
+      throw new Error(
+        "DIA_MAIL_TEST_TO no contiene destinatarios válidos para el modo prueba."
+      );
+    }
+
+    const destinatariosFinales = modoPrueba
+      ? destinatariosPrueba
+      : destinatariosTo;
+    const subjectFinal = modoPrueba ? `[TEST] ${subject}` : subject;
+    const htmlFinal = modoPrueba
+      ? `<div style="margin-bottom:16px;padding:12px;border:2px solid #d97706;background:#fef3c7;color:#92400e;font-family:Arial,sans-serif;">
+          <strong>MODO PRUEBA</strong><br />
+          <strong>Destinatarios reales:</strong> ${escaparHtml(destinatariosTo.join(", ") || "-")}<br />
+          <strong>CC reales:</strong> ${escaparHtml(destinatariosCc.join(", ") || "-")}
+        </div>${html}`
+      : html;
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 465),
@@ -266,10 +297,14 @@ export default async function handler(req, res) {
 
     const mailOptions = {
       from: process.env.MAIL_FROM,
-      to: destinatariosTo.join(","),
-      cc: destinatariosCc.length ? destinatariosCc.join(",") : undefined,
-      subject,
-      html,
+      to: destinatariosFinales.join(","),
+      cc: modoPrueba
+        ? undefined
+        : destinatariosCc.length
+          ? destinatariosCc.join(",")
+          : undefined,
+      subject: subjectFinal,
+      html: htmlFinal,
     };
 
     // Primer mail del pedido: crea el hilo
