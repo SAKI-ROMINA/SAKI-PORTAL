@@ -571,7 +571,6 @@ async function handleAbrirLiquidacionGuardada(liquidacionId) {
     setItemsAbiertos(abiertosNormalizados);
     setEditingItemKey(null);
 
-    alert("Liquidación abierta para editar.");
   } catch (err) {
     console.error("Error inesperado al abrir liquidación:", err);
     alert("Ocurrió un error inesperado al abrir la liquidación.");
@@ -860,9 +859,9 @@ async function handleGuardarLiquidacion() {
         <section className="hero">
           <div>
             <span className="eyebrow">MÓDULO INTERNO</span>
-            <h1>Liquidación mensual Día</h1>
+            <h1>Resumen mensual de trabajos</h1>
             <p>
-              Generá el detalle mensual de trabajos entregados para facturación,
+              Armá el detalle mensual de trabajos entregados para enviar a Día,
               agrupando cada dominio con sus conceptos e importes.
             </p>
           </div>
@@ -957,9 +956,11 @@ async function handleGuardarLiquidacion() {
         <section className="savedBox">
   <div className="savedHeader">
     <div>
-      <h2>Liquidaciones guardadas</h2>
+      <h2>Resúmenes mensuales guardados</h2>
       <p>
-        Abrí una liquidación ya guardada para revisarla, agregar conceptos o corregir datos antes de imprimir.
+        {readOnly
+          ? "Consultá o abrí un resumen mensual ya guardado para revisar su detalle e imprimirlo."
+          : "Consultá o abrí un resumen mensual ya guardado para revisar, ajustar conceptos e imprimir."}
       </p>
     </div>
 
@@ -1034,10 +1035,10 @@ async function handleGuardarLiquidacion() {
         <section className="tableBox">
           <div className="tableHeader">
   <div>
-    <h2>Trabajos entregados</h2>
+    <h2>Detalle de trabajos incluidos</h2>
     <p>
-      Vista tipo planilla: tienda, dominio, sector, analista, FRQ y trámite.
-      No se muestra módulo en impresión.
+      Detalle de trabajos que integran el resumen mensual, con sus conceptos,
+      subtotales y total.
     </p>
   </div>
 
@@ -1929,8 +1930,13 @@ const styles = `
 }
 
 .printButton {
-  background: linear-gradient(135deg, #1e40af, #1d4ed8);
-  box-shadow: 0 14px 28px rgba(30, 64, 175, 0.22);
+  min-height: 32px;
+  padding: 0 12px;
+  background: rgba(30, 64, 175, 0.34);
+  border-color: rgba(96, 165, 250, 0.18);
+  font-size: 10px;
+  font-weight: 750;
+  box-shadow: none;
 }
 
 .printHeader {
