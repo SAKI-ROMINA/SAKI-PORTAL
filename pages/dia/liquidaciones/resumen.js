@@ -32,6 +32,7 @@ export default function ResumenMensualLiquidaciones() {
 
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
+  const [actualizacionFeedback, setActualizacionFeedback] = useState("");
 
   const [savingLiquidacion, setSavingLiquidacion] = useState(false);
 const [liquidacionGuardadaId, setLiquidacionGuardadaId] = useState(null);
@@ -156,6 +157,18 @@ async function cargarLiquidacionesGuardadas() {
 
     try {
       setLoading(true);
+      setActualizacionFeedback("");
+
+      const liquidacionAbierta = liquidacionesGuardadas.find(
+        (liquidacion) => liquidacion.id === liquidacionGuardadaId
+      );
+
+      if (liquidacionAbierta && !esBorrador(liquidacionAbierta.estado)) {
+        setActualizacionFeedback(
+          "Solo podés buscar trabajos nuevos cuando el resumen abierto está en estado BORRADOR."
+        );
+        return;
+      }
 
       let query = supabase
         .from("dia_liquidables_base")
@@ -179,6 +192,44 @@ async function cargarLiquidacionesGuardadas() {
       }
 
       const rows = data || [];
+
+      if (liquidacionAbierta) {
+        const clavesExistentes = new Set(items.map((item) => getTrabajoKey(item)));
+        const trabajosNuevos = rows.filter(
+          (item) => !clavesExistentes.has(getTrabajoKey(item))
+        );
+
+        if (!trabajosNuevos.length) {
+          setActualizacionFeedback(
+            "No hay trabajos nuevos para agregar al resumen abierto."
+          );
+          return;
+        }
+
+        setItems((prev) => [...prev, ...trabajosNuevos]);
+        setConceptosPorItem((prev) => {
+          const next = { ...prev };
+
+          trabajosNuevos.forEach((item) => {
+            next[getItemKey(item)] = next[getItemKey(item)] || [];
+          });
+
+          return next;
+        });
+        setItemsAbiertos((prev) => {
+          const next = { ...prev };
+
+          trabajosNuevos.forEach((item) => {
+            next[getItemKey(item)] = false;
+          });
+
+          return next;
+        });
+        setActualizacionFeedback(
+          `${trabajosNuevos.length} trabajo${trabajosNuevos.length === 1 ? "" : "s"} nuevo${trabajosNuevos.length === 1 ? "" : "s"} agregado${trabajosNuevos.length === 1 ? "" : "s"} al resumen. Recordá actualizarlo para guardar los cambios.`
+        );
+        return;
+      }
 
 setItems(rows);
 
@@ -229,6 +280,18 @@ setItemsAbiertos((prev) => {
 
 function getItemKey(item) {
   return item.local_id || `${item.origen_interno}-${item.origen_id}`;
+}
+
+function getTrabajoKey(item) {
+  if (item?.origen_interno && item?.origen_id) {
+    return `${item.origen_interno}-${item.origen_id}`;
+  }
+
+  return getItemKey(item);
+}
+
+function esBorrador(estado) {
+  return String(estado || "").trim().toUpperCase() === "BORRADOR";
 }
 
 function parseImporte(value) {
@@ -928,6 +991,10 @@ async function handleGuardarLiquidacion() {
             {loading ? "Buscando..." : "Buscar entregados"}
           </button>
           )}
+
+          {actualizacionFeedback && (
+            <p className="actualizacionFeedback">{actualizacionFeedback}</p>
+          )}
           {!readOnly && (
           <button
   type="button"
@@ -1517,6 +1584,18 @@ const styles = `
   width: 100%;
   padding: 0 14px;
   white-space: nowrap;
+}
+
+.actualizacionFeedback {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 1px solid rgba(96, 165, 250, 0.20);
+  border-radius: 12px;
+  background: rgba(30, 64, 175, 0.16);
+  color: rgba(219, 234, 254, 0.92);
+  padding: 9px 12px;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
   .field {
