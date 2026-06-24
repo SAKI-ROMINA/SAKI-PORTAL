@@ -1222,8 +1222,8 @@ async function handleGuardarLiquidacion() {
             <div className="brandSub">Liquidaciones Día</div>
           </div>
 
-          <Link href="/dia" className="backLink">
-            Volver al Workspace
+          <Link href="/dia/liquidaciones" className="backLink">
+            Volver a Liquidaciones
           </Link>
         </header>
 
