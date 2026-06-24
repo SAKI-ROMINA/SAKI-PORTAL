@@ -342,7 +342,7 @@ function handleCambiarItemDato(item, field, value) {
         ? {
             ...row,
             [field]:
-              field === "fecha_entrega"
+              field === "fecha_entrega" || field === "sector"
                 ? value
                 : value.toLocaleUpperCase("es-AR"),
           }
@@ -938,7 +938,7 @@ async function handleGuardarLiquidacion() {
   {savingLiquidacion
   ? "Guardando..."
   : liquidacionGuardadaId
-    ? "Actualizar liquidación"
+    ? "Actualizar resumen"
     : "Guardar liquidación"}
 </button>
           )}
@@ -1011,7 +1011,11 @@ async function handleGuardarLiquidacion() {
             className="smallButton"
             onClick={() => handleAbrirLiquidacionGuardada(liq.id)}
           >
-            {readOnly ? "Abrir" : "Abrir / editar"}
+            {readOnly
+              ? "Ver resumen"
+              : String(liq.estado || "").trim().toUpperCase() === "BORRADOR"
+                ? "Abrir / editar"
+                : "Ver resumen"}
           </button>
         </div>
       ))}
@@ -1540,16 +1544,16 @@ const styles = `
   }
 
   .primaryButton {
-    min-height: 44px;
-    border: 0;
+    min-height: 38px;
+    border: 1px solid rgba(96, 165, 250, 0.22);
     border-radius: 999px;
     background: linear-gradient(135deg, #2563eb, #1d4ed8);
     color: #ffffff;
-    padding: 0 22px;
-    font-size: 14px;
-    font-weight: 800;
+    padding: 0 15px;
+    font-size: 12px;
+    font-weight: 750;
     cursor: pointer;
-    box-shadow: 0 14px 28px rgba(37, 99, 235, 0.24);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
   }
 
   .primaryButton:disabled {
@@ -1667,14 +1671,14 @@ const styles = `
 }
 
 .smallButton {
-  min-height: 34px;
+  min-height: 30px;
   border-radius: 999px;
   border: 1px solid rgba(96, 165, 250, 0.22);
   background: rgba(30, 64, 175, 0.26);
   color: rgba(219, 234, 254, 0.95);
-  padding: 0 14px;
-  font-size: 12px;
-  font-weight: 800;
+  padding: 0 11px;
+  font-size: 11px;
+  font-weight: 750;
   cursor: pointer;
 }
 
@@ -1930,11 +1934,11 @@ const styles = `
 }
 
 .printButton {
-  min-height: 32px;
-  padding: 0 12px;
+  min-height: 34px;
+  padding: 0 14px;
   background: rgba(30, 64, 175, 0.34);
   border-color: rgba(96, 165, 250, 0.18);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 750;
   box-shadow: none;
 }
