@@ -135,7 +135,6 @@ export default function DiaResultado() {
 
       return mailJson;
     } catch (err) {
-      console.error("Error enviando notificación:", err);
       return { ok: false, error: err.message || "No se pudo enviar el mail." };
     }
   }
@@ -159,22 +158,14 @@ export default function DiaResultado() {
         setRow(data);
 
         // Rol usuario actual
-        const { data: auth, error: authError } = await supabase.auth.getUser();
-
-        console.log("AUTH DETAIL:", auth);
-        console.log("AUTH ERROR:", authError);
+        const { data: auth } = await supabase.auth.getUser();
 
         if (auth?.user) {
-          const { data: prof, error: profError } = await supabase
+          const { data: prof } = await supabase
             .from("profiles")
             .select("id, email, role, full_name, name")
             .eq("id", auth.user.id)
             .maybeSingle();
-
-          console.log("PROFILE DETAIL:", prof);
-          console.log("PROFILE ERROR:", profError);
-          console.log("AUTH USER ID:", auth?.user?.id);
-          console.log("PROFILE ERROR MESSAGE:", profError?.message);
 
           setIsAdmin((prof?.role || "").toLowerCase() === "admin");
         } else {
@@ -316,7 +307,6 @@ export default function DiaResultado() {
 
       alert("Guardado ✔");
     } catch (e) {
-      console.error(e);
       alert("No se pudo guardar");
     } finally {
       setSaving(false);
@@ -434,7 +424,6 @@ export default function DiaResultado() {
 
       alert("Archivo subido con éxito ✅");
     } catch (e) {
-      console.error(e);
       alert("Error al subir archivo ❌");
     }
   };
