@@ -49,7 +49,6 @@ const [analistasOptions, setAnalistasOptions] = useState([]);
 useEffect(() => {
   verificarUsuario();
   cargarAnalistas();
-  cargarLiquidacionesGuardadas();
   setFechasMesActual();
 }, []);
 
@@ -97,6 +96,7 @@ useEffect(() => {
       setIsAdmin(esAdmin);
       setCanAccess(esAdmin || esAdmFranquicias);
       setReadOnly(!esAdmin);
+      await cargarLiquidacionesGuardadas(esAdmin);
     } finally {
       setLoadingUser(false);
     }
@@ -128,7 +128,7 @@ async function cargarAnalistas() {
   setAnalistasOptions(opciones);
 }
 
-async function cargarLiquidacionesGuardadas() {
+async function cargarLiquidacionesGuardadas(mostrarBorradores = isAdmin) {
   try {
     setLoadingGuardadas(true);
 
@@ -143,7 +143,11 @@ async function cargarLiquidacionesGuardadas() {
       return;
     }
 
-    setLiquidacionesGuardadas(data || []);
+    setLiquidacionesGuardadas(
+      mostrarBorradores
+        ? data || []
+        : (data || []).filter((liquidacion) => !esBorrador(liquidacion.estado))
+    );
   } finally {
     setLoadingGuardadas(false);
   }
@@ -163,7 +167,7 @@ async function cargarLiquidacionesGuardadas() {
         (liquidacion) => liquidacion.id === liquidacionGuardadaId
       );
 
-      if (liquidacionAbierta && !esBorrador(liquidacionAbierta.estado)) {
+      if (!readOnly && liquidacionAbierta && !esBorrador(liquidacionAbierta.estado)) {
         setActualizacionFeedback(
           "Solo podés buscar trabajos nuevos cuando el resumen abierto está en estado BORRADOR."
         );
@@ -193,7 +197,7 @@ async function cargarLiquidacionesGuardadas() {
 
       const rows = data || [];
 
-      if (liquidacionAbierta) {
+      if (!readOnly && liquidacionAbierta && esBorrador(liquidacionAbierta.estado)) {
         const clavesExistentes = new Set(items.map((item) => getTrabajoKey(item)));
         const trabajosNuevos = rows.filter(
           (item) => !clavesExistentes.has(getTrabajoKey(item))
@@ -633,6 +637,7 @@ async function handleAbrirLiquidacionGuardada(liquidacionId) {
     setConceptosPorItem(conceptosNormalizados);
     setItemsAbiertos(abiertosNormalizados);
     setEditingItemKey(null);
+    return true;
 
   } catch (err) {
     console.error("Error inesperado al abrir liquidación:", err);
@@ -640,6 +645,16 @@ async function handleAbrirLiquidacionGuardada(liquidacionId) {
   } finally {
     setLoading(false);
   }
+}
+
+async function handleImprimirResumenGuardado(liquidacionId) {
+  const seAbrio = await handleAbrirLiquidacionGuardada(liquidacionId);
+
+  if (seAbrio !== true) return;
+
+  setTimeout(() => {
+    window.print();
+  }, 150);
 }
 
 async function handleGuardarLiquidacion() {
@@ -874,6 +889,14 @@ async function handleGuardarLiquidacion() {
   }, 0);
 }, [items, conceptosPorItem]);
 
+  const resumenAbierto = liquidacionesGuardadas.find(
+    (liquidacion) => liquidacion.id === liquidacionGuardadaId
+  );
+  const puedeGuardarResumen =
+    !readOnly &&
+    (!liquidacionGuardadaId ||
+      (resumenAbierto && esBorrador(resumenAbierto.estado)));
+
   if (loadingUser) {
     return (
       <main className="page">
@@ -954,7 +977,6 @@ async function handleGuardarLiquidacion() {
               type="date"
               value={desde}
               onChange={(event) => setDesde(event.currentTarget.value)}
-              disabled={readOnly}
             />
           </div>
 
@@ -964,7 +986,6 @@ async function handleGuardarLiquidacion() {
               type="date"
               value={hasta}
               onChange={(event) => setHasta(event.currentTarget.value)}
-              disabled={readOnly}
             />
           </div>
 
@@ -973,7 +994,6 @@ async function handleGuardarLiquidacion() {
             <select
               value={tipo}
               onChange={(event) => setTipo(event.currentTarget.value)}
-              disabled={readOnly}
             >
               <option value="todos">Todos</option>
               <option value="informe">Informes</option>
@@ -981,21 +1001,19 @@ async function handleGuardarLiquidacion() {
             </select>
           </div>
 
-          {!readOnly && (
           <button
             type="button"
-            className="primaryButton"
+            className="primaryButton filterActionButton"
             onClick={buscarLiquidables}
             disabled={loading}
           >
-            {loading ? "Buscando..." : "Buscar entregados"}
+            {loading ? "Buscando..." : "Buscar trabajos"}
           </button>
-          )}
 
           {actualizacionFeedback && (
             <p className="actualizacionFeedback">{actualizacionFeedback}</p>
           )}
-          {!readOnly && (
+          {puedeGuardarResumen && (
           <button
   type="button"
   className="primaryButton saveButton"
@@ -1012,7 +1030,7 @@ async function handleGuardarLiquidacion() {
 
 <button
   type="button"
-  className="primaryButton printButton"
+  className="primaryButton filterActionButton printButton"
   onClick={handleImprimirLiquidacion}
   disabled={items.length === 0}
 >
@@ -1031,14 +1049,16 @@ async function handleGuardarLiquidacion() {
       </p>
     </div>
 
-    <button
-      type="button"
-      className="smallButton"
-      onClick={cargarLiquidacionesGuardadas}
-      disabled={loadingGuardadas}
-    >
-      {loadingGuardadas ? "Actualizando..." : "Actualizar"}
-    </button>
+    {isAdmin && resumenAbierto && esBorrador(resumenAbierto.estado) && (
+      <button
+        type="button"
+        className="smallButton"
+        onClick={cargarLiquidacionesGuardadas}
+        disabled={loadingGuardadas}
+      >
+        {loadingGuardadas ? "Actualizando..." : "Actualizar"}
+      </button>
+    )}
   </div>
 
   {liquidacionesGuardadas.length === 0 && (
@@ -1073,17 +1093,24 @@ async function handleGuardarLiquidacion() {
             <strong>{formatMoney(liq.total_general)}</strong>
           </div>
 
-          <button
-            type="button"
-            className="smallButton"
-            onClick={() => handleAbrirLiquidacionGuardada(liq.id)}
-          >
-            {readOnly
-              ? "Ver resumen"
-              : String(liq.estado || "").trim().toUpperCase() === "BORRADOR"
-                ? "Abrir / editar"
+          <div className="savedActions">
+            <button
+              type="button"
+              className="smallButton"
+              onClick={() => handleAbrirLiquidacionGuardada(liq.id)}
+            >
+              {isAdmin && esBorrador(liq.estado)
+                ? "Ver / editar"
                 : "Ver resumen"}
-          </button>
+            </button>
+            <button
+              type="button"
+              className="smallButton"
+              onClick={() => handleImprimirResumenGuardado(liq.id)}
+            >
+              Imprimir
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -1422,7 +1449,7 @@ async function handleGuardarLiquidacion() {
 )}
           {items.length > 0 && (
   <div className="totalGeneralBox">
-    <span>Total general liquidación</span>
+    <span>Total general de trabajos</span>
     <strong>{formatMoney(totalGeneral)}</strong>
   </div>
 )}
@@ -1584,6 +1611,18 @@ const styles = `
   width: 100%;
   padding: 0 14px;
   white-space: nowrap;
+}
+
+.filtersBox .filterActionButton {
+  width: auto;
+  min-height: 34px;
+  padding: 0 13px;
+  justify-self: start;
+  border-color: rgba(96, 165, 250, 0.18);
+  background: rgba(30, 64, 175, 0.34);
+  font-size: 11px;
+  font-weight: 750;
+  box-shadow: none;
 }
 
 .actualizacionFeedback {
@@ -2012,14 +2051,15 @@ const styles = `
   font-weight: 700;
 }
 
+.savedActions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .printButton {
-  min-height: 34px;
-  padding: 0 14px;
-  background: rgba(30, 64, 175, 0.34);
-  border-color: rgba(96, 165, 250, 0.18);
-  font-size: 11px;
-  font-weight: 750;
-  box-shadow: none;
+  color: rgba(219, 234, 254, 0.95);
 }
 
 .printHeader {
@@ -2058,17 +2098,39 @@ const styles = `
 }
 
   @media print {
+    @page {
+      size: A4 portrait;
+      margin: 12mm;
+    }
+
+    html,
+    body {
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
     .page {
+      width: 100% !important;
+      min-height: 0 !important;
       background: #ffffff !important;
       color: #111827 !important;
       padding: 0 !important;
+      margin: 0 !important;
       font-family: Arial, sans-serif !important;
+      box-sizing: border-box !important;
+      transform: none !important;
+      position: static !important;
     }
 
     .shell {
       max-width: none !important;
       width: 100% !important;
       margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+      transform: none !important;
+      position: static !important;
     }
 
     .topbar,
@@ -2088,6 +2150,9 @@ const styles = `
 
     .printHeader {
       display: block !important;
+      width: 100% !important;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
       margin-bottom: 18px !important;
       padding-bottom: 12px !important;
       border-bottom: 2px solid #111827 !important;
@@ -2113,14 +2178,19 @@ const styles = `
     }
 
     .tableBox {
+      width: 100% !important;
       border: none !important;
       background: transparent !important;
       padding: 0 !important;
       margin: 0 !important;
+      box-sizing: border-box !important;
     }
 
     .liquidacionList {
       display: block !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
 
     .liquidacionItem {
