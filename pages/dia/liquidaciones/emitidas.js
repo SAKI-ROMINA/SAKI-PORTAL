@@ -69,8 +69,9 @@ const [loadingGuardadas, setLoadingGuardadas] = useState(false);
   const [conceptosPorItem, setConceptosPorItem] = useState({});
   const [itemsAbiertos, setItemsAbiertos] = useState({});
 
-  const [editingItemKey, setEditingItemKey] = useState(null);
+const [editingItemKey, setEditingItemKey] = useState(null);
 const [analistasOptions, setAnalistasOptions] = useState([]);
+const detalleEmitidoSoloLectura = true;
 
 useEffect(() => {
   verificarUsuario();
@@ -199,7 +200,13 @@ async function cargarLiquidacionesGuardadas() {
       return;
     }
 
-    setLiquidacionesGuardadas(data || []);
+    setLiquidacionesGuardadas(
+      (data || []).filter(
+        (liquidacion) =>
+          String(liquidacion.estado || "").trim().toUpperCase() !==
+          "BORRADOR"
+      )
+    );
   } finally {
     setLoadingGuardadas(false);
   }
@@ -1289,7 +1296,7 @@ async function handleGuardarLiquidacion() {
     {loading ? "Buscando..." : "Buscar entregados"}
   </button>
 
-  {!readOnly && (
+  {!readOnly && !detalleEmitidoSoloLectura && (
     <button
       type="button"
       className="primaryButton saveButton"
@@ -1310,7 +1317,7 @@ async function handleGuardarLiquidacion() {
     onClick={handleImprimirLiquidacion}
     disabled={items.length === 0}
   >
-    Imprimir detalle
+    Imprimir liquidación emitida
   </button>
 </div>
 
@@ -1752,7 +1759,7 @@ async function handleGuardarLiquidacion() {
     </p>
   </div>
 
-  {!readOnly && (
+  {!readOnly && !detalleEmitidoSoloLectura && (
   <div className="tableActions">
     <button
       type="button"
@@ -1782,7 +1789,7 @@ async function handleGuardarLiquidacion() {
           {items.length > 0 && (
   <div className="liquidacionList">
     {items.map((item) => {
-      const editando = itemEstaEditando(item);
+      const editando = !detalleEmitidoSoloLectura && itemEstaEditando(item);
 
       return (
         <article
@@ -1938,7 +1945,7 @@ async function handleGuardarLiquidacion() {
                 {itemEstaAbierto(item) ? "Ocultar conceptos" : "Ver conceptos"}
               </button>
 
-{!readOnly && (
+{!readOnly && !detalleEmitidoSoloLectura && (
   <button
     type="button"
     className="toggleItemButton"
@@ -1948,7 +1955,7 @@ async function handleGuardarLiquidacion() {
   </button>
 )}
 
-{!readOnly && (
+{!readOnly && !detalleEmitidoSoloLectura && (
   <button
     type="button"
     className="miniDangerButton"
@@ -1973,7 +1980,7 @@ async function handleGuardarLiquidacion() {
                 <div className="conceptosHeader">
                   <strong>Conceptos</strong>
 
-{!readOnly && (
+{!readOnly && !detalleEmitidoSoloLectura && (
   <button
     type="button"
     className="smallButton"
@@ -1994,9 +2001,13 @@ async function handleGuardarLiquidacion() {
                   (concepto, index) => (
                     <div key={concepto.id || index} className="conceptoRow">
                       <select
-  className={readOnly ? "conceptoSelectReadOnly" : ""}
+  className={
+    readOnly || detalleEmitidoSoloLectura
+      ? "conceptoSelectReadOnly"
+      : ""
+  }
   value={concepto.concepto}
-  disabled={readOnly}
+  disabled={readOnly || detalleEmitidoSoloLectura}
   onChange={(event) =>
                           handleCambiarConcepto(
                             item,
@@ -2019,8 +2030,12 @@ async function handleGuardarLiquidacion() {
   <input
     className="conceptoImporte"
     inputMode="decimal"
-    value={readOnly ? formatImporteInput(concepto.importe) : concepto.importe}
-    disabled={readOnly}
+    value={
+      readOnly || detalleEmitidoSoloLectura
+        ? formatImporteInput(concepto.importe)
+        : concepto.importe
+    }
+    disabled={readOnly || detalleEmitidoSoloLectura}
     onChange={(event) =>
       handleCambiarConcepto(
         item,
@@ -2037,7 +2052,7 @@ async function handleGuardarLiquidacion() {
   </span>
 </div>
 
-                      {!readOnly && (
+                      {!readOnly && !detalleEmitidoSoloLectura && (
   <button
     type="button"
     className="deleteConceptoButton"
