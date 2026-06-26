@@ -59,6 +59,17 @@ const emailsUnicosPrenda = (values) => {
   return Array.from(new Set(values.flatMap((value) => separarEmailsPrenda(value))));
 };
 
+const obtenerAliasesSectorPrenda = () => [
+  "Créditos y Cobranzas",
+  "Creditos y Cobranzas",
+  "créditos y cobranzas",
+  "creditos y cobranzas",
+  "Cobranzas y Créditos",
+  "Cobranzas y Creditos",
+  "cobranzas y créditos",
+  "cobranzas y creditos",
+];
+
 const enviarNotificacionNuevaPrenda = async ({
   prendaId,
   payload,
@@ -74,7 +85,7 @@ const enviarNotificacionNuevaPrenda = async ({
       .from("profiles")
       .select("email, sector, role")
       .eq("role", "member")
-      .in("sector", ["Créditos y Cobranzas", "Creditos y Cobranzas"]);
+      .in("sector", obtenerAliasesSectorPrenda());
 
     if (perfilesError) {
       console.error("Error buscando destinatarios de Prendas:", perfilesError);
@@ -88,6 +99,10 @@ const enviarNotificacionNuevaPrenda = async ({
       mailAdminSaki,
       ...mailsSector,
     ]);
+
+    const copiasExternas = emailsUnicosPrenda([payload?.cc_email]).filter(
+      (email) => !destinatariosPrincipales.includes(email)
+    );
 
     if (!destinatariosPrincipales.length) {
       console.warn("No hay destinatarios para notificar la nueva prenda.");
@@ -110,7 +125,7 @@ const enviarNotificacionNuevaPrenda = async ({
       },
       body: JSON.stringify({
         to: destinatariosPrincipales.join(","),
-        cc: payload?.cc_email || "",
+        cc: copiasExternas.join(","),
         subject: "SAKI | Nueva prenda cargada",
         html: `
           <div style="font-family: Arial, sans-serif; font-size: 14px; color: #111; line-height: 1.5;">
