@@ -76,23 +76,8 @@ const detalleEmitidoSoloLectura = true;
 useEffect(() => {
   verificarUsuario();
   cargarAnalistas();
-  setFechasMesActual();
-}, []);
-
-useEffect(() => {
-  if (!desde || !hasta) return;
-
   cargarLiquidacionesGuardadas();
-}, [desde, hasta, tipo]);
-
-  function setFechasMesActual() {
-    const hoy = new Date();
-    const primero = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-    const ultimo = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-
-    setDesde(primero.toISOString().slice(0, 10));
-    setHasta(ultimo.toISOString().slice(0, 10));
-  }
+}, []);
 
   async function verificarUsuario() {
   try {
@@ -161,9 +146,15 @@ async function cargarAnalistas() {
   setAnalistasOptions(opciones);
 }
 
-async function cargarLiquidacionesGuardadas() {
+async function cargarLiquidacionesGuardadas({
+  desdeOverride = desde,
+  hastaOverride = hasta,
+  tipoOverride = tipo,
+} = {}) {
   try {
     setLoadingGuardadas(true);
+
+    const hayFiltroFecha = Boolean(desdeOverride || hastaOverride);
 
     let query = supabase
       .from("dia_liquidaciones")
@@ -200,12 +191,16 @@ async function cargarLiquidacionesGuardadas() {
       .order("periodo_desde", { ascending: false })
       .order("created_at", { ascending: false });
 
-    if (desde) {
-      query = query.gte("periodo_desde", desde);
+    if (desdeOverride) {
+      query = query.gte("periodo_desde", desdeOverride);
     }
 
-    if (hasta) {
-      query = query.lte("periodo_hasta", hasta);
+    if (hastaOverride) {
+      query = query.lte("periodo_hasta", hastaOverride);
+    }
+
+    if (!hayFiltroFecha) {
+      query = query.limit(12);
     }
 
     const { data, error } = await query;
@@ -218,7 +213,7 @@ async function cargarLiquidacionesGuardadas() {
     setLiquidacionesGuardadas(
       (data || [])
         .filter((liquidacion) => !esEstadoBorrador(liquidacion.estado))
-        .filter((liquidacion) => filtraLiquidacionPorEstado(liquidacion, tipo))
+        .filter((liquidacion) => filtraLiquidacionPorEstado(liquidacion, tipoOverride))
     );
   } finally {
     setLoadingGuardadas(false);
@@ -226,11 +221,6 @@ async function cargarLiquidacionesGuardadas() {
 }
 
   async function buscarLiquidaciones() {
-    if (!desde || !hasta) {
-      alert("Seleccioná fecha desde y fecha hasta.");
-      return;
-    }
-
     try {
       setLoading(true);
       await cargarLiquidacionesGuardadas();
@@ -238,6 +228,23 @@ async function cargarLiquidacionesGuardadas() {
       setLoading(false);
     }
   }
+
+async function limpiarFiltrosLiquidaciones() {
+  setDesde("");
+  setHasta("");
+  setTipo("todos");
+
+  try {
+    setLoading(true);
+    await cargarLiquidacionesGuardadas({
+      desdeOverride: "",
+      hastaOverride: "",
+      tipoOverride: "todos",
+    });
+  } finally {
+    setLoading(false);
+  }
+}
 
 function normalizarEstadoLiquidacion(estado) {
   return String(estado || "")
@@ -1327,6 +1334,15 @@ async function handleGuardarLiquidacion() {
     {loading ? "Buscando..." : "Buscar liquidaciones"}
   </button>
 
+  <button
+    type="button"
+    className="secondaryFilterButton"
+    onClick={limpiarFiltrosLiquidaciones}
+    disabled={loading}
+  >
+    Limpiar filtros
+  </button>
+
   {!readOnly && !detalleEmitidoSoloLectura && (
     <button
       type="button"
@@ -2389,6 +2405,27 @@ const styles = `
   letter-spacing: 0.01em;
 }
 
+.secondaryFilterButton {
+  width: auto;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid rgba(147, 197, 253, 0.24);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.54);
+  color: rgba(219, 234, 254, 0.94);
+  padding: 0 15px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.secondaryFilterButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
   .field {
     display: grid;
     gap: 7px;
@@ -2866,6 +2903,13 @@ const styles = `
     .itemToggleLine {
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .filtersButtons {
+      grid-column: auto;
+      grid-row: auto;
+      justify-self: stretch;
+      flex-wrap: wrap;
     }
   }
 
