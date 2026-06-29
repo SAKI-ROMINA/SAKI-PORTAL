@@ -231,10 +231,7 @@ frq_razon_social:
   source?.franquiciado ||
   "",
 frq_cuit:
-  source?.frq_cuit ||
-  source?.cuit ||
-  source?.identificacion_cuit ||
-  "",
+  source?.frq_cuit || "",
 frq_email: source?.frq_email || "",
 frq_telefono: source?.frq_telefono || "",
 frq_domicilio: source?.frq_domicilio || "",
@@ -3085,7 +3082,7 @@ const resumenLegajoTexto = [
     "Por completar"
   }`,
   `CUIT FRQ: ${
-    formatCuit(row?.frq_cuit || row?.identificacion_cuit) ||
+    formatCuit(row?.frq_cuit) ||
     "Por completar"
   }`,
   "",
@@ -3649,7 +3646,7 @@ value={
     items={[
       ["Tienda", row?.tienda || "Por completar"],
       ["Franquiciado", row?.franquiciado || row?.frq || "Por completar"],
-      ["CUIT", row?.frq_cuit || row?.identificacion_cuit || "Por completar"],
+      ["CUIT", row?.frq_cuit || "Por completar"],
     ]}
     action="Ver ficha →"
     onClick={() => setActiveFicha("frq")}
@@ -11010,13 +11007,10 @@ function FichaFrq({ row }) {
     row?.frq_razon_social ||
     row?.franquiciado ||
     row?.frq ||
-    row?.identificacion_nombre ||
     "Por completar";
 
   const cuitFranquiciado =
     row?.frq_cuit ||
-    row?.cuit ||
-    row?.identificacion_cuit ||
     "Por completar";
 
   return (
