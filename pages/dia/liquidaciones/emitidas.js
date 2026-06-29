@@ -76,9 +76,14 @@ const detalleEmitidoSoloLectura = true;
 useEffect(() => {
   verificarUsuario();
   cargarAnalistas();
-  cargarLiquidacionesGuardadas();
   setFechasMesActual();
 }, []);
+
+useEffect(() => {
+  if (!desde || !hasta) return;
+
+  cargarLiquidacionesGuardadas();
+}, [desde, hasta, tipo]);
 
   function setFechasMesActual() {
     const hoy = new Date();
@@ -160,7 +165,7 @@ async function cargarLiquidacionesGuardadas() {
   try {
     setLoadingGuardadas(true);
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("dia_liquidaciones")
       .select(`
   id,
@@ -192,8 +197,18 @@ async function cargarLiquidacionesGuardadas() {
   echeq_archivo_path,
   observaciones_facturacion
 `)
-      .order("created_at", { ascending: false })
-      .limit(12);
+      .order("periodo_desde", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (desde) {
+      query = query.gte("periodo_desde", desde);
+    }
+
+    if (hasta) {
+      query = query.lte("periodo_hasta", hasta);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error al cargar liquidaciones guardadas:", error);
@@ -201,18 +216,16 @@ async function cargarLiquidacionesGuardadas() {
     }
 
     setLiquidacionesGuardadas(
-      (data || []).filter(
-        (liquidacion) =>
-          String(liquidacion.estado || "").trim().toUpperCase() !==
-          "BORRADOR"
-      )
+      (data || [])
+        .filter((liquidacion) => !esEstadoBorrador(liquidacion.estado))
+        .filter((liquidacion) => filtraLiquidacionPorEstado(liquidacion, tipo))
     );
   } finally {
     setLoadingGuardadas(false);
   }
 }
 
-  async function buscarLiquidables() {
+  async function buscarLiquidaciones() {
     if (!desde || !hasta) {
       alert("Seleccioná fecha desde y fecha hasta.");
       return;
@@ -220,57 +233,53 @@ async function cargarLiquidacionesGuardadas() {
 
     try {
       setLoading(true);
-
-      let query = supabase
-        .from("dia_liquidables_base")
-        .select("*")
-        .gte("fecha_entrega", desde)
-        .lte("fecha_entrega", hasta)
-        .order("fecha_entrega", { ascending: true })
-        .order("tienda", { ascending: true })
-        .order("dominio", { ascending: true });
-
-      if (tipo !== "todos") {
-        query = query.eq("origen_interno", tipo);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error al buscar liquidables:", error);
-        alert(`No se pudieron traer los trabajos liquidables: ${error.message}`);
-        return;
-      }
-
-      const rows = data || [];
-
-setItems(rows);
-setLiquidacionAbiertaParaImpresion(null);
-
-setConceptosPorItem((prev) => {
-  const next = {};
-
-  rows.forEach((item) => {
-    const key = getItemKey(item);
-    next[key] = prev[key] || [];
-  });
-
-  return next;
-});
-setItemsAbiertos((prev) => {
-  const next = {};
-
-  rows.forEach((item) => {
-    const key = getItemKey(item);
-    next[key] = prev[key] || false;
-  });
-
-  return next;
-});
+      await cargarLiquidacionesGuardadas();
     } finally {
       setLoading(false);
     }
   }
+
+function normalizarEstadoLiquidacion(estado) {
+  return String(estado || "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function esEstadoBorrador(estado) {
+  return normalizarEstadoLiquidacion(estado) === "BORRADOR";
+}
+
+function getEstadoSimpleLiquidacion(liquidacion) {
+  const estado = normalizarEstadoLiquidacion(liquidacion?.estado);
+
+  if (estado === "ANULADO" || estado === "ANULADA") return "anulada";
+  if (estado === "COBRADO" || estado === "COBRADA") return "cobrada";
+  if (estado === "ENVIADO A DIA") return "enviada";
+
+  if (
+    liquidacion?.oc_numero ||
+    liquidacion?.em_numero ||
+    liquidacion?.factura_numero ||
+    liquidacion?.echeq_numero ||
+    estado === "OC RECIBIDA" ||
+    estado === "EM RECIBIDA" ||
+    estado === "FACTURA EMITIDA" ||
+    estado === "E-CHEQ RECIBIDO" ||
+    estado === "LIQUIDACION EMITIDA"
+  ) {
+    return "en_curso";
+  }
+
+  return "enviada";
+}
+
+function filtraLiquidacionPorEstado(liquidacion, filtroEstado) {
+  if (!filtroEstado || filtroEstado === "todos") return true;
+
+  return getEstadoSimpleLiquidacion(liquidacion) === filtroEstado;
+}
 
   function formatFecha(value) {
     if (!value) return "—";
@@ -902,6 +911,7 @@ setItems(itemsNormalizados);
 setConceptosPorItem(conceptosNormalizados);
 setItemsAbiertos(abiertosNormalizados);
 setEditingItemKey(null);
+return true;
 
     
   } catch (err) {
@@ -910,6 +920,22 @@ setEditingItemKey(null);
   } finally {
     setLoading(false);
   }
+}
+
+async function handleImprimirLiquidacionGuardada(liquidacionId) {
+  if (!liquidacionId) return;
+
+  let seAbrio = true;
+
+  if (liquidacionGuardadaId !== liquidacionId) {
+    seAbrio = await handleAbrirLiquidacionGuardada(liquidacionId);
+  }
+
+  if (seAbrio !== true) return;
+
+  setTimeout(() => {
+    window.print();
+  }, 150);
 }
 
 async function handleEmitirLiquidacion(liquidacionId) {
@@ -1163,11 +1189,15 @@ async function handleGuardarLiquidacion() {
 
   const resumen = useMemo(() => {
     return {
-      total: items.length,
-      informes: items.filter((item) => item.origen_interno === "informe").length,
-      prendas: items.filter((item) => item.origen_interno === "prenda").length,
+      total: liquidacionesGuardadas.length,
+      enCurso: liquidacionesGuardadas.filter(
+        (liquidacion) => getEstadoSimpleLiquidacion(liquidacion) === "en_curso"
+      ).length,
+      cobradas: liquidacionesGuardadas.filter(
+        (liquidacion) => getEstadoSimpleLiquidacion(liquidacion) === "cobrada"
+      ).length,
     };
-  }, [items]);
+  }, [liquidacionesGuardadas]);
 
   const totalGeneral = useMemo(() => {
   return items.reduce((total, item) => {
@@ -1230,27 +1260,26 @@ async function handleGuardarLiquidacion() {
         <section className="hero">
           <div>
             <span className="eyebrow">MÓDULO INTERNO</span>
-            <h1>Liquidación mensual Día</h1>
+            <h1>Liquidaciones emitidas</h1>
             <p>
-              Generá el detalle mensual de trabajos entregados para facturación,
-              agrupando cada dominio con sus conceptos e importes.
+              Consultá las liquidaciones mensuales enviadas a Día y continuá el circuito de OC, EM, factura, e-cheq y cobro.
             </p>
           </div>
 
           <div className="summaryGrid">
             <div>
-              <span>Total</span>
+              <span>Liquidaciones</span>
               <strong>{resumen.total}</strong>
             </div>
 
             <div>
-              <span>Informes</span>
-              <strong>{resumen.informes}</strong>
+              <span>En curso</span>
+              <strong>{resumen.enCurso}</strong>
             </div>
 
             <div>
-              <span>Prendas</span>
-              <strong>{resumen.prendas}</strong>
+              <span>Cobradas</span>
+              <strong>{resumen.cobradas}</strong>
             </div>
           </div>
         </section>
@@ -1275,14 +1304,16 @@ async function handleGuardarLiquidacion() {
           </div>
 
           <div className="field">
-            <label>Tipo</label>
+            <label>Estado</label>
             <select
               value={tipo}
               onChange={(event) => setTipo(event.currentTarget.value)}
             >
               <option value="todos">Todos</option>
-              <option value="informe">Informes</option>
-              <option value="prenda">Prendas</option>
+              <option value="enviada">Enviada a Día</option>
+              <option value="en_curso">En curso</option>
+              <option value="cobrada">Cobrada</option>
+              <option value="anulada">Anulada</option>
             </select>
           </div>
 
@@ -1290,10 +1321,10 @@ async function handleGuardarLiquidacion() {
   <button
     type="button"
     className="primaryButton"
-    onClick={buscarLiquidables}
+    onClick={buscarLiquidaciones}
     disabled={loading}
   >
-    {loading ? "Buscando..." : "Buscar entregados"}
+    {loading ? "Buscando..." : "Buscar liquidaciones"}
   </button>
 
   {!readOnly && !detalleEmitidoSoloLectura && (
@@ -1311,14 +1342,6 @@ async function handleGuardarLiquidacion() {
     </button>
   )}
 
-  <button
-    type="button"
-    className="primaryButton printButton"
-    onClick={handleImprimirLiquidacion}
-    disabled={items.length === 0}
-  >
-    Imprimir liquidación emitida
-  </button>
 </div>
 
         </section>
@@ -1383,6 +1406,14 @@ async function handleGuardarLiquidacion() {
   onClick={() => handleAbrirLiquidacionGuardada(liq.id)}
 >
   {liquidacionGuardadaId === liq.id ? "Cerrar" : "Detalle"}
+</button>
+
+<button
+  type="button"
+  className="smallActionButton"
+  onClick={() => handleImprimirLiquidacionGuardada(liq.id)}
+>
+  Imprimir
 </button>
 
   {!readOnly && String(liq.estado || "").toUpperCase().trim() === "BORRADOR" && (
@@ -1752,10 +1783,9 @@ async function handleGuardarLiquidacion() {
         <section className="tableBox">
           <div className="tableHeader">
   <div>
-    <h2>Trabajos entregados</h2>
+    <h2>Detalle de trabajos incluidos</h2>
     <p>
-      Vista tipo planilla: tienda, dominio, sector, analista, FRQ y trámite.
-      No se muestra módulo en impresión.
+      Trabajos, conceptos, subtotales y total de la liquidación mensual abierta.
     </p>
   </div>
 
