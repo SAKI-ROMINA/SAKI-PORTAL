@@ -31,6 +31,7 @@ export default function ResumenMensualLiquidaciones() {
   const [tipo, setTipo] = useState("todos");
 
   const [loading, setLoading] = useState(false);
+  const [loadingNuevosTrabajos, setLoadingNuevosTrabajos] = useState(false);
   const [items, setItems] = useState([]);
   const [actualizacionFeedback, setActualizacionFeedback] = useState("");
 
@@ -163,86 +164,21 @@ async function cargarLiquidacionesGuardadas(mostrarBorradores = isAdmin) {
       setLoading(true);
       setActualizacionFeedback("");
 
-      const liquidacionAbierta = liquidacionesGuardadas.find(
-        (liquidacion) => liquidacion.id === liquidacionGuardadaId
-      );
-
-      if (!readOnly && liquidacionAbierta && !esBorrador(liquidacionAbierta.estado)) {
-        setActualizacionFeedback(
-          "Solo podés buscar trabajos nuevos cuando el resumen abierto está en estado BORRADOR."
-        );
-        return;
-      }
-
-      let query = supabase
-        .from("dia_liquidables_base")
-        .select("*")
-        .gte("fecha_entrega", desde)
-        .lte("fecha_entrega", hasta)
-        .order("fecha_entrega", { ascending: true })
-        .order("tienda", { ascending: true })
-        .order("dominio", { ascending: true });
-
-      if (tipo !== "todos") {
-        query = query.eq("origen_interno", tipo);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error al buscar liquidables:", error);
-        alert(`No se pudieron traer los trabajos liquidables: ${error.message}`);
-        return;
-      }
-
-      const rows = data || [];
-
-      if (!readOnly && liquidacionAbierta && esBorrador(liquidacionAbierta.estado)) {
-        const clavesExistentes = new Set(items.map((item) => getTrabajoKey(item)));
-        const trabajosNuevos = rows.filter(
-          (item) => !clavesExistentes.has(getTrabajoKey(item))
-        );
-
-        if (!trabajosNuevos.length) {
-          setActualizacionFeedback(
-            "No hay trabajos nuevos para agregar al resumen abierto."
-          );
-          return;
-        }
-
-        setItems((prev) => [...prev, ...trabajosNuevos]);
-        setConceptosPorItem((prev) => {
-          const next = { ...prev };
-
-          trabajosNuevos.forEach((item) => {
-            next[getItemKey(item)] = next[getItemKey(item)] || [];
-          });
-
-          return next;
-        });
-        setItemsAbiertos((prev) => {
-          const next = { ...prev };
-
-          trabajosNuevos.forEach((item) => {
-            next[getItemKey(item)] = false;
-          });
-
-          return next;
-        });
-        setActualizacionFeedback(
-          `${trabajosNuevos.length} trabajo${trabajosNuevos.length === 1 ? "" : "s"} nuevo${trabajosNuevos.length === 1 ? "" : "s"} agregado${trabajosNuevos.length === 1 ? "" : "s"} al resumen. Recordá actualizarlo para guardar los cambios.`
-        );
-        return;
-      }
+      const rows = await buscarTrabajosLiquidablesPorPeriodo({ desde, hasta, tipo });
 
 setItems(rows);
+setLiquidacionGuardadaId(null);
+setEditingItemKey(null);
 
 setConceptosPorItem((prev) => {
   const next = {};
 
   rows.forEach((item) => {
     const key = getItemKey(item);
-    next[key] = prev[key] || [];
+    next[key] =
+      prev[key]?.length > 0
+        ? prev[key]
+        : getConceptosEstimadosItem(item);
   });
 
   return next;
@@ -261,6 +197,337 @@ setItemsAbiertos((prev) => {
       setLoading(false);
     }
   }
+
+  async function buscarNuevosTrabajosParaBorrador() {
+    if (!desde || !hasta) {
+      alert("Seleccioná fecha desde y fecha hasta.");
+      return;
+    }
+
+    const liquidacionAbierta = liquidacionesGuardadas.find(
+      (liquidacion) => liquidacion.id === liquidacionGuardadaId
+    );
+
+    if (!isAdmin || !liquidacionAbierta || !esBorrador(liquidacionAbierta.estado)) {
+      return;
+    }
+
+    try {
+      setLoadingNuevosTrabajos(true);
+      setActualizacionFeedback("");
+
+      const rows = await buscarTrabajosLiquidablesPorPeriodo({ desde, hasta, tipo });
+      const clavesExistentes = new Set(items.map((item) => getTrabajoKey(item)));
+      const trabajosNuevos = rows.filter(
+        (item) => !clavesExistentes.has(getTrabajoKey(item))
+      );
+
+      if (!trabajosNuevos.length) {
+        setActualizacionFeedback(
+          "No hay trabajos nuevos para agregar al resumen abierto."
+        );
+        return;
+      }
+
+      setItems((prev) => [...prev, ...trabajosNuevos]);
+      setConceptosPorItem((prev) => {
+        const next = { ...prev };
+
+        trabajosNuevos.forEach((item) => {
+          const key = getItemKey(item);
+
+          next[key] =
+            next[key]?.length > 0
+              ? next[key]
+              : getConceptosEstimadosItem(item);
+        });
+
+        return next;
+      });
+      setItemsAbiertos((prev) => {
+        const next = { ...prev };
+
+        trabajosNuevos.forEach((item) => {
+          next[getItemKey(item)] = false;
+        });
+
+        return next;
+      });
+      setActualizacionFeedback(
+        `${trabajosNuevos.length} trabajo${trabajosNuevos.length === 1 ? "" : "s"} nuevo${trabajosNuevos.length === 1 ? "" : "s"} agregado${trabajosNuevos.length === 1 ? "" : "s"} al resumen. Usá Guardar cambios para confirmar.`
+      );
+    } finally {
+      setLoadingNuevosTrabajos(false);
+    }
+  }
+
+async function buscarTrabajosLiquidablesPorPeriodo({ desde, hasta, tipo }) {
+  const incluirInformes = tipo === "todos" || tipo === "informe";
+  const incluirPrendas = tipo === "todos" || tipo === "prenda";
+
+  const [informesResult, prendasResult] = await Promise.all([
+    incluirInformes ? buscarInformesLiquidables({ desde, hasta }) : { rows: [] },
+    incluirPrendas ? buscarPrendasLiquidables({ desde, hasta }) : { rows: [] },
+  ]);
+
+  const errores = [informesResult.error, prendasResult.error].filter(Boolean);
+
+  if (errores.length > 0) {
+    console.error("Error al buscar trabajos liquidables:", errores);
+    alert(
+      `No se pudieron traer los trabajos liquidables: ${errores
+        .map((error) => error.message)
+        .join(" / ")}`
+    );
+  }
+
+  const rows = deduplicarTrabajosLiquidables([
+    ...(informesResult.rows || []),
+    ...(prendasResult.rows || []),
+  ]).sort(ordenarTrabajosLiquidables);
+
+  return hidratarConceptosEstimados(rows);
+}
+
+async function buscarInformesLiquidables({ desde, hasta }) {
+  const { data, error } = await supabase
+    .from("dia_requests")
+    .select("*")
+    .in("status", ["ENTREGADO", "Entregado", "entregado"])
+    .order("fecha_entrega_real", { ascending: true, nullsFirst: false })
+    .order("tienda", { ascending: true })
+    .order("dominio", { ascending: true });
+
+  if (error) {
+    return { rows: [], error };
+  }
+
+  return {
+    rows: (data || [])
+      .map(normalizarInformeLiquidable)
+      .filter((item) => fechaEnRango(item.fecha_entrega, desde, hasta)),
+    error: null,
+  };
+}
+
+async function buscarPrendasLiquidables({ desde, hasta }) {
+  const { data, error } = await supabase
+    .from("dia_request_prendas")
+    .select("*")
+    .order("tienda", { ascending: true })
+    .order("dominio", { ascending: true });
+
+  if (error) {
+    return { rows: [], error };
+  }
+
+  return {
+    rows: (data || [])
+      .filter((prenda) => esEstadoPrendaLiquidable(prenda.estado))
+      .map(normalizarPrendaLiquidable)
+      .filter((item) => fechaEnRango(item.fecha_entrega, desde, hasta)),
+    error: null,
+  };
+}
+
+async function hidratarConceptosEstimados(rows) {
+  if (!rows.length) return rows;
+
+  const conceptosPorTrabajo = {};
+
+  for (const origen of ["informe", "prenda"]) {
+    const ids = rows
+      .filter((item) => item.origen_interno === origen && item.origen_id)
+      .map((item) => item.origen_id);
+
+    if (!ids.length) continue;
+
+    const { data: itemsGuardados, error: itemsError } = await supabase
+      .from("dia_liquidaciones_items")
+      .select("*")
+      .eq("origen", origen)
+      .in("origen_id", ids);
+
+    if (itemsError) {
+      console.error("Error al buscar conceptos estimados:", itemsError);
+      continue;
+    }
+
+    const itemIds = (itemsGuardados || []).map((item) => item.id).filter(Boolean);
+
+    if (!itemIds.length) continue;
+
+    const { data: conceptosGuardados, error: conceptosError } = await supabase
+      .from("dia_liquidaciones_conceptos")
+      .select("*")
+      .in("item_id", itemIds)
+      .order("orden", { ascending: true });
+
+    if (conceptosError) {
+      console.error("Error al cargar conceptos estimados:", conceptosError);
+      continue;
+    }
+
+    (itemsGuardados || []).forEach((itemGuardado) => {
+      const key = `${itemGuardado.origen}-${itemGuardado.origen_id}`;
+      const conceptos = (conceptosGuardados || [])
+        .filter((concepto) => concepto.item_id === itemGuardado.id)
+        .map((concepto) => ({
+          id: concepto.id,
+          concepto: concepto.concepto,
+          importe: String(concepto.importe || ""),
+        }))
+        .filter((concepto) => concepto.concepto && parseImporte(concepto.importe) > 0);
+
+      if (conceptos.length > 0) {
+        conceptosPorTrabajo[key] = conceptos;
+      }
+    });
+  }
+
+  return rows.map((item) => ({
+    ...item,
+    conceptos_estimados:
+      conceptosPorTrabajo[getTrabajoKey(item)] || getConceptosEstimadosDesdeFuente(item),
+  }));
+}
+
+function normalizarInformeLiquidable(informe) {
+  const fechaEntrega =
+    normalizarFechaLiquidable(informe.fecha_entrega_real) ||
+    normalizarFechaLiquidable(informe.datos_legajo_actualizado_en) ||
+    normalizarFechaLiquidable(informe.updated_at) ||
+    normalizarFechaLiquidable(informe.created_at);
+
+  return {
+    origen_interno: "informe",
+    origen_id: informe.id,
+    fecha_pedido:
+      normalizarFechaLiquidable(informe.fecha_pedido_real) ||
+      normalizarFechaLiquidable(informe.created_at),
+    fecha_entrega: fechaEntrega,
+    tienda: informe.tienda || "",
+    dominio: informe.dominio || "",
+    sector: informe.sector_responsable || "",
+    analista: informe.analista || "",
+    frq: informe.franquiciado || informe.frq || "",
+    garante: informe.titular_dominio || "",
+    tramite: informe.type || informe.tipo || informe.tramite || "informe_dominio",
+    importe_estimado:
+      informe.importe_estimado ||
+      informe.importe_liquidacion ||
+      informe.importe ||
+      informe.total ||
+      informe.monto ||
+      "",
+    concepto_estimado:
+      informe.concepto_estimado || informe.concepto || "HONORARIOS",
+  };
+}
+
+function normalizarPrendaLiquidable(prenda) {
+  const fechaEntrega =
+    normalizarFechaLiquidable(prenda.fecha_real_retiro_final) ||
+    normalizarFechaLiquidable(prenda.fecha_retiro_final_real) ||
+    normalizarFechaLiquidable(prenda.fecha_doc_final_enviada) ||
+    normalizarFechaLiquidable(prenda.fecha_documentacion_final_enviada) ||
+    normalizarFechaLiquidable(prenda.fecha_disponible_retiro_final) ||
+    normalizarFechaLiquidable(prenda.fecha_inscripcion);
+
+  return {
+    origen_interno: "prenda",
+    origen_id: prenda.id,
+    fecha_pedido:
+      normalizarFechaLiquidable(prenda.fecha_envio_oficina) ||
+      normalizarFechaLiquidable(prenda.created_at),
+    fecha_entrega: fechaEntrega,
+    tienda: prenda.tienda || "",
+    dominio: prenda.dominio || "",
+    sector: "Cobranzas y Créditos",
+    analista: prenda.analista || "",
+    frq: prenda.frq || prenda.franquiciado || "",
+    garante: prenda.titular_dominio || "",
+    tramite: "INSCRIPCIÓN DE PRENDA",
+    importe_estimado:
+      prenda.importe_estimado ||
+      prenda.importe_liquidacion ||
+      prenda.importe ||
+      prenda.total ||
+      "",
+    concepto_estimado:
+      prenda.concepto_estimado || prenda.concepto || "HONORARIOS",
+  };
+}
+
+function getConceptosEstimadosItem(item) {
+  if (Array.isArray(item?.conceptos_estimados) && item.conceptos_estimados.length > 0) {
+    return item.conceptos_estimados;
+  }
+
+  return getConceptosEstimadosDesdeFuente(item);
+}
+
+function getConceptosEstimadosDesdeFuente(item) {
+  const importe = parseImporte(item?.importe_estimado);
+
+  if (!importe) return [];
+
+  return [
+    {
+      id: `estimado-${getTrabajoKey(item)}`,
+      concepto: item?.concepto_estimado || "HONORARIOS",
+      importe: String(item.importe_estimado),
+    },
+  ];
+}
+
+function esEstadoPrendaLiquidable(estado) {
+  const estadoKey = normalizarEstado(estado);
+
+  return [
+    "RETIRO FINAL",
+    "RETIRADA",
+    "LEGAJO CERRADO",
+    "DOC FINAL ENVIADA",
+    "DOCUMENTACION FINAL ENVIADA",
+    "ORIGINALES ENTREGADOS",
+    "INSCRIPTA",
+    "DISPONIBLE PARA RETIRO",
+  ].includes(estadoKey);
+}
+
+function normalizarFechaLiquidable(value) {
+  if (!value) return "";
+
+  return String(value).slice(0, 10);
+}
+
+function fechaEnRango(value, desde, hasta) {
+  const fecha = normalizarFechaLiquidable(value);
+
+  return Boolean(fecha && fecha >= desde && fecha <= hasta);
+}
+
+function deduplicarTrabajosLiquidables(rows) {
+  const vistos = new Set();
+
+  return rows.filter((row) => {
+    const key = getTrabajoKey(row);
+
+    if (vistos.has(key)) return false;
+
+    vistos.add(key);
+    return true;
+  });
+}
+
+function ordenarTrabajosLiquidables(a, b) {
+  return (
+    String(a.fecha_entrega || "").localeCompare(String(b.fecha_entrega || "")) ||
+    String(a.tienda || "").localeCompare(String(b.tienda || ""), "es-AR") ||
+    String(a.dominio || "").localeCompare(String(b.dominio || ""), "es-AR")
+  );
+}
 
   function formatFecha(value) {
     if (!value) return "—";
@@ -294,8 +561,56 @@ function getTrabajoKey(item) {
   return getItemKey(item);
 }
 
+function normalizarEstado(estado) {
+  return String(estado || "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function esBorrador(estado) {
-  return String(estado || "").trim().toUpperCase() === "BORRADOR";
+  return normalizarEstado(estado) === "BORRADOR";
+}
+
+function esEnviadoADia(estado) {
+  return normalizarEstado(estado) === "ENVIADO A DIA";
+}
+
+function tieneDatosAdministrativosCargados(liquidacion) {
+  const camposAdministrativos = [
+    "oc_numero",
+    "oc_fecha",
+    "oc_archivo_nombre",
+    "oc_archivo_path",
+    "em_numero",
+    "em_fecha",
+    "em_archivo_nombre",
+    "em_archivo_path",
+    "factura_numero",
+    "factura_fecha",
+    "factura_importe",
+    "factura_archivo_nombre",
+    "factura_archivo_path",
+    "forma_pago",
+    "echeq_numero",
+    "echeq_importe",
+    "echeq_fecha_emision",
+    "echeq_fecha_cobro",
+    "echeq_archivo_nombre",
+    "echeq_archivo_path",
+    "observaciones_facturacion",
+  ];
+
+  return camposAdministrativos.some((campo) => {
+    const value = liquidacion?.[campo];
+
+    if (typeof value === "number") {
+      return value !== 0;
+    }
+
+    return String(value || "").trim() !== "";
+  });
 }
 
 function parseImporte(value) {
@@ -657,6 +972,190 @@ async function handleImprimirResumenGuardado(liquidacionId) {
   }, 150);
 }
 
+async function handleCerrarYEnviarADia(liquidacion) {
+  if (!isAdmin || !esBorrador(liquidacion?.estado)) return;
+
+  const confirmar = window.confirm(
+    "Al cerrar el resumen ya no podrás modificar el detalle de trabajos. Luego se gestionará desde Liquidaciones emitidas. ¿Confirmás?"
+  );
+
+  if (!confirmar) return;
+
+  try {
+    const { error } = await supabase
+      .from("dia_liquidaciones")
+      .update({ estado: "ENVIADO A DÍA" })
+      .eq("id", liquidacion.id)
+      .eq("estado", "BORRADOR");
+
+    if (error) {
+      console.error("Error al cerrar el resumen:", error);
+      setActualizacionFeedback("No se pudo cerrar el resumen. Intentá nuevamente.");
+      return;
+    }
+
+    setEditingItemKey(null);
+    await cargarLiquidacionesGuardadas(true);
+    setActualizacionFeedback(
+      "Resumen cerrado y enviado a Día. El detalle de trabajos quedó en solo lectura."
+    );
+  } catch (error) {
+    console.error("Error inesperado al cerrar el resumen:", error);
+    setActualizacionFeedback("No se pudo cerrar el resumen. Intentá nuevamente.");
+  }
+}
+
+async function handleEliminarBorrador(liquidacion) {
+  if (!isAdmin || !esBorrador(liquidacion?.estado)) return;
+
+  const confirmar = window.confirm(
+    "¿Querés eliminar este borrador? Se eliminarán también sus ítems y conceptos guardados."
+  );
+
+  if (!confirmar) return;
+
+  try {
+    setActualizacionFeedback("");
+
+    const { data: itemsGuardados, error: itemsError } = await supabase
+      .from("dia_liquidaciones_items")
+      .select("id")
+      .eq("liquidacion_id", liquidacion.id);
+
+    if (itemsError) {
+      console.error("Error al buscar ítems del borrador:", itemsError);
+      setActualizacionFeedback("No se pudo eliminar el borrador. Intentá nuevamente.");
+      return;
+    }
+
+    const itemIds = (itemsGuardados || []).map((item) => item.id);
+
+    if (itemIds.length > 0) {
+      const { error: conceptosError } = await supabase
+        .from("dia_liquidaciones_conceptos")
+        .delete()
+        .in("item_id", itemIds);
+
+      if (conceptosError) {
+        console.error("Error al eliminar conceptos del borrador:", conceptosError);
+        setActualizacionFeedback("No se pudo eliminar el borrador. Intentá nuevamente.");
+        return;
+      }
+    }
+
+    const { error: itemsDeleteError } = await supabase
+      .from("dia_liquidaciones_items")
+      .delete()
+      .eq("liquidacion_id", liquidacion.id);
+
+    if (itemsDeleteError) {
+      console.error("Error al eliminar ítems del borrador:", itemsDeleteError);
+      setActualizacionFeedback("No se pudo eliminar el borrador. Intentá nuevamente.");
+      return;
+    }
+
+    const { error: liquidacionError } = await supabase
+      .from("dia_liquidaciones")
+      .delete()
+      .eq("id", liquidacion.id);
+
+    if (liquidacionError) {
+      console.error("Error al eliminar borrador:", liquidacionError);
+      setActualizacionFeedback("No se pudo eliminar el borrador. Intentá nuevamente.");
+      return;
+    }
+
+    if (liquidacionGuardadaId === liquidacion.id) {
+      setLiquidacionGuardadaId(null);
+      setItems([]);
+      setConceptosPorItem({});
+      setItemsAbiertos({});
+      setEditingItemKey(null);
+    }
+
+    await cargarLiquidacionesGuardadas(true);
+    setActualizacionFeedback("Borrador eliminado correctamente.");
+  } catch (error) {
+    console.error("Error inesperado al eliminar borrador:", error);
+    setActualizacionFeedback("No se pudo eliminar el borrador. Intentá nuevamente.");
+  }
+}
+
+async function handleReabrirComoBorrador(liquidacion) {
+  if (!isAdmin || !esEnviadoADia(liquidacion?.estado)) return;
+
+  const confirmar = window.confirm(
+    "¿Querés reabrir este resumen como borrador? Solo se puede hacer si no tiene datos administrativos cargados."
+  );
+
+  if (!confirmar) return;
+
+  try {
+    setActualizacionFeedback("");
+
+    const { data: liquidacionCompleta, error: liquidacionError } = await supabase
+      .from("dia_liquidaciones")
+      .select(`
+        id,
+        estado,
+        oc_numero,
+        oc_fecha,
+        oc_archivo_nombre,
+        oc_archivo_path,
+        em_numero,
+        em_fecha,
+        em_archivo_nombre,
+        em_archivo_path,
+        factura_numero,
+        factura_fecha,
+        factura_importe,
+        factura_archivo_nombre,
+        factura_archivo_path,
+        forma_pago,
+        echeq_numero,
+        echeq_importe,
+        echeq_fecha_emision,
+        echeq_fecha_cobro,
+        echeq_archivo_nombre,
+        echeq_archivo_path,
+        observaciones_facturacion
+      `)
+      .eq("id", liquidacion.id)
+      .single();
+
+    if (liquidacionError) {
+      console.error("Error al validar datos administrativos:", liquidacionError);
+      setActualizacionFeedback("No se pudo reabrir el resumen. Intentá nuevamente.");
+      return;
+    }
+
+    if (tieneDatosAdministrativosCargados(liquidacionCompleta)) {
+      setActualizacionFeedback(
+        "No se puede reabrir porque ya tiene datos administrativos cargados. En ese caso corresponde anular desde Liquidaciones emitidas."
+      );
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("dia_liquidaciones")
+      .update({ estado: "BORRADOR" })
+      .eq("id", liquidacion.id)
+      .eq("estado", liquidacionCompleta.estado);
+
+    if (updateError) {
+      console.error("Error al reabrir resumen:", updateError);
+      setActualizacionFeedback("No se pudo reabrir el resumen. Intentá nuevamente.");
+      return;
+    }
+
+    await cargarLiquidacionesGuardadas(true);
+    setActualizacionFeedback("Resumen reabierto como borrador.");
+  } catch (error) {
+    console.error("Error inesperado al reabrir resumen:", error);
+    setActualizacionFeedback("No se pudo reabrir el resumen. Intentá nuevamente.");
+  }
+}
+
 async function handleGuardarLiquidacion() {
   if (savingLiquidacion) return;
 
@@ -854,11 +1353,8 @@ async function handleGuardarLiquidacion() {
 
     setLiquidacionGuardadaId(liquidacionId);
     await cargarLiquidacionesGuardadas();
-
-    alert(
-      liquidacionGuardadaId
-        ? "Liquidación actualizada correctamente."
-        : "Liquidación guardada correctamente."
+    setActualizacionFeedback(
+      liquidacionGuardadaId ? "Cambios guardados." : "Resumen guardado."
     );
   } catch (err) {
     console.error("Error inesperado al guardar liquidación:", err);
@@ -893,6 +1389,14 @@ async function handleGuardarLiquidacion() {
     (liquidacion) => liquidacion.id === liquidacionGuardadaId
   );
   const puedeGuardarResumen =
+    !readOnly &&
+    (!liquidacionGuardadaId ||
+      (resumenAbierto && esBorrador(resumenAbierto.estado)));
+  const puedeGuardarCambiosResumen =
+    isAdmin && liquidacionGuardadaId && resumenAbierto && esBorrador(resumenAbierto.estado);
+  const puedeBuscarNuevosTrabajos =
+    isAdmin && liquidacionGuardadaId && resumenAbierto && esBorrador(resumenAbierto.estado);
+  const puedeEditarResumen =
     !readOnly &&
     (!liquidacionGuardadaId ||
       (resumenAbierto && esBorrador(resumenAbierto.estado)));
@@ -947,8 +1451,9 @@ async function handleGuardarLiquidacion() {
             <span className="eyebrow">MÓDULO INTERNO</span>
             <h1>Resumen mensual de trabajos</h1>
             <p>
-              Armá el detalle mensual de trabajos entregados para enviar a Día,
-              agrupando cada dominio con sus conceptos e importes.
+              {readOnly
+                ? "Consultá los trabajos entregados del período y el importe acumulado estimado."
+                : "Armá el detalle mensual de trabajos entregados para enviar a Día, agrupando cada dominio con sus conceptos e importes."}
             </p>
           </div>
 
@@ -1010,6 +1515,17 @@ async function handleGuardarLiquidacion() {
             {loading ? "Buscando..." : "Buscar trabajos"}
           </button>
 
+          {puedeBuscarNuevosTrabajos && (
+            <button
+              type="button"
+              className="primaryButton filterActionButton"
+              onClick={buscarNuevosTrabajosParaBorrador}
+              disabled={loadingNuevosTrabajos}
+            >
+              {loadingNuevosTrabajos ? "Buscando..." : "Buscar nuevos trabajos"}
+            </button>
+          )}
+
           {actualizacionFeedback && (
             <p className="actualizacionFeedback">{actualizacionFeedback}</p>
           )}
@@ -1022,9 +1538,9 @@ async function handleGuardarLiquidacion() {
 >
   {savingLiquidacion
   ? "Guardando..."
-  : liquidacionGuardadaId
-    ? "Actualizar resumen"
-    : "Guardar liquidación"}
+  : puedeGuardarCambiosResumen
+    ? "Guardar cambios"
+    : "Guardar resumen"}
 </button>
           )}
 
@@ -1049,14 +1565,14 @@ async function handleGuardarLiquidacion() {
       </p>
     </div>
 
-    {isAdmin && resumenAbierto && esBorrador(resumenAbierto.estado) && (
+    {isAdmin && (
       <button
         type="button"
         className="smallButton"
-        onClick={cargarLiquidacionesGuardadas}
+        onClick={() => cargarLiquidacionesGuardadas(true)}
         disabled={loadingGuardadas}
       >
-        {loadingGuardadas ? "Actualizando..." : "Actualizar"}
+        {loadingGuardadas ? "Refrescando..." : "Refrescar listado"}
       </button>
     )}
   </div>
@@ -1110,6 +1626,33 @@ async function handleGuardarLiquidacion() {
             >
               Imprimir
             </button>
+            {isAdmin && esBorrador(liq.estado) && (
+              <button
+                type="button"
+                className="smallButton closeSummaryButton"
+                onClick={() => handleCerrarYEnviarADia(liq)}
+              >
+                Cerrar y enviar a Día
+              </button>
+            )}
+            {isAdmin && esBorrador(liq.estado) && (
+              <button
+                type="button"
+                className="smallButton"
+                onClick={() => handleEliminarBorrador(liq)}
+              >
+                Eliminar borrador
+              </button>
+            )}
+            {isAdmin && esEnviadoADia(liq.estado) && (
+              <button
+                type="button"
+                className="smallButton"
+                onClick={() => handleReabrirComoBorrador(liq)}
+              >
+                Reabrir como borrador
+              </button>
+            )}
           </div>
         </div>
       ))}
@@ -1140,7 +1683,7 @@ async function handleGuardarLiquidacion() {
     </p>
   </div>
 
-  {!readOnly && (
+  {puedeEditarResumen && (
   <div className="tableActions">
     <button
       type="button"
@@ -1170,14 +1713,14 @@ async function handleGuardarLiquidacion() {
           {items.length > 0 && (
   <div className="liquidacionList">
     {items.map((item) => {
-      const editando = !readOnly && itemEstaEditando(item);
+      const editando = puedeEditarResumen && itemEstaEditando(item);
 
       return (
         <article
           key={getItemKey(item)}
           className="liquidacionItem"
         >
-          <div className="itemMainLine">
+          <div className="itemMainLine screenOnly">
             <div>
               <span>TIENDA</span>
               {editando ? (
@@ -1316,7 +1859,7 @@ async function handleGuardarLiquidacion() {
             </div>
           </div>
 
-          <div className="itemToggleLine">
+          <div className="itemToggleLine screenOnly">
             <div className="itemActionGroup">
               <button
                 type="button"
@@ -1326,7 +1869,7 @@ async function handleGuardarLiquidacion() {
                 {itemEstaAbierto(item) ? "Ocultar conceptos" : "Ver conceptos"}
               </button>
 
-              {!readOnly && (
+              {puedeEditarResumen && (
               <button
                 type="button"
                 className="toggleItemButton"
@@ -1336,7 +1879,7 @@ async function handleGuardarLiquidacion() {
               </button>
               )}
 
-              {!readOnly && (
+              {puedeEditarResumen && (
               <button
   type="button"
   className="miniDangerButton"
@@ -1357,11 +1900,11 @@ async function handleGuardarLiquidacion() {
           {itemEstaAbierto(item) && (
             <>
               
-              <div className="conceptosBox open">
+              <div className="conceptosBox open screenOnly">
                 <div className="conceptosHeader">
                   <strong>Conceptos</strong>
 
-                  {!readOnly && (
+                  {puedeEditarResumen && (
                   <button
                     type="button"
                     className="smallButton"
@@ -1383,7 +1926,7 @@ async function handleGuardarLiquidacion() {
                     <div key={concepto.id || index} className="conceptoRow">
                       <select
                         value={concepto.concepto}
-                        disabled={readOnly}
+                        disabled={!puedeEditarResumen}
                         onChange={(event) =>
                           handleCambiarConcepto(
                             item,
@@ -1404,8 +1947,8 @@ async function handleGuardarLiquidacion() {
   <input
     className="conceptoImporte"
     inputMode="decimal"
-    value={readOnly ? formatImporteInput(concepto.importe) : concepto.importe}
-    disabled={readOnly}
+    value={!puedeEditarResumen ? formatImporteInput(concepto.importe) : concepto.importe}
+    disabled={!puedeEditarResumen}
     onChange={(event) =>
       handleCambiarConcepto(
         item,
@@ -1422,7 +1965,7 @@ async function handleGuardarLiquidacion() {
   </span>
 </div>
 
-                      {!readOnly && (
+                      {puedeEditarResumen && (
                       <button
                         type="button"
                         className="deleteConceptoButton"
@@ -1442,6 +1985,67 @@ async function handleGuardarLiquidacion() {
               </div>
             </>
           )}
+
+          <div className="resumenPrintOnly">
+            <div className="resumenPrintGrid">
+              <div>
+                <span>TIENDA</span>
+                <strong>{item.tienda || "SIN INFORMAR"}</strong>
+              </div>
+
+              <div>
+                <span>DOMINIO</span>
+                <strong>{item.dominio || "SIN DOMINIO"}</strong>
+              </div>
+
+              <div>
+                <span>PEDIDO / ENTREGA</span>
+                <strong>
+                  P: {formatFecha(item.fecha_pedido)} · E: {formatFecha(item.fecha_entrega)}
+                </strong>
+              </div>
+
+              <div>
+                <span>SECTOR</span>
+                <strong>{item.sector || "SIN INFORMAR"}</strong>
+              </div>
+
+              <div>
+                <span>ANALISTA</span>
+                <strong>{item.analista || "SIN INFORMAR"}</strong>
+              </div>
+
+              <div>
+                <span>FRQ</span>
+                <strong>{item.frq || "SIN INFORMAR"}</strong>
+              </div>
+
+              <div>
+                <span>TRÁMITE</span>
+                <strong>{formatTramite(item.tramite)}</strong>
+              </div>
+            </div>
+
+            <div className="resumenPrintConceptos">
+              {(conceptosPorItem[getItemKey(item)] || []).length === 0 && (
+                <p>Sin conceptos cargados.</p>
+              )}
+
+              {(conceptosPorItem[getItemKey(item)] || []).map(
+                (concepto, index) => (
+                  <div key={concepto.id || index} className="resumenPrintConceptoRow">
+                    <span>{concepto.concepto || "SIN CONCEPTO"}</span>
+                    <strong>{formatMoney(parseImporte(concepto.importe))}</strong>
+                  </div>
+                )
+              )}
+
+              <div className="resumenPrintSubtotal">
+                <span>Subtotal dominio</span>
+                <strong>{formatMoney(getSubtotalItem(item))}</strong>
+              </div>
+            </div>
+          </div>
         </article>
       );
     })}
@@ -2097,6 +2701,10 @@ const styles = `
   display: none;
 }
 
+.resumenPrintOnly {
+  display: none;
+}
+
   @media print {
     @page {
       size: A4 portrait;
@@ -2145,6 +2753,14 @@ const styles = `
     .primaryButton,
     .smallButton,
     .miniDangerButton {
+      display: none !important;
+    }
+
+    .screenOnly,
+    input,
+    select,
+    textarea,
+    button {
       display: none !important;
     }
 
@@ -2202,7 +2818,12 @@ const styles = `
       page-break-inside: avoid !important;
     }
 
-    .itemMainLine {
+    .resumenPrintOnly {
+      display: block !important;
+      width: 100% !important;
+    }
+
+    .resumenPrintGrid {
       display: grid !important;
       grid-template-columns: 60px 72px 118px 105px 110px 70px 1fr !important;
       gap: 7px !important;
@@ -2211,68 +2832,56 @@ const styles = `
       margin-bottom: 8px !important;
     }
 
-    .itemMainLine span {
+    .resumenPrintGrid span {
+      display: block !important;
       color: #374151 !important;
       font-size: 8px !important;
       font-weight: 700 !important;
       letter-spacing: 0.04em !important;
     }
 
-    .itemMainLine strong {
+    .resumenPrintGrid strong {
+      display: block !important;
       color: #111827 !important;
       font-size: 9.5px !important;
       font-weight: 600 !important;
       line-height: 1.25 !important;
     }
 
-    .conceptosBox,
-    .conceptosBox.closed {
+    .resumenPrintConceptos {
       display: block !important;
-      border-top: none !important;
       margin-top: 0 !important;
       padding-top: 0 !important;
     }
 
-    .emptyConceptos {
-      display: none !important;
+    .resumenPrintConceptos p {
+      margin: 0 0 4px !important;
+      color: #6b7280 !important;
+      font-size: 10px !important;
     }
 
-    .conceptoRow {
+    .resumenPrintConceptoRow {
       display: grid !important;
       grid-template-columns: 1fr 110px !important;
       gap: 8px !important;
       margin-bottom: 4px !important;
     }
 
-.conceptoRow select {
-  border: none !important;
-  background: transparent !important;
-  color: #111827 !important;
-  min-height: auto !important;
-  padding: 0 !important;
-  font-size: 10px !important;
-  font-weight: 500 !important;
-  appearance: none !important;
-}
-
-.conceptoRow input {
-  display: none !important;
-}
-
-.conceptoImportePrint {
-  display: block !important;
-  color: #111827 !important;
-  font-size: 10px !important;
-  font-weight: 600 !important;
-  text-align: right !important;
-  white-space: nowrap !important;
-}
-
-    .conceptoImporte {
-      text-align: right !important;
+    .resumenPrintConceptoRow span {
+      color: #111827 !important;
+      font-size: 10px !important;
+      font-weight: 500 !important;
     }
 
-    .subtotalLine {
+    .resumenPrintConceptoRow strong {
+      color: #111827 !important;
+      font-size: 10px !important;
+      font-weight: 600 !important;
+      text-align: right !important;
+      white-space: nowrap !important;
+    }
+
+    .resumenPrintSubtotal {
       display: flex !important;
       justify-content: flex-end !important;
       gap: 12px !important;
@@ -2281,8 +2890,8 @@ const styles = `
       padding-top: 6px !important;
     }
 
-    .subtotalLine span,
-    .subtotalLine strong {
+    .resumenPrintSubtotal span,
+    .resumenPrintSubtotal strong {
       color: #111827 !important;
       font-size: 10px !important;
     }
