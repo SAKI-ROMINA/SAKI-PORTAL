@@ -20,6 +20,12 @@ const SECTORES_DIA_LIQUIDACION = [
   "Cobranzas y Créditos",
 ];
 
+const ANALISTAS_EXTERNOS_DIA = [
+  { id: "externo-esc-alonso", nombre: "ESC. ALONSO", sector: "" },
+  { id: "externo-esc-roman", nombre: "ESC. ROMAN", sector: "" },
+  { id: "externo-esc-deymonnaz", nombre: "ESC. DEYMONNAZ", sector: "" },
+];
+
 export default function ResumenMensualLiquidaciones() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -126,7 +132,12 @@ async function cargarAnalistas() {
     }))
     .filter((user) => user.nombre);
 
-  setAnalistasOptions(opciones);
+  const opcionesConExternos = [...opciones, ...ANALISTAS_EXTERNOS_DIA].filter(
+    (user, index, listado) =>
+      listado.findIndex((item) => item.nombre === user.nombre) === index
+  );
+
+  setAnalistasOptions(opcionesConExternos);
 }
 
 async function cargarLiquidacionesGuardadas(mostrarBorradores = isAdmin) {
