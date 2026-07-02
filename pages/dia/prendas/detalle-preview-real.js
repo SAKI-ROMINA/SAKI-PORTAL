@@ -39,6 +39,78 @@ function formatDate(value) {
   return raw;
 }
 
+function normalizeEstadoKey(value) {
+  return (value || "")
+    .toString()
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function isHistoricalMissingObservationDate(value) {
+  if (!value) return true;
+
+  const raw = String(value).trim();
+  const onlyDate = raw.slice(0, 10);
+
+  if (!onlyDate) return true;
+  if (onlyDate === "2000-01-01") return true;
+  if (raw.slice(0, 10) === "01/01/2000") return true;
+
+  const parsed = new Date(onlyDate);
+  return Number.isNaN(parsed.getTime());
+}
+
+function formatObservationDateForPrint(value) {
+  if (isHistoricalMissingObservationDate(value)) {
+    return "Carga histórica sin fecha registrada";
+  }
+
+  return formatDate(value) || "Carga histórica sin fecha registrada";
+}
+
+function getPrendaIncidenciaLabel(row, estadoActualKey) {
+  const incidenciaLabels = {
+    error_documental: "Error documental",
+    observacion_registral: "Observación registral",
+    observacion_formal: "Observación formal",
+    observacion_documental: "Observación documental",
+  };
+
+  if (incidenciaLabels[row?.incidencia_tipo]) {
+    return incidenciaLabels[row.incidencia_tipo];
+  }
+
+  if (row?.incidencia_tipo === "error_documental") return "Error documental";
+  if (estadoActualKey === "OBSERVADA") return "Sin incidencia cargada.";
+
+  return "No aplica";
+}
+
+function getEstadoTramitePrintInfo({
+  row,
+  estadoActual,
+  estadoActualKey,
+  proximaAccionInfo,
+}) {
+  const isObservada = estadoActualKey === "OBSERVADA";
+
+  return {
+    estadoActual: estadoActual || "Por completar",
+    fechaObservacion: formatObservationDateForPrint(row?.fecha_observacion),
+    proximaAccion:
+      proximaAccionInfo?.titulo ||
+      (isObservada ? "Sin próxima acción cargada." : "Por completar"),
+    incidencia: getPrendaIncidenciaLabel(row, estadoActualKey),
+    detalle: isObservada
+      ? row?.motivo_incidencia ||
+        proximaAccionInfo?.texto ||
+        "Sin detalle de observación cargado."
+      : proximaAccionInfo?.texto || "Por completar",
+  };
+}
+
 function addYearsToDateString(value, years) {
   if (!value) return "";
 
@@ -594,12 +666,7 @@ const [savingEliminarLegajo, setSavingEliminarLegajo] = useState(false);
 
   const estadoActual = row?.estado || "—";
 
-const estadoActualKey = (row?.estado || "")
-  .toString()
-  .trim()
-  .toUpperCase()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "");
+const estadoActualKey = normalizeEstadoKey(row?.estado);
 
   const fechaEstadoActual = "12/03/2026";
   const fechaVencimiento = "12/03/2031";
@@ -1217,13 +1284,20 @@ Fecha de generación: ${new Date().toLocaleDateString("es-AR")}
 1. Datos principales
 - Dominio: ${row?.dominio || "—"}
 - Estado actual: ${row?.estado || "—"}
-- Próxima acción: ${proximaAccionInfo?.title || "—"}
+- Próxima acción: ${proximaAccionInfo?.titulo || "—"}
 - Tienda: ${row?.tienda || "—"}
 - Franquiciado: ${franquiciadoNombre}
 - CUIT franquiciado: ${row?.frq_cuit || "—"}
 - Fecha de envío programada: ${
     row?.fecha_envio_oficina ? formatDate(row.fecha_envio_oficina) : "—"
   }
+
+ESTADO DEL TRÁMITE
+- Estado actual: ${estadoTramitePrintInfo.estadoActual}
+- Fecha de observación: ${estadoTramitePrintInfo.fechaObservacion}
+- Próxima acción: ${estadoTramitePrintInfo.proximaAccion}
+- Incidencia: ${estadoTramitePrintInfo.incidencia}
+- Detalle: ${estadoTramitePrintInfo.detalle}
 
 2. Prenda
 - Escritura: ${row?.numero_escritura || "—"}
@@ -5068,6 +5142,13 @@ if (estadoActualKey === "PENDIENTE") {
     boton: "Ver detalle del trámite →",
   };
 })();
+
+const estadoTramitePrintInfo = getEstadoTramitePrintInfo({
+  row,
+  estadoActual,
+  estadoActualKey,
+  proximaAccionInfo,
+});
 
 const resumenLegajoTexto = [
   "SAKI · Prendas M&T",
@@ -9631,6 +9712,32 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
       </div>
     </section>
 
+    <section className="print-section print-status-section">
+      <h2>Estado del trámite</h2>
+      <div className="print-grid">
+        <div>
+          <span>Estado actual</span>
+          <strong>{estadoTramitePrintInfo.estadoActual}</strong>
+        </div>
+        <div>
+          <span>Fecha de observación</span>
+          <strong>{estadoTramitePrintInfo.fechaObservacion}</strong>
+        </div>
+        <div>
+          <span>Próxima acción</span>
+          <strong>{estadoTramitePrintInfo.proximaAccion}</strong>
+        </div>
+        <div>
+          <span>Incidencia</span>
+          <strong>{estadoTramitePrintInfo.incidencia}</strong>
+        </div>
+        <div className="print-grid-wide">
+          <span>Detalle</span>
+          <strong>{estadoTramitePrintInfo.detalle}</strong>
+        </div>
+      </div>
+    </section>
+
     <section className="print-section">
       <h2>Prenda</h2>
       <div className="print-grid">
@@ -10281,7 +10388,7 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
 
         <div>
           <span>Próxima acción</span>
-          <strong>{proximaAccionInfo?.title || "—"}</strong>
+          <strong>{proximaAccionInfo?.titulo || "—"}</strong>
         </div>
 
         <div>
@@ -12206,6 +12313,10 @@ onEliminarArchivo={handleEliminarArchivoLegajo}
     font-size: 12px !important;
     color: #111827 !important;
     font-weight: 700 !important;
+  }
+
+  .print-grid-wide {
+    grid-column: 1 / -1 !important;
   }
 }
 `}</style>
@@ -15073,14 +15184,12 @@ onRetomarGestion,
   onAnularPrenda,
 }) {
 
-  const incidenciaLabel =
-    row?.incidencia_tipo === "error_documental"
-      ? "Error documental"
-      : row?.incidencia_tipo === "observacion_registral"
-      ? "Observación registral"
-      : estadoActualKey === "OBSERVADA"
-      ? "Por completar"
-      : "No aplica";
+  const estadoTramiteInfo = getEstadoTramitePrintInfo({
+    row,
+    estadoActual,
+    estadoActualKey,
+    proximaAccionInfo,
+  });
 
       const ultimaRectificacion = Array.isArray(historyRows)
   ? historyRows.find((item) => item?.tipo_evento === "rectificacion_solicitada")
@@ -15143,18 +15252,12 @@ const mostrarDetalleRectificacion =
 
         <FichaDato
           label="Incidencia"
-          value={incidenciaLabel}
+          value={estadoTramiteInfo.incidencia}
         />
 
         <FichaDato
   label="Detalle"
-  value={
-    estadoActualKey === "OBSERVADA"
-      ? row?.motivo_incidencia ||
-        proximaAccionInfo?.texto ||
-        "Por completar"
-      : proximaAccionInfo?.texto || "Por completar"
-  }
+  value={estadoTramiteInfo.detalle}
   wide
 />
 

@@ -28,13 +28,32 @@ function formatCuit(value) {
   return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10, 11)}`;
 }
 
-function getStatusSummary(status) {
-  const value = (status || "")
+function formatDate(value) {
+  if (!value) return "—";
+
+  const raw = String(value).trim();
+  const onlyDate = raw.slice(0, 10);
+  const match = onlyDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (match) {
+    const [, y, m, d] = match;
+    return `${d}/${m}/${y}`;
+  }
+
+  return raw;
+}
+
+function normalizeFilterText(value) {
+  return (value || "")
     .toString()
     .trim()
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getStatusSummary(status) {
+  const value = normalizeFilterText(status);
 
   if (!value) return "Pendiente de envío";
 
@@ -145,6 +164,7 @@ export default function DiaPrendasIndex() {
   const [fechaDesde, setFechaDesde] = useState("");
 const [fechaHasta, setFechaHasta] = useState("");
 const [ordenFecha, setOrdenFecha] = useState("desc");
+  const [printMode, setPrintMode] = useState(null);
   const [selectedPrenda, setSelectedPrenda] = useState(null);
 
   const [topMenuOpen, setTopMenuOpen] = useState(false);
@@ -271,11 +291,7 @@ useEffect(() => {
   }
 
   const filteredRows = useMemo(() => {
-  const q = search
-  .trim()
-  .toLowerCase()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "");
+  const q = normalizeFilterText(search);
 
 const qDigits = onlyDigits(search);
 
@@ -353,6 +369,47 @@ const matchesSearch = q || qDigits
   });
 }, [rows, search, fechaDesde, fechaHasta, ordenFecha]);
 
+function getVistaSeleccionada() {
+  const q = normalizeFilterText(search);
+
+  if (!q) return "PRENDAS";
+  if (q === "en curso" || q === "en proceso") return "EN CURSO";
+  if (q === "observada" || q === "observadas") return "OBSERVADAS";
+  if (q === "inscripta" || q === "inscriptas") return "INSCRIPTAS";
+
+  return "PRENDAS";
+}
+
+function getOrdenLabel() {
+  return ordenFecha === "asc" ? "Más antiguas primero" : "Más recientes primero";
+}
+
+function getFechaBase(row) {
+  return (row?.fecha_envio_oficina || row?.created_at || "").toString().slice(0, 10);
+}
+
+function handlePrintListado() {
+  if (loading) return;
+
+  if (filteredRows.length === 0) {
+    alert("No hay prendas para imprimir con los filtros actuales.");
+    return;
+  }
+
+  setPrintMode("listado");
+
+  const cleanup = () => {
+    setPrintMode(null);
+    window.removeEventListener("afterprint", cleanup);
+  };
+
+  window.addEventListener("afterprint", cleanup);
+
+  setTimeout(() => {
+    window.print();
+  }, 150);
+}
+
   const hasSearch = search.trim() !== "";
 
 const noSearchResults =
@@ -385,6 +442,7 @@ const totalInscriptas = rows.filter((row) => {
 const totalAvisosPrendas = totalEnCurso + totalObservadas;
 
   return (
+    <>
     <div style={pageStyle}>
       <div style={shellStyle}>
         <section style={heroStyle}>
@@ -688,6 +746,23 @@ onClick={() => {
   />
 </section>
 
+<div style={listPrintToolbarStyle}>
+  <button
+    type="button"
+    onClick={handlePrintListado}
+    disabled={loading}
+    style={{
+      ...printListButtonStyle,
+      cursor: loading ? "not-allowed" : "pointer",
+      opacity: loading ? 0.55 : 1,
+    }}
+    title="Imprimir el listado actualmente visible"
+  >
+    <Printer size={16} />
+    <span>Imprimir listado</span>
+  </button>
+</div>
+
         <div
   style={{
     ...tableCardStyle,
@@ -861,6 +936,201 @@ onClick={() => {
         )}
       </div>
     </div>
+
+    {printMode === "listado" && (
+      <div className="print-only print-listado-prendas">
+        <div className="print-header">
+          <div className="print-brand">SAKI</div>
+          <h1>Listado de prendas</h1>
+          <p>Fecha de impresión: {new Date().toLocaleDateString("es-AR")}</p>
+        </div>
+
+        <section className="print-section">
+          <h2>Filtros aplicados</h2>
+          <div className="print-filters">
+            <div>
+              <span>Desde</span>
+              <strong>{fechaDesde ? formatDate(fechaDesde) : "Sin filtro"}</strong>
+            </div>
+            <div>
+              <span>Hasta</span>
+              <strong>{fechaHasta ? formatDate(fechaHasta) : "Sin filtro"}</strong>
+            </div>
+            <div>
+              <span>Estado / vista seleccionada</span>
+              <strong>{getVistaSeleccionada()}</strong>
+            </div>
+            <div>
+              <span>Búsqueda</span>
+              <strong>{search.trim() || "Sin búsqueda"}</strong>
+            </div>
+            <div>
+              <span>Orden</span>
+              <strong>{getOrdenLabel()}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="print-section">
+          <h2>Resumen</h2>
+          <p className="print-total">
+            Total de registros impresos: <strong>{filteredRows.length}</strong>
+          </p>
+        </section>
+
+        <table className="print-table">
+          <thead>
+            <tr>
+              <th>Tienda</th>
+              <th>Franquiciado</th>
+              <th>CUIT</th>
+              <th>Dominio</th>
+              <th>Garante / Titular</th>
+              <th>Estado</th>
+              <th>Fecha / Última actualización</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRows.map((row) => (
+              <tr key={row.id}>
+                <td>{row.tienda || "—"}</td>
+                <td>{row.frq || "—"}</td>
+                <td>{formatCuit(row.frq_cuit) || "—"}</td>
+                <td>{row.dominio || "—"}</td>
+                <td>{row.titular_dominio || "—"}</td>
+                <td>{getStatusSummary(row.estado)}</td>
+                <td>{formatDate(getFechaBase(row))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    <style jsx global>{`
+      .print-only {
+        display: none;
+      }
+
+      @media print {
+        body * {
+          visibility: hidden !important;
+        }
+
+        .print-only,
+        .print-only * {
+          visibility: visible !important;
+        }
+
+        .print-only {
+          display: block !important;
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          background: #ffffff !important;
+          color: #111827 !important;
+          padding: 24px !important;
+          font-family: Arial, sans-serif !important;
+          box-sizing: border-box !important;
+        }
+
+        .print-header {
+          border-bottom: 1px solid #d1d5db !important;
+          padding-bottom: 14px !important;
+          margin-bottom: 18px !important;
+        }
+
+        .print-brand {
+          font-size: 22px !important;
+          font-weight: 900 !important;
+          letter-spacing: 0.08em !important;
+          margin-bottom: 10px !important;
+        }
+
+        .print-header h1 {
+          font-size: 22px !important;
+          margin: 0 0 8px !important;
+          color: #111827 !important;
+        }
+
+        .print-header p {
+          font-size: 12px !important;
+          margin: 4px 0 !important;
+          color: #374151 !important;
+        }
+
+        .print-section {
+          border: 1px solid #d1d5db !important;
+          border-radius: 10px !important;
+          padding: 14px !important;
+          margin-bottom: 14px !important;
+          page-break-inside: avoid !important;
+        }
+
+        .print-section h2 {
+          font-size: 15px !important;
+          margin: 0 0 12px !important;
+          color: #111827 !important;
+        }
+
+        .print-filters {
+          display: grid !important;
+          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          gap: 10px !important;
+        }
+
+        .print-filters div {
+          border: 1px solid #e5e7eb !important;
+          border-radius: 8px !important;
+          padding: 9px !important;
+        }
+
+        .print-filters span {
+          display: block !important;
+          font-size: 10px !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.05em !important;
+          color: #6b7280 !important;
+          margin-bottom: 4px !important;
+        }
+
+        .print-filters strong,
+        .print-total strong {
+          color: #111827 !important;
+          font-weight: 700 !important;
+        }
+
+        .print-total {
+          margin: 0 !important;
+          font-size: 13px !important;
+          color: #374151 !important;
+        }
+
+        .print-table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          font-size: 11px !important;
+        }
+
+        .print-table th,
+        .print-table td {
+          border: 1px solid #d1d5db !important;
+          padding: 7px 8px !important;
+          text-align: left !important;
+          vertical-align: top !important;
+          color: #111827 !important;
+        }
+
+        .print-table th {
+          background: #f3f4f6 !important;
+          font-size: 10px !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.04em !important;
+        }
+      }
+    `}</style>
+    </>
   );
 }
 
@@ -1244,6 +1514,30 @@ const summaryGridStyle = {
   gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   gap: "14px",
   marginBottom: "18px",
+};
+
+const listPrintToolbarStyle = {
+  display: "flex",
+  justifyContent: "flex-end",
+  alignItems: "center",
+  margin: "-2px 0 12px",
+};
+
+const printListButtonStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  minHeight: "38px",
+  padding: "0 13px",
+  borderRadius: "10px",
+  border: "1px solid rgba(125,211,252,0.18)",
+  background: "rgba(30,64,108,0.72)",
+  color: "#dbeafe",
+  fontSize: "12px",
+  fontWeight: 750,
+  boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+  whiteSpace: "nowrap",
 };
 
 const summaryCardStyle = {
