@@ -186,6 +186,30 @@ const obtenerAliasesSectorPrenda = () => [
   "cobranzas y creditos",
 ];
 
+const normalizarSectorPrenda = (value) => {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " y ")
+    .replace(/\+/g, " y ")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_+/g, "_");
+};
+
+const esSectorCreditosCobranzasPrenda = (sector) => {
+  const normalizado = normalizarSectorPrenda(sector);
+
+  return [
+    "creditos_y_cobranzas",
+    "cobranzas_y_creditos",
+    "creditos_cobranzas",
+    "c_y_c",
+  ].includes(normalizado);
+};
+
 const enviarNotificacionPrendaEstado = async ({
   prendaId,
   row,
@@ -204,15 +228,16 @@ const enviarNotificacionPrendaEstado = async ({
     const { data: perfilesSector, error: perfilesError } = await supabase
       .from("profiles")
       .select("email, sector, role")
-      .eq("role", "member")
-      .in("sector", obtenerAliasesSectorPrenda());
+      .eq("role", "member");
 
     if (perfilesError) {
       console.error("Error buscando destinatarios de Prendas:", perfilesError);
     }
 
     const mailsSector = emailsUnicosPrenda(
-      (perfilesSector || []).map((perfil) => perfil?.email)
+      (perfilesSector || [])
+        .filter((perfil) => esSectorCreditosCobranzasPrenda(perfil?.sector))
+        .map((perfil) => perfil?.email)
     );
 
     const destinatariosPrincipales = emailsUnicosPrenda([

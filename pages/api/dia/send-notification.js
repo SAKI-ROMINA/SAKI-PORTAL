@@ -5,7 +5,9 @@ const MAIL_ADMIN_SAKI = "rominamazzeo@gmail.com";
 
 const SECTORES_AUTORIZADOS_DIA = [
   "creditos y cobranzas",
+  "creditos cobranzas",
   "cobranzas y creditos",
+  "cobranzas creditos",
   "c c",
   "c y c",
   "administracion franquicias",
