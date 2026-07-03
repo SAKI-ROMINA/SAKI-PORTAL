@@ -567,6 +567,54 @@ export default function FondosARendir() {
     await cargarMovimientos();
   }
 
+  async function eliminarMovimiento(movimiento) {
+    if (!isAdmin || !movimiento?.id) return;
+
+    const confirmar = window.confirm(
+      "¿Eliminar este asiento? Esta acción no se puede deshacer."
+    );
+
+    if (!confirmar) return;
+
+    const { error } = await supabase
+      .from("dia_fondos_movimientos")
+      .delete()
+      .eq("id", movimiento.id);
+
+    if (error) {
+      console.error("Error eliminando movimiento:", error);
+      setFeedback("No se pudo eliminar el asiento. Revisar permisos de Supabase.");
+      return;
+    }
+
+    let comprobanteNoEliminado = false;
+
+    if (movimiento.comprobante_url) {
+      const { error: storageError } = await supabase.storage
+        .from(BUCKET_COMPROBANTES)
+        .remove([movimiento.comprobante_url]);
+
+      if (storageError) {
+        console.error("Error eliminando comprobante de fondos:", storageError);
+        comprobanteNoEliminado = true;
+      }
+    }
+
+    setMovimientos((prev) =>
+      prev.filter((item) => String(item.id) !== String(movimiento.id))
+    );
+
+    if (detalle?.id === movimiento.id) {
+      setDetalle(null);
+    }
+
+    setFeedback(
+      comprobanteNoEliminado
+        ? "Asiento eliminado. No se pudo eliminar el comprobante del storage."
+        : "Asiento eliminado."
+    );
+  }
+
   async function verComprobante(movimiento) {
     if (!movimiento?.comprobante_url) return;
 
@@ -846,6 +894,11 @@ export default function FondosARendir() {
                       Editar
                     </button>
                   )}
+                  {isAdmin && (
+                    <button type="button" className="smallButton deleteButton" onClick={() => eliminarMovimiento(movimiento)}>
+                      Eliminar
+                    </button>
+                  )}
                 </span>
               </div>
             ))}
@@ -1087,6 +1140,11 @@ export default function FondosARendir() {
                   {detalle.estado !== "ANULADO" && (
                     <button type="button" className="dangerButton" onClick={() => anularMovimiento(detalle)}>
                       Anular
+                    </button>
+                  )}
+                  {isAdmin && (
+                    <button type="button" className="dangerButton deleteButton" onClick={() => eliminarMovimiento(detalle)}>
+                      Eliminar
                     </button>
                   )}
                 </>
@@ -1366,7 +1424,7 @@ const styles = `
 
   .movementRow {
     display: grid;
-    grid-template-columns: 92px 76px 100px minmax(150px, 1fr) 110px 110px 100px 170px;
+    grid-template-columns: 92px 76px 100px minmax(150px, 1fr) 110px 110px 100px 220px;
     gap: 10px;
     align-items: center;
     border-radius: 16px;
@@ -1409,6 +1467,12 @@ const styles = `
     color: rgba(219, 234, 254, 0.94);
     padding: 0 10px;
     font-size: 11px;
+  }
+
+  .deleteButton {
+    border-color: rgba(248, 113, 113, 0.30);
+    background: rgba(127, 29, 29, 0.38);
+    color: #fecaca;
   }
 
   .linkButton {
