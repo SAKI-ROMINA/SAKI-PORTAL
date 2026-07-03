@@ -154,14 +154,32 @@ function mapPrendaResultado(row) {
   };
 }
 
+function getPerfilDisplayName(profile) {
+  if (!profile) return "";
+
+  const base =
+    profile.full_name ||
+    profile.name ||
+    profile.email ||
+    "";
+
+  if (profile.role === "admin") {
+    return base ? `${base} · Admin SAKI` : "Admin SAKI";
+  }
+
+  return base;
+}
+
 export default function FondosARendir() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [canAccess, setCanAccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [readOnly, setReadOnly] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserIsAdmin, setCurrentUserIsAdmin] = useState(false);
 
   const [movimientos, setMovimientos] = useState([]);
+  const [profilesById, setProfilesById] = useState({});
   const [loadingMovimientos, setLoadingMovimientos] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -205,12 +223,13 @@ export default function FondosARendir() {
         setCanAccess(false);
         setReadOnly(true);
         setIsAdmin(false);
+        setCurrentUserIsAdmin(false);
         return;
       }
 
       const { data: profile, error } = await supabase
         .from("profiles")
-        .select("role, sector")
+        .select("role, sector, full_name, name, email")
         .eq("id", userId)
         .single();
 
@@ -219,6 +238,7 @@ export default function FondosARendir() {
         setCanAccess(false);
         setReadOnly(true);
         setIsAdmin(false);
+        setCurrentUserIsAdmin(false);
         return;
       }
 
@@ -227,11 +247,36 @@ export default function FondosARendir() {
       const admFranquicias = sector.includes("franquicias");
 
       setIsAdmin(admin);
+      setCurrentUserIsAdmin(admin);
       setReadOnly(!admin);
       setCanAccess(admin || admFranquicias);
+
+      await cargarProfiles();
     } finally {
       setLoadingUser(false);
     }
+  }
+
+  async function cargarProfiles() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name, name, email, role");
+
+    if (error) {
+      console.error("Error cargando perfiles para Fondos:", error);
+      setProfilesById({});
+      return;
+    }
+
+    const mapped = (data || []).reduce((acc, profile) => {
+      if (profile?.id) {
+        acc[String(profile.id)] = profile;
+      }
+
+      return acc;
+    }, {});
+
+    setProfilesById(mapped);
   }
 
   async function cargarMovimientos(filtrosOverride = filtros) {
@@ -287,6 +332,20 @@ export default function FondosARendir() {
       ...prev,
       [field]: field === "dominio" ? value.toUpperCase() : value,
     }));
+  }
+
+  function resolverUsuarioVisible(userId) {
+    if (!userId) return "Usuario SAKI";
+
+    const profile = profilesById[String(userId)];
+    const profileName = getPerfilDisplayName(profile);
+
+    if (profileName) return profileName;
+    if (currentUserIsAdmin && String(userId) === String(currentUserId)) {
+      return "Admin SAKI";
+    }
+
+    return "Usuario SAKI";
   }
 
   async function limpiarFiltros() {
@@ -352,8 +411,10 @@ export default function FondosARendir() {
     }));
   }
 
-  async function buscarTramitePorDominio() {
-    const dominio = busquedaDominio.trim().toUpperCase();
+  async function buscarTramitePorDominio(dominioOverride = "") {
+    const dominio = (dominioOverride || busquedaDominio || form.dominio || "")
+      .trim()
+      .toUpperCase();
 
     if (!dominio) {
       setFeedback("Ingresá un dominio para buscar.");
@@ -363,6 +424,7 @@ export default function FondosARendir() {
     try {
       setBuscandoTramite(true);
       setFeedback("");
+      setBusquedaDominio(dominio);
 
       const [informesRes, prendasRes] = await Promise.all([
         supabase
@@ -393,14 +455,37 @@ export default function FondosARendir() {
       setResultadosTramite(resultados);
 
       if (!resultados.length) {
-        setFeedback("No encontramos trámites con ese dominio. Podés cargar el egreso manualmente.");
+        setFeedback("No se encontraron datos asociados a ese dominio. Podés completar los datos manualmente.");
+      } else if (resultados.length === 1) {
+        aplicarTramite(resultados[0]);
+      } else {
+        setFeedback("Encontramos más de una coincidencia. Elegí el trámite correcto.");
       }
     } finally {
       setBuscandoTramite(false);
     }
   }
 
+  function tieneDatosManualCargados() {
+    return [
+      form.tienda,
+      form.frq_nombre,
+      form.frq_cuit,
+      form.garante_nombre,
+      form.garante_cuit,
+      form.origen_id,
+    ].some((value) => String(value || "").trim());
+  }
+
   function aplicarTramite(resultado) {
+    if (tieneDatosManualCargados()) {
+      const confirmar = window.confirm(
+        "Ya hay datos cargados en el movimiento. ¿Querés reemplazarlos con los datos encontrados para este dominio?"
+      );
+
+      if (!confirmar) return;
+    }
+
     setForm((prev) => ({
       ...prev,
       origen_tipo: resultado.origen_tipo,
@@ -411,8 +496,10 @@ export default function FondosARendir() {
       frq_cuit: resultado.frq_cuit || prev.frq_cuit,
       garante_nombre: resultado.garante_nombre || prev.garante_nombre,
       garante_cuit: resultado.garante_cuit || prev.garante_cuit,
-      concepto: resultado.concepto || prev.concepto,
+      concepto: prev.tipo === "EGRESO" ? resultado.concepto || prev.concepto : prev.concepto,
     }));
+    setBusquedaDominio(resultado.dominio || "");
+    setResultadosTramite([]);
     setFeedback("Datos del trámite aplicados. Podés editarlos antes de guardar.");
   }
 
@@ -967,18 +1054,17 @@ export default function FondosARendir() {
               </button>
             </header>
 
-            {form.tipo === "EGRESO" && (
-              <section className="searchBox">
-                <label>Buscar trámite por dominio</label>
+            <section className="searchBox">
+                <label>Buscar datos por dominio</label>
                 <div className="searchLine">
                   <input
                     value={busquedaDominio}
                     onChange={(event) => setBusquedaDominio(event.currentTarget.value.toUpperCase())}
                     placeholder="Dominio"
                   />
-                  <button type="button" className="secondaryButton" onClick={buscarTramitePorDominio} disabled={buscandoTramite}>
+                  <button type="button" className="secondaryButton" onClick={() => buscarTramitePorDominio()} disabled={buscandoTramite}>
                     <Search size={15} />
-                    {buscandoTramite ? "Buscando..." : "Buscar"}
+                    {buscandoTramite ? "Buscando..." : "Buscar datos"}
                   </button>
                 </div>
 
@@ -997,7 +1083,6 @@ export default function FondosARendir() {
                   </div>
                 )}
               </section>
-            )}
 
             <div className="formGrid">
               <label>
@@ -1045,7 +1130,18 @@ export default function FondosARendir() {
 
               <label>
                 Dominio
-                <input value={form.dominio} onChange={(event) => setFormField("dominio", event.currentTarget.value)} />
+                <input
+                  value={form.dominio}
+                  onChange={(event) => setFormField("dominio", event.currentTarget.value)}
+                  onBlur={() => {
+                    const dominio = String(form.dominio || "").trim().toUpperCase();
+                    const ultimaBusqueda = String(busquedaDominio || "").trim().toUpperCase();
+
+                    if (dominio && dominio !== ultimaBusqueda) {
+                      buscarTramitePorDominio(dominio);
+                    }
+                  }}
+                />
               </label>
 
               <label>
@@ -1120,7 +1216,7 @@ export default function FondosARendir() {
               <Detail label="Concepto" value={detalle.concepto} />
               <Detail label="Detalle completo" value={detalle.detalle} />
               <Detail label="Estado" value={detalle.estado} />
-              <Detail label="Usuario que cargó" value={detalle.creado_por} />
+              <Detail label="Usuario que cargó" value={resolverUsuarioVisible(detalle.creado_por)} />
               <Detail label="Fecha de carga" value={formatFecha(detalle.created_at)} />
               <Detail label="Comprobante" value={detalle.comprobante_nombre || "—"} />
             </div>
