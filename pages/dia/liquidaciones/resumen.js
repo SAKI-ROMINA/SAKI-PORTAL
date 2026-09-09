@@ -35,6 +35,11 @@ export default function ResumenMensualLiquidaciones() {
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
   const [tipo, setTipo] = useState("todos");
+  const [sectorFiltro, setSectorFiltro] = useState("");
+  const [tipoInformeFiltro, setTipoInformeFiltro] = useState("");
+  const [sectoresFiltro, setSectoresFiltro] = useState([]);
+  const [tiposInformeFiltro, setTiposInformeFiltro] = useState([]);
+  const [errorOpcionesFiltros, setErrorOpcionesFiltros] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [loadingNuevosTrabajos, setLoadingNuevosTrabajos] = useState(false);
@@ -58,6 +63,69 @@ useEffect(() => {
   cargarAnalistas();
   setFechasMesActual();
 }, []);
+
+useEffect(() => {
+  if (canAccess) cargarOpcionesFiltros();
+}, [canAccess]);
+
+async function cargarOpcionesFiltros() {
+  try {
+    const sectores = new Set();
+    const tiposInforme = new Set();
+    const pageSize = 1000;
+
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await supabase
+        .from("dia_requests")
+        .select("*")
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+
+      if (error) throw error;
+
+      (data || []).forEach((informe) => {
+        const item = normalizarInformeLiquidable(informe);
+        if (item.sector) sectores.add(item.sector);
+        if (item.tramite) tiposInforme.add(item.tramite);
+      });
+
+      if ((data || []).length < pageSize) break;
+    }
+
+    for (let offset = 0; ; offset += pageSize) {
+      const { data: prendas, error } = await supabase
+        .from("dia_request_prendas")
+        .select("*")
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+
+      if (error) throw error;
+
+      (prendas || []).forEach((prenda) => {
+        const item = normalizarPrendaLiquidable(prenda);
+        if (item.sector) sectores.add(item.sector);
+      });
+
+      if ((prendas || []).length < pageSize) break;
+    }
+
+    const sectoresUnicos = new Map();
+    sectores.forEach((sector) => {
+      const clave = normalizarEstado(sector);
+      if (clave && !sectoresUnicos.has(clave)) {
+        sectoresUnicos.set(clave, clave === "FRANQUICIAS" ? "Franquicias" : sector.trim());
+      }
+    });
+    setSectoresFiltro([...sectoresUnicos.values()].sort((a, b) => a.localeCompare(b, "es-AR")));
+    setTiposInformeFiltro([...tiposInforme].sort((a, b) =>
+      formatTramite(a).localeCompare(formatTramite(b), "es-AR")
+    ));
+    setErrorOpcionesFiltros("");
+  } catch (error) {
+    console.error("Error al cargar opciones de filtros:", error);
+    setErrorOpcionesFiltros("No se pudieron cargar los sectores y tipos de informe. Recargá la página para reintentar.");
+  }
+}
 
   function setFechasMesActual() {
     const hoy = new Date();
@@ -175,7 +243,7 @@ async function cargarLiquidacionesGuardadas(mostrarBorradores = isAdmin) {
       setLoading(true);
       setActualizacionFeedback("");
 
-      const rows = await buscarTrabajosLiquidablesPorPeriodo({ desde, hasta, tipo });
+      const rows = await buscarTrabajosLiquidablesPorPeriodo({ desde, hasta, tipo, sectorFiltro, tipoInformeFiltro });
 
 setItems(rows);
 setLiquidacionGuardadaId(null);
@@ -227,7 +295,7 @@ setItemsAbiertos((prev) => {
       setLoadingNuevosTrabajos(true);
       setActualizacionFeedback("");
 
-      const rows = await buscarTrabajosLiquidablesPorPeriodo({ desde, hasta, tipo });
+      const rows = await buscarTrabajosLiquidablesPorPeriodo({ desde, hasta, tipo, sectorFiltro, tipoInformeFiltro });
       const clavesExistentes = new Set(items.map((item) => getTrabajoKey(item)));
       const trabajosNuevos = rows.filter(
         (item) => !clavesExistentes.has(getTrabajoKey(item))
@@ -272,7 +340,7 @@ setItemsAbiertos((prev) => {
     }
   }
 
-async function buscarTrabajosLiquidablesPorPeriodo({ desde, hasta, tipo }) {
+async function buscarTrabajosLiquidablesPorPeriodo({ desde, hasta, tipo, sectorFiltro = "", tipoInformeFiltro = "" }) {
   const incluirInformes = tipo === "todos" || tipo === "informe";
   const incluirPrendas = tipo === "todos" || tipo === "prenda";
 
@@ -295,7 +363,10 @@ async function buscarTrabajosLiquidablesPorPeriodo({ desde, hasta, tipo }) {
   const rows = deduplicarTrabajosLiquidables([
     ...(informesResult.rows || []),
     ...(prendasResult.rows || []),
-  ]).sort(ordenarTrabajosLiquidables);
+  ]).filter((item) =>
+    (!sectorFiltro || normalizarEstado(item.sector) === normalizarEstado(sectorFiltro)) &&
+    (tipo !== "informe" || !tipoInformeFiltro || item.tramite === tipoInformeFiltro)
+  ).sort(ordenarTrabajosLiquidables);
 
   return hidratarConceptosEstimados(rows);
 }
@@ -1509,13 +1580,45 @@ async function handleGuardarLiquidacion() {
             <label>Tipo</label>
             <select
               value={tipo}
-              onChange={(event) => setTipo(event.currentTarget.value)}
+              onChange={(event) => {
+                const nuevoTipo = event.currentTarget.value;
+                setTipo(nuevoTipo);
+                if (nuevoTipo !== "informe") setTipoInformeFiltro("");
+              }}
             >
               <option value="todos">Todos</option>
               <option value="informe">Informes</option>
               <option value="prenda">Prendas</option>
             </select>
           </div>
+
+          <div className="field">
+            <label htmlFor="sector-filtro">Sector</label>
+            <select id="sector-filtro" value={sectorFiltro}
+              onChange={(event) => setSectorFiltro(event.currentTarget.value)}>
+              <option value="">Todos</option>
+              {sectoresFiltro.map((sector) => (
+                <option key={sector} value={sector}>{sector}</option>
+              ))}
+            </select>
+          </div>
+
+          {tipo === "informe" && (
+            <div className="field">
+              <label htmlFor="tipo-informe-filtro">Tipo de informe</label>
+              <select id="tipo-informe-filtro" value={tipoInformeFiltro}
+                onChange={(event) => setTipoInformeFiltro(event.currentTarget.value)}>
+                <option value="">Todos</option>
+                {tiposInformeFiltro.map((tipoInforme) => (
+                  <option key={tipoInforme} value={tipoInforme}>{formatTramite(tipoInforme)}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {errorOpcionesFiltros && (
+            <p className="actualizacionFeedback" role="alert">{errorOpcionesFiltros}</p>
+          )}
 
           <button
             type="button"
@@ -2217,7 +2320,7 @@ const styles = `
   background: rgba(3, 18, 34, 0.42);
   padding: 18px;
   display: grid;
-  grid-template-columns: 145px 145px 135px 1fr 1fr 160px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   align-items: end;
 }
